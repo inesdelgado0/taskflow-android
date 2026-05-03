@@ -1,4 +1,4 @@
-package com.taskflow.network.error
+package com.taskflow.util
 
 sealed class ApiResult<out T> {
     data class Success<T>(val data: T) : ApiResult<T>()
@@ -8,7 +8,7 @@ sealed class ApiResult<out T> {
 /** Transforma o valor em caso de sucesso */
 inline fun <T, R> ApiResult<T>.map(transform: (T) -> R): ApiResult<R> = when (this) {
     is ApiResult.Success -> ApiResult.Success(transform(data))
-    is ApiResult.Error   -> this
+    is ApiResult.Error -> this
 }
 
 /** Obtém o valor ou null */

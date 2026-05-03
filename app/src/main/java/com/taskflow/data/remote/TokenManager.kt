@@ -1,4 +1,4 @@
-package com.taskflow.network.auth
+package com.taskflow.data.remote
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -12,8 +12,6 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
-
-
 
 private val Context.dataStore: DataStore<Preferences>
         by preferencesDataStore(name = "taskflow_auth")

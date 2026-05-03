@@ -1,4 +1,4 @@
-package com.taskflow.network.error
+package com.taskflow.util
 
 
 sealed class NetworkError : Exception() {

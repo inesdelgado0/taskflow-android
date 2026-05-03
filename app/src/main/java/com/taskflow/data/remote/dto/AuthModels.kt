@@ -1,4 +1,4 @@
-package com.taskflow.network.model
+package com.taskflow.data.remote.dto
 
 import com.google.gson.annotations.SerializedName
 

@@ -1,6 +1,6 @@
-package com.taskflow.network.interceptor
+package com.taskflow.data.remote.interceptor
 
-import com.taskflow.network.error.NetworkError
+import com.taskflow.util.NetworkError
 import okhttp3.Interceptor
 import okhttp3.Response
 import java.net.SocketTimeoutException

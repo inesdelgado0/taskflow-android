@@ -1,9 +1,9 @@
-package com.taskflow.network.api
+package com.taskflow.data.remote.api
 
-import com.taskflow.network.model.AuthResponse
-import com.taskflow.network.model.LoginRequest
-import com.taskflow.network.model.RefreshTokenRequest
-import com.taskflow.network.model.RegisterRequest
+import com.taskflow.data.remote.dto.AuthResponse
+import com.taskflow.data.remote.dto.LoginRequest
+import com.taskflow.data.remote.dto.RefreshTokenRequest
+import com.taskflow.data.remote.dto.RegisterRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST

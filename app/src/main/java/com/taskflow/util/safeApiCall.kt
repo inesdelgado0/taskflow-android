@@ -1,7 +1,7 @@
-package com.taskflow.network.error
+package com.taskflow.util
 
 import com.google.gson.Gson
-import com.taskflow.network.model.ApiErrorResponse
+import com.taskflow.data.remote.dto.ApiErrorResponse
 import retrofit2.Response
 import java.io.IOException
 

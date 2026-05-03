@@ -1,10 +1,10 @@
 package com.taskflow.di
 
 import com.taskflow.app.BuildConfig
-import com.taskflow.network.api.AuthApi
-import com.taskflow.network.interceptor.AuthInterceptor
-import com.taskflow.network.interceptor.NetworkErrorInterceptor
-import com.taskflow.network.interceptor.TokenRefreshInterceptor
+import com.taskflow.data.remote.api.AuthApi
+import com.taskflow.data.remote.interceptor.AuthInterceptor
+import com.taskflow.data.remote.interceptor.NetworkErrorInterceptor
+import com.taskflow.data.remote.interceptor.TokenRefreshInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -40,7 +40,7 @@ object NetworkModule {
     @Singleton
     fun provideOkHttpClient(
         loggingInterceptor:      HttpLoggingInterceptor,
-        authInterceptor:         AuthInterceptor,
+        authInterceptor: AuthInterceptor,
         tokenRefreshInterceptor: TokenRefreshInterceptor,
         networkErrorInterceptor: NetworkErrorInterceptor
     ): OkHttpClient = OkHttpClient.Builder()

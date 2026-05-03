@@ -1,6 +1,6 @@
-package com.taskflow.network.interceptor
+package com.taskflow.data.remote.interceptor
 
-import com.taskflow.network.auth.TokenManager
+import com.taskflow.data.remote.TokenManager
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
