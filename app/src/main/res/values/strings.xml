@@ -1,3 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!-- App -->
     <string name="app_name">TaskFlow</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_title_1">Bem-vindo ao TaskFlow</string>
+    <string name="onboarding_desc_1">Gere os teus projetos e tarefas de forma simples e eficiente.</string>
+    <string name="onboarding_title_2">Trabalha em Equipa</string>
+    <string name="onboarding_desc_2">Colabora com a tua equipa, atribui tarefas e acompanha o progresso.</string>
+    <string name="onboarding_title_3">Sempre Sincronizado</string>
+    <string name="onboarding_desc_3">Os teus dados estão sempre disponíveis, mesmo sem internet.</string>
+    <string name="onboarding_btn_next">Próximo</string>
+    <string name="onboarding_btn_skip">Saltar</string>
+    <string name="onboarding_btn_start">Começar</string>
+
+    <!-- Boas-vindas -->
+    <string name="welcome_title">TaskFlow</string>
+    <string name="welcome_subtitle">Gestão de projetos na palma da mão</string>
+    <string name="welcome_btn_login">Iniciar Sessão</string>
+    <string name="welcome_btn_register">Criar Conta</string>
+
+    <!-- Login -->
+    <string name="login_title">Iniciar Sessão</string>
+    <string name="login_label_email">Email</string>
+    <string name="login_label_password">Palavra-passe</string>
+    <string name="login_btn_submit">Entrar</string>
+    <string name="login_forgot_password">Esqueceu a palavra-passe?</string>
+    <string name="login_no_account">Não tem conta? Registe-se</string>
+
+    <!-- Registo -->
+    <string name="register_title">Criar Conta</string>
+    <string name="register_label_name">Nome</string>
+    <string name="register_label_username">Nome de utilizador</string>
+    <string name="register_label_email">Email</string>
+    <string name="register_label_password">Palavra-passe</string>
+    <string name="register_label_confirm_password">Confirmar palavra-passe</string>
+    <string name="register_label_photo">Fotografia de perfil</string>
+    <string name="register_btn_submit">Registar</string>
+    <string name="register_already_account">Já tem conta? Inicie sessão</string>
+
+    <!-- Perfil -->
+    <string name="profile_title">Perfil</string>
+    <string name="profile_label_name">Nome</string>
+    <string name="profile_label_username">Nome de utilizador</string>
+    <string name="profile_label_email">Email</string>
+    <string name="profile_label_password">Palavra-passe</string>
+    <string name="profile_label_photo">Fotografia</string>
+    <string name="profile_btn_edit">Editar perfil</string>
+    <string name="profile_btn_save">Guardar alterações</string>
+    <string name="profile_btn_change_photo">Alterar fotografia</string>
+    <string name="profile_btn_logout">Terminar sessão</string>
+
+    <!-- Projetos -->
+    <string name="projects_title">Projetos</string>
+    <string name="projects_btn_new">Novo Projeto</string>
+    <string name="projects_empty">Nenhum projeto encontrado.</string>
+    <string name="project_detail_title">Detalhes do Projeto</string>
+    <string name="project_label_name">Nome do projeto</string>
+    <string name="project_label_description">Descrição</string>
+    <string name="project_label_manager">Gestor de Projeto</string>
+    <string name="project_label_status">Estado</string>
+    <string name="project_status_active">Ativo</string>
+    <string name="project_status_completed">Concluído</string>
+    <string name="project_btn_create">Criar Projeto</string>
+    <string name="project_btn_edit">Editar Projeto</string>
+    <string name="project_btn_delete">Remover Projeto</string>
+    <string name="project_btn_complete">Marcar como Concluído</string>
+
+    <!-- Tarefas -->
+    <string name="tasks_title">Tarefas</string>
+    <string name="tasks_btn_new">Nova Tarefa</string>
+    <string name="tasks_empty">Nenhuma tarefa encontrada.</string>
+    <string name="task_detail_title">Detalhes da Tarefa</string>
+    <string name="task_label_title">Título</string>
+    <string name="task_label_description">Descrição</string>
+    <string name="task_label_priority">Prioridade</string>
+    <string name="task_label_deadline">Prazo</string>
+    <string name="task_label_status">Estado</string>
+    <string name="task_label_completion">Taxa de conclusão (%)</string>
+    <string name="task_label_date">Data de execução</string>
+    <string name="task_label_location">Local</string>
+    <string name="task_label_time_spent">Tempo dispensado (min)</string>
+    <string name="task_priority_low">Baixa</string>
+    <string name="task_priority_medium">Média</string>
+    <string name="task_priority_high">Alta</string>
+    <string name="task_status_pending">Pendente</string>
+    <string name="task_status_in_progress">Em progresso</string>
+    <string name="task_status_completed">Concluída</string>
+    <string name="task_btn_create">Criar Tarefa</string>
+    <string name="task_btn_edit">Editar Tarefa</string>
+    <string name="task_btn_delete">Remover Tarefa</string>
+    <string name="task_btn_complete">Marcar como Concluída</string>
+    <string name="task_btn_save_progress">Guardar Progresso</string>
+
+    <!-- Histórico e pendentes -->
+    <string name="pending_tasks_title">Tarefas Pendentes</string>
+    <string name="history_tasks_title">Histórico de Tarefas</string>
+    <string name="history_empty">Sem tarefas concluídas ainda.</string>
+    <string name="pending_empty">Sem tarefas pendentes.</string>
+
+    <!-- Utilizadores (Admin) -->
+    <string name="users_title">Utilizadores</string>
+    <string name="users_btn_new">Novo Utilizador</string>
+    <string name="users_empty">Nenhum utilizador encontrado.</string>
+    <string name="user_label_name">Nome</string>
+    <string name="user_label_email">Email</string>
+    <string name="user_label_role">Perfil</string>
+    <string name="user_role_admin">Administrador</string>
+    <string name="user_role_manager">Gestor de Projeto</string>
+    <string name="user_role_user">Utilizador</string>
+    <string name="user_btn_create">Criar Utilizador</string>
+    <string name="user_btn_edit">Editar Utilizador</string>
+    <string name="user_btn_delete">Remover Utilizador</string>
+
+    <!-- Associações -->
+    <string name="assign_users_title">Associar Utilizadores</string>
+    <string name="assign_btn_save">Guardar Associações</string>
+
+    <!-- Observações -->
+    <string name="observations_title">Observações</string>
+    <string name="observations_btn_new">Nova Observação</string>
+    <string name="observations_empty">Sem observações.</string>
+    <string name="observation_label_text">Texto</string>
+    <string name="observation_label_photo">Fotografia</string>
+    <string name="observation_btn_camera">Câmara</string>
+    <string name="observation_btn_gallery">Galeria</string>
+    <string name="observation_btn_save">Guardar Observação</string>
+
+    <!-- Avaliação -->
+    <string name="evaluation_title">Avaliar Utilizador</string>
+    <string name="evaluation_label_score">Classificação (1–5)</string>
+    <string name="evaluation_label_comment">Comentário (opcional)</string>
+    <string name="evaluation_btn_submit">Submeter Avaliação</string>
+
+    <!-- Estatísticas / Exportação -->
+    <string name="stats_title">Estatísticas</string>
+    <string name="stats_by_user">Por Utilizador</string>
+    <string name="stats_by_project">Por Projeto</string>
+    <string name="stats_by_task">Por Tarefa</string>
+    <string name="export_btn_pdf">Exportar PDF</string>
+    <string name="export_btn_csv">Exportar CSV</string>
+
+    <!-- Pesquisa e filtros -->
+    <string name="search_hint">Pesquisar…</string>
+    <string name="filter_title">Filtrar</string>
+    <string name="filter_by_status">Estado</string>
+    <string name="filter_by_priority">Prioridade</string>
+    <string name="filter_by_date">Data</string>
+    <string name="filter_btn_apply">Aplicar Filtros</string>
+    <string name="filter_btn_clear">Limpar Filtros</string>
+
+    <!-- Notificações -->
+    <string name="notif_task_assigned">Foi-lhe atribuída uma nova tarefa.</string>
+    <string name="notif_deadline_soon">Prazo a aproximar-se para a tarefa: %1$s</string>
+    <string name="notif_sync_complete">Sincronização concluída.</string>
+    <string name="notif_sync_pending">A sincronizar dados…</string>
+
+    <!-- Erros e validação -->
+    <string name="error_field_required">Este campo é obrigatório.</string>
+    <string name="error_invalid_email">Email inválido.</string>
+    <string name="error_password_too_short">A palavra-passe deve ter pelo menos 6 caracteres.</string>
+    <string name="error_passwords_no_match">As palavras-passe não coincidem.</string>
+    <string name="error_invalid_credentials">Credenciais inválidas. Verifique o email e a palavra-passe.</string>
+    <string name="error_no_internet">Sem ligação à internet.</string>
+    <string name="error_network_generic">Erro de rede. Tente novamente.</string>
+    <string name="error_server">Erro no servidor. Tente mais tarde.</string>
+    <string name="error_unknown">Ocorreu um erro inesperado.</string>
+    <string name="error_session_expired">Sessão expirada. Por favor, inicie sessão novamente.</string>
+
+    <!-- Ações genéricas -->
+    <string name="btn_save">Guardar</string>
+    <string name="btn_cancel">Cancelar</string>
+    <string name="btn_confirm">Confirmar</string>
+    <string name="btn_delete">Remover</string>
+    <string name="btn_edit">Editar</string>
+    <string name="btn_back">Voltar</string>
+    <string name="btn_close">Fechar</string>
+    <string name="btn_retry">Tentar novamente</string>
+
+    <!-- Diálogos de confirmação -->
+    <string name="dialog_delete_title">Confirmar remoção</string>
+    <string name="dialog_delete_message">Tem a certeza que pretende remover este item?</string>
+    <string name="dialog_logout_title">Terminar sessão</string>
+    <string name="dialog_logout_message">Tem a certeza que pretende terminar a sessão?</string>
+    <string name="dialog_complete_project_title">Concluir projeto</string>
+    <string name="dialog_complete_project_message">Tem a certeza que pretende marcar este projeto como concluído?</string>
+
+    <!-- Estado de sincronização -->
+    <string name="sync_status_offline">Sem ligação</string>
+    <string name="sync_status_syncing">A sincronizar…</string>
+    <string name="sync_status_synced">Sincronizado</string>
+
 </resources>
