@@ -408,7 +408,7 @@ TaskFlow/
 ### 1. Clonar o Repositório
 
 bash
-git clone https://github.com/<org>/taskflow-android.git
+git clone https://github.com/inesdelgado0/taskflow-android.git
 cd taskflow-android
 
 ### 2. Configurar Variáveis de Ambiente
