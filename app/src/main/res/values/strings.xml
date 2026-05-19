@@ -160,7 +160,7 @@
     <!-- Erros e validação -->
     <string name="error_field_required">Este campo é obrigatório.</string>
     <string name="error_invalid_email">Email inválido.</string>
-    <string name="error_password_too_short">A palavra-passe deve ter pelo menos 6 caracteres.</string>
+    <string name="error_password_too_short">A palavra-passe deve ter pelo menos 8 caracteres.</string>
     <string name="error_passwords_no_match">As palavras-passe não coincidem.</string>
     <string name="error_invalid_credentials">Credenciais inválidas. Verifique o email e a palavra-passe.</string>
     <string name="error_no_internet">Sem ligação à internet.</string>
@@ -191,5 +191,24 @@
     <string name="sync_status_offline">Sem ligação</string>
     <string name="sync_status_syncing">A sincronizar…</string>
     <string name="sync_status_synced">Sincronizado</string>
+
+    <!-- Autenticação - JP -->
+    <string name="login_subtitle">Faça login para continuar</string>
+    <string name="login_select_profile">Selecione o perfil:</string>
+    <string name="register_subtitle">Preencha os dados para se registar</string>
+    <string name="register_photo_add">Adicionar fotografia</string>
+    <string name="register_placeholder_name">Ex: João Silva</string>
+    <string name="register_placeholder_username">Ex: joaosilva</string>
+    <string name="register_placeholder_email">Ex: joao@exemplo.com</string>
+    <string name="register_placeholder_password">Mínimo 8 caracteres</string>
+    <string name="register_placeholder_confirm_password">Repita a palavra-passe</string>
+    <string name="admin_user_active">Utilizador ativo</string>
+    <string name="manager_select_project">Selecione o projeto</string>
+    <string name="task_deadline_placeholder">AAAA-MM-DD</string>
+    <string name="task_priority_critical">Crítica</string>
+    <string name="task_status_cancelled">Cancelada</string>
+    <string name="user_role_admin_short">Admin</string>
+    <string name="user_role_manager_short">Gestor</string>
+    <string name="user_role_user_short">User</string>
 
 </resources>

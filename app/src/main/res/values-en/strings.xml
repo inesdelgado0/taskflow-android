@@ -160,7 +160,7 @@
     <!-- Erros e validação -->
     <string name="error_field_required">This field is required.</string>
     <string name="error_invalid_email">Invalid email address.</string>
-    <string name="error_password_too_short">Password must be at least 6 characters.</string>
+    <string name="error_password_too_short">Password must be at least 8 characters.</string>
     <string name="error_passwords_no_match">Passwords do not match.</string>
     <string name="error_invalid_credentials">Invalid credentials. Please check your email and password.</string>
     <string name="error_no_internet">No internet connection.</string>
@@ -191,5 +191,24 @@
     <string name="sync_status_offline">Offline</string>
     <string name="sync_status_syncing">Syncing…</string>
     <string name="sync_status_synced">Synced</string>
+
+    <!-- Authentication - JP -->
+    <string name="login_subtitle">Sign in to continue</string>
+    <string name="login_select_profile">Select profile:</string>
+    <string name="register_subtitle">Fill in your details to register</string>
+    <string name="register_photo_add">Add photo</string>
+    <string name="register_placeholder_name">Ex: John Smith</string>
+    <string name="register_placeholder_username">Ex: johnsmith</string>
+    <string name="register_placeholder_email">Ex: john@example.com</string>
+    <string name="register_placeholder_password">Minimum 8 characters</string>
+    <string name="register_placeholder_confirm_password">Repeat password</string>
+    <string name="admin_user_active">Active user</string>
+    <string name="manager_select_project">Select project</string>
+    <string name="task_deadline_placeholder">YYYY-MM-DD</string>
+    <string name="task_priority_critical">Critical</string>
+    <string name="task_status_cancelled">Cancelled</string>
+    <string name="user_role_admin_short">Admin</string>
+    <string name="user_role_manager_short">Manager</string>
+    <string name="user_role_user_short">User</string>
 
 </resources>
