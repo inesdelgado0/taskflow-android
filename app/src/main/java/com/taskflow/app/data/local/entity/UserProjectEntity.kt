@@ -37,3 +37,4 @@ data class UserProjectEntity(
     @ColumnInfo(name = "joined_at")
     val joinedAt: Long
 )
+

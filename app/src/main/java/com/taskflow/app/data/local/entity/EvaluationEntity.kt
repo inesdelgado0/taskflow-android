@@ -59,3 +59,4 @@ data class EvaluationEntity(
     @ColumnInfo(name = "created_at")
     val createdAt: Long
 )
+

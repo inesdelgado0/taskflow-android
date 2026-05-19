@@ -44,3 +44,4 @@ object DatabaseModule {
     @Provides fun provideAuditLogDao(db: AppDatabase): AuditLogDao = db.auditLogDao()
     @Provides fun provideSyncQueueDao(db: AppDatabase): SyncQueueDao = db.syncQueueDao()
 }
+

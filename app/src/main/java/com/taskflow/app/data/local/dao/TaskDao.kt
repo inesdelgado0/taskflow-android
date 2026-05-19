@@ -67,3 +67,4 @@ interface TaskDao {
     @Query("UPDATE tasks SET status = :status, updated_at = :updatedAt WHERE id = :id")
     suspend fun updateStatus(id: Long, status: TaskStatus, updatedAt: Long)
 }
+

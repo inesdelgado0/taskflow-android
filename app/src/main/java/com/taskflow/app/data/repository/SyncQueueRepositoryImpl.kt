@@ -48,3 +48,4 @@ class SyncQueueRepositoryImpl @Inject constructor(
         lastError = lastError
     )
 }
+

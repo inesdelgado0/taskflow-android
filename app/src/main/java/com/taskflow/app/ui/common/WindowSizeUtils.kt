@@ -32,3 +32,4 @@ private tailrec fun Context.findActivity(): Activity =
         is ContextWrapper -> baseContext.findActivity()
         else -> error("Activity context is required to calculate window size class.")
     }
+

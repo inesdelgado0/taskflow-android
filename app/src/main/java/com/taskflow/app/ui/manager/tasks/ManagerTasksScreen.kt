@@ -437,3 +437,4 @@ private fun statusLabel(status: TaskStatus): String =
         TaskStatus.COMPLETED -> stringResource(R.string.task_status_completed)
         TaskStatus.CANCELLED -> stringResource(R.string.task_status_cancelled)
     }
+

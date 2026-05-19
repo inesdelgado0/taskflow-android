@@ -387,3 +387,4 @@ private fun roleLabel(role: UserRole): String =
         UserRole.MANAGER -> stringResource(R.string.user_role_manager)
         UserRole.USER -> stringResource(R.string.user_role_user)
     }
+

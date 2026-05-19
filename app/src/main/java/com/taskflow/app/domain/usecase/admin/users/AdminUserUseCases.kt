@@ -31,3 +31,4 @@ class DeleteUserUseCase @Inject constructor(
     suspend operator fun invoke(userId: Long): Result<Unit> =
         runCatching { userRepository.deleteUser(userId) }
 }
+

@@ -475,3 +475,4 @@ private fun PasswordVisibilityIcon(
         }
     }
 }
+

@@ -11,3 +11,4 @@ data class SyncQueueItem(
     val retryCount: Int = 0,
     val lastError: String? = null
 )
+

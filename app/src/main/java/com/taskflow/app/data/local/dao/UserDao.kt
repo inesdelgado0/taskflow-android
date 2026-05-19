@@ -43,3 +43,4 @@ interface UserDao {
     @Query("UPDATE users SET is_active = :isActive, updated_at = :updatedAt WHERE id = :id")
     suspend fun setActive(id: Long, isActive: Boolean, updatedAt: Long)
 }
+

@@ -258,3 +258,4 @@ class ManagerTasksViewModel @Inject constructor(
     private fun ManagerTaskFormState.hasErrors(): Boolean =
         listOf(titleError, projectError, deadlineError).any { it != null }
 }
+

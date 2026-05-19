@@ -225,3 +225,4 @@ class AdminUsersViewModel @Inject constructor(
     private fun AdminUserFormState.hasErrors(): Boolean =
         listOf(nameError, usernameError, emailError, passwordError).any { it != null }
 }
+

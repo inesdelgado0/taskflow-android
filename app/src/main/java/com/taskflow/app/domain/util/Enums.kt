@@ -23,3 +23,4 @@ enum class AuditAction {
 enum class HttpMethod {
     GET, POST, PUT, DELETE
 }
+

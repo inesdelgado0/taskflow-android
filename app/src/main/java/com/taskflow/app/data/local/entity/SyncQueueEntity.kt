@@ -33,3 +33,4 @@ data class SyncQueueEntity(
     @ColumnInfo(name = "last_error")
     val lastError: String? = null
 )
+

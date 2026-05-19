@@ -17,3 +17,4 @@ interface UserRepository {
     fun searchUsersFlow(query: String): Flow<List<User>>
     suspend fun setUserActive(id: Long, isActive: Boolean)
 }
+

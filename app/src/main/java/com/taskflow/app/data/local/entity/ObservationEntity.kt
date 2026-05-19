@@ -47,3 +47,4 @@ data class ObservationEntity(
     @ColumnInfo(name = "created_at")
     val createdAt: Long
 )
+

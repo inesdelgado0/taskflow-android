@@ -450,3 +450,4 @@ private enum class StatIcon {
     Tasks,
     Clock
 }
+

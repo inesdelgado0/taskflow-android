@@ -45,3 +45,4 @@ class AuthRepositoryImpl @Inject constructor(
         // Session persistence belongs to the app-level auth/session module.
     }
 }
+

@@ -41,3 +41,4 @@ class DeleteTaskUseCase @Inject constructor(
     suspend operator fun invoke(task: TaskEntity): Result<Unit> =
         runCatching { taskDao.delete(task) }
 }
+

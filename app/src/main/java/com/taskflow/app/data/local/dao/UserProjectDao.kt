@@ -30,3 +30,4 @@ interface UserProjectDao {
     @Query("DELETE FROM user_project WHERE project_id = :projectId")
     suspend fun deleteAllForProject(projectId: Long)
 }
+

@@ -11,3 +11,4 @@ class LoginUseCase @Inject constructor(
     suspend operator fun invoke(email: String, password: String, role: UserRole): Result<User> =
         authRepository.login(email, password, role)
 }
+

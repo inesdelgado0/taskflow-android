@@ -34,3 +34,4 @@ class Converters {
     @TypeConverter fun fromHttpMethod(value: HttpMethod): String = value.name
     @TypeConverter fun toHttpMethod(value: String): HttpMethod = HttpMethod.valueOf(value)
 }
+

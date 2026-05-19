@@ -27,3 +27,4 @@ interface AuditLogDao {
     @Query("SELECT * FROM audit_log WHERE timestamp BETWEEN :from AND :to ORDER BY timestamp DESC")
     fun getByRangeFlow(from: Long, to: Long): Flow<List<AuditLogEntity>>
 }
+

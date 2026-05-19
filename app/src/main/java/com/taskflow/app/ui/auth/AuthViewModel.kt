@@ -128,3 +128,4 @@ class AuthViewModel @Inject constructor(
         listOf(emailError, passwordError, nameError, usernameError, confirmPasswordError)
             .any { it != null }
 }
+

@@ -12,3 +12,4 @@ interface SyncQueueRepository {
     suspend fun incrementRetry(id: Long, error: String)
     suspend fun count(): Int
 }
+

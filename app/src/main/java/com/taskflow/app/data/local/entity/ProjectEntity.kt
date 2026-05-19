@@ -60,3 +60,4 @@ data class ProjectEntity(
     @ColumnInfo(name = "updated_at")
     val updatedAt: Long
 )
+

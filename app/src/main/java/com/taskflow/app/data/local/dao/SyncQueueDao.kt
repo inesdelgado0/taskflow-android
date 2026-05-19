@@ -29,3 +29,4 @@ interface SyncQueueDao {
     @Query("SELECT COUNT(*) FROM sync_queue")
     suspend fun count(): Int
 }
+

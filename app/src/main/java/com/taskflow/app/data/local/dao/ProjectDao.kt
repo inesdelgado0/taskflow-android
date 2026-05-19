@@ -43,3 +43,4 @@ interface ProjectDao {
     @Query("UPDATE projects SET manager_id = :managerId, updated_at = :updatedAt WHERE id = :id")
     suspend fun assignManager(id: Long, managerId: Long?, updatedAt: Long)
 }
+

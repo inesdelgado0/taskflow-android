@@ -47,3 +47,4 @@ data class AuditLogEntity(
     @ColumnInfo(name = "timestamp")
     val timestamp: Long
 )
+

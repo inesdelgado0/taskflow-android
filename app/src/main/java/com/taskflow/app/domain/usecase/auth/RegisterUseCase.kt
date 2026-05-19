@@ -15,3 +15,4 @@ class RegisterUseCase @Inject constructor(
     ): Result<User> =
         authRepository.register(name, username, email, password)
 }
+

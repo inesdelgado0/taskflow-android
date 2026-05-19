@@ -12,3 +12,4 @@ object Routes {
 
     fun managerDashboard(managerId: Long): String = "$MANAGER_DASHBOARD/$managerId"
 }
+

@@ -14,3 +14,4 @@ data class User(
     val createdAt: Long,
     val updatedAt: Long
 )
+
