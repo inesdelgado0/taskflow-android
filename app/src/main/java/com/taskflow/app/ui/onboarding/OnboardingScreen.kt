@@ -7,7 +7,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,8 +22,13 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Dashboard
+import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -37,11 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -217,44 +217,18 @@ private fun OnboardingIconView(
     accent: Color,
     modifier: Modifier = Modifier
 ) {
-    Canvas(
-        modifier = modifier
-            .size(56.dp)
-            .padding(4.dp)
-    ) {
-        val stroke = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
-        when (icon) {
-            OnboardingIcon.Board -> {
-                drawRoundRect(
-                    color = accent,
-                    topLeft = Offset(10.dp.toPx(), 13.dp.toPx()),
-                    size = Size(34.dp.toPx(), 29.dp.toPx()),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(4.dp.toPx()),
-                    style = stroke
-                )
-                drawLine(accent, Offset(18.dp.toPx(), 24.dp.toPx()), Offset(18.dp.toPx(), 34.dp.toPx()), strokeWidth = 4.dp.toPx(), cap = StrokeCap.Round)
-                drawLine(accent, Offset(27.dp.toPx(), 27.dp.toPx()), Offset(27.dp.toPx(), 34.dp.toPx()), strokeWidth = 4.dp.toPx(), cap = StrokeCap.Round)
-                drawLine(accent, Offset(36.dp.toPx(), 22.dp.toPx()), Offset(36.dp.toPx(), 34.dp.toPx()), strokeWidth = 4.dp.toPx(), cap = StrokeCap.Round)
-                drawLine(accent, Offset(20.dp.toPx(), 13.dp.toPx()), Offset(16.dp.toPx(), 8.dp.toPx()), strokeWidth = 4.dp.toPx(), cap = StrokeCap.Round)
-                drawLine(accent, Offset(20.dp.toPx(), 13.dp.toPx()), Offset(31.dp.toPx(), 13.dp.toPx()), strokeWidth = 4.dp.toPx(), cap = StrokeCap.Round)
-            }
-
-            OnboardingIcon.Team -> {
-                drawCircle(accent, radius = 7.dp.toPx(), center = Offset(23.dp.toPx(), 17.dp.toPx()), style = stroke)
-                drawCircle(accent, radius = 5.dp.toPx(), center = Offset(37.dp.toPx(), 21.dp.toPx()), style = stroke)
-                drawArc(accent, 190f, 160f, false, topLeft = Offset(10.dp.toPx(), 27.dp.toPx()), size = Size(27.dp.toPx(), 22.dp.toPx()), style = stroke)
-                drawArc(accent, 205f, 130f, false, topLeft = Offset(30.dp.toPx(), 31.dp.toPx()), size = Size(18.dp.toPx(), 17.dp.toPx()), style = stroke)
-            }
-
-            OnboardingIcon.Progress -> {
-                drawLine(accent, Offset(12.dp.toPx(), 12.dp.toPx()), Offset(12.dp.toPx(), 42.dp.toPx()), strokeWidth = 4.dp.toPx(), cap = StrokeCap.Round)
-                drawLine(accent, Offset(12.dp.toPx(), 42.dp.toPx()), Offset(44.dp.toPx(), 42.dp.toPx()), strokeWidth = 4.dp.toPx(), cap = StrokeCap.Round)
-                drawLine(accent, Offset(23.dp.toPx(), 34.dp.toPx()), Offset(23.dp.toPx(), 24.dp.toPx()), strokeWidth = 4.dp.toPx(), cap = StrokeCap.Round)
-                drawLine(accent, Offset(32.dp.toPx(), 34.dp.toPx()), Offset(32.dp.toPx(), 18.dp.toPx()), strokeWidth = 4.dp.toPx(), cap = StrokeCap.Round)
-                drawLine(accent, Offset(41.dp.toPx(), 34.dp.toPx()), Offset(41.dp.toPx(), 28.dp.toPx()), strokeWidth = 4.dp.toPx(), cap = StrokeCap.Round)
-            }
-        }
+    val imageVector = when (icon) {
+        OnboardingIcon.Board -> Icons.Outlined.Dashboard
+        OnboardingIcon.Team -> Icons.Outlined.Groups
+        OnboardingIcon.Progress -> Icons.Outlined.Insights
     }
+
+    Icon(
+        imageVector = imageVector,
+        contentDescription = null,
+        tint = accent,
+        modifier = modifier.size(56.dp)
+    )
 }
 
 @Composable
