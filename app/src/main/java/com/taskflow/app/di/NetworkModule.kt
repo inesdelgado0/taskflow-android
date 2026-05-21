@@ -25,7 +25,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val BASE_URL        = "https://api.taskflow.com/v1/"
+    private const val BASE_URL        = "http://10.0.2.2:3000/v1/"
     private const val CONNECT_TIMEOUT = 15L
     private const val READ_TIMEOUT    = 30L
     private const val WRITE_TIMEOUT   = 30L
