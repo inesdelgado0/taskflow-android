@@ -69,6 +69,7 @@ class UserRepositoryImpl @Inject constructor(
         passwordHash = passwordHash,
         photoUrl = photoUrl,
         role = role,
+        roles = listOf(role),
         isActive = isActive,
         createdAt = createdAt,
         updatedAt = updatedAt

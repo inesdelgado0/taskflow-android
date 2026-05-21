@@ -16,24 +16,27 @@
 10. [Como Usar a Aplicação](#como-usar-a-aplicação)
 11. [API Reference](#api-reference)
 12. [Base de Dados Local](#base-de-dados-local)
-13. [Sincronização Offline](#sincronização-offline)
-14. [Internacionalização (i18n)](#internacionalização-i18n)
-15. [Testes](#testes)
-16. [Geração do APK](#geração-do-apk)
-17. [Gestão do Projeto (Trello)](#gestão-do-projeto-trello)
-18. [Equipa](#equipa)
+13. [Base de Dados Remota](#base-de-dados-remota)
+14. [Sincronização Offline](#sincronização-offline)
+15. [Internacionalização (i18n)](#internacionalização-i18n)
+16. [Testes](#testes)
+17. [Geração do APK](#geração-do-apk)
+18. [Gestão do Projeto (Trello)](#gestão-do-projeto-trello)
+19. [Equipa](#equipa)
 
 ---
 
 ## Descrição do Projeto
 
-**TaskFlow** é uma aplicação móvel Android desenvolvida em **Kotlin** no âmbito da unidade curricular de Computação Móvel. O objetivo é criar uma plataforma completa de **gestão de projetos e tarefas** para equipas, com suporte a perfis de utilizador, sincronização offline/online, visualização de estatísticas e notificações em tempo real.
+**TaskFlow** é uma aplicação móvel Android desenvolvida em **Kotlin** no âmbito da unidade curricular de Computação Móvel. O objetivo é criar uma plataforma completa de **gestão de projetos e tarefas** para equipas, com suporte a múltiplos perfis por utilizador, sincronização offline/online, visualização de estatísticas e notificações.
 
 ### Visão Geral
 
-A aplicação assenta num modelo **offline-first**: todos os dados são guardados localmente via **Room (SQLite)** e sincronizados automaticamente com uma **REST API** assim que houver conectividade. A lógica de negócio segue a arquitetura **MVVM com Clean Architecture**, garantindo separação de responsabilidades, testabilidade e escalabilidade. A interface é construída inteiramente com **Jetpack Compose**.
+A aplicação assenta num modelo **offline-first**: os dados são guardados localmente via **Room (SQLite)** e sincronizados com uma **REST API Node/Express** que persiste informação em **Supabase/PostgreSQL**. A lógica de negócio segue a arquitetura **MVVM com Clean Architecture**, garantindo separação de responsabilidades, testabilidade e escalabilidade. A interface é construída inteiramente com **Jetpack Compose**.
 
-### Tipos de Perfil
+### Perfis de Utilizador
+
+Um utilizador pode ter uma ou mais roles em simultâneo. No Android existe uma role ativa/principal para navegação imediata, mas a API e a base de dados já suportam múltiplas roles através de `roles` e `user_roles`.
 
 | Perfil | Responsabilidades principais |
 |---|---|
@@ -307,10 +310,10 @@ SplashScreen
 
 | Tecnologia | Versão | Uso |
 |---|---|---|
-| Kotlin | 1.9.x | Linguagem principal (RNF01) |
-| Android SDK | API 26–34 | Plataforma alvo |
+| Kotlin | 2.2.x | Linguagem principal (RNF01) |
+| Android SDK | API 26–36 | Plataforma alvo |
 | Android Studio | Hedgehog+ | IDE de desenvolvimento |
-| Gradle | 8.x | Build system |
+| Gradle | 9.x | Build system via wrapper |
 
 ### UI & Navegação
 
@@ -318,10 +321,7 @@ SplashScreen
 |---|---|---|
 | Jetpack Compose BOM | 2024.02.x | Toolkit declarativo de UI (RNF11) |
 | Material3 (Compose) | — (via BOM) | Componentes Material Design 3 |
-| Compose Navigation | 2.7.x | Navegação entre Composables |
-| Accompanist Pager | 0.32.x | Intro sliders / HorizontalPager (RF01) |
-| Coil Compose | 2.6.x | Carregamento de imagens em Compose |
-| Lottie Compose | 6.x | Animações (loading, empty states) |
+| Compose Navigation | 2.8.x | Navegação entre Composables |
 | WindowSizeClass | — (via BOM) | Suporte portrait/landscape adaptativo (RNF09) |
 
 ### Arquitetura & Persistência
@@ -330,8 +330,8 @@ SplashScreen
 |---|---|---|
 | ViewModel + StateFlow | 2.7.x | MVVM / state management (RNF02) |
 | Room | 2.6.x | Base de dados local SQLite (RNF03) |
-| DataStore (Preferences) | 1.0.x | Armazenamento de preferências/tokens |
-| Hilt (Dependency Injection) | 2.50.x | Injeção de dependências |
+| DataStore (Preferences) | 1.1.x | Armazenamento de preferências/tokens |
+| Hilt (Dependency Injection) | 2.56.x | Injeção de dependências |
 | Kotlin Coroutines | 1.7.x | Programação assíncrona |
 | Flow | — | Streams reativos de dados |
 
@@ -339,10 +339,19 @@ SplashScreen
 
 | Biblioteca | Versão | Uso |
 |---|---|---|
-| Retrofit | 2.9.x | Cliente HTTP REST (RNF04) |
+| Retrofit | 2.11.x | Cliente HTTP REST (RNF04) |
 | OkHttp + Logging Interceptor | 4.12.x | HTTP client + debug logs |
-| Gson / Moshi | — | Serialização JSON |
-| JWT Decoder | — | Leitura de tokens JWT (RNF04) |
+| Gson Converter | 2.11.x | Serialização JSON |
+
+### Backend & Base de Dados Remota
+
+| Tecnologia | Versão | Uso |
+|---|---|---|
+| Node.js + Express | 4.x | REST API da aplicação |
+| Supabase | — | PostgreSQL gerido |
+| `@supabase/supabase-js` | 2.x | Cliente Supabase no backend |
+| JSON Web Token | 9.x | Tokens de autenticação |
+| Render | — | Opção gratuita para publicar a API |
 
 ### Background & Sync
 
@@ -401,33 +410,21 @@ dependencies {
     // WindowSizeClass (adaptive layouts)
     implementation("androidx.compose.material3:material3-window-size-class")
 
-    // Accompanist (HorizontalPager para onboarding)
-    implementation("com.google.accompanist:accompanist-pager:0.32.0")
-    implementation("com.google.accompanist:accompanist-pager-indicators:0.32.0")
-
-    // Coil para imagens em Compose
-    implementation("io.coil-kt:coil-compose:2.6.0")
-
-    // Lottie Compose
-    implementation("com.airbnb.android:lottie-compose:6.1.0")
-
     // Architecture
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
-    kapt("androidx.room:room-compiler:2.6.1")
-    implementation("androidx.datastore:datastore-preferences:1.0.0")
-    implementation("com.google.dagger:hilt-android:2.50")
-    kapt("com.google.dagger:hilt-compiler:2.50")
-    implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
+    ksp("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation("com.google.dagger:hilt-android:2.56.2")
+    ksp("com.google.dagger:hilt-compiler:2.56.2")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
     // Network
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
@@ -439,16 +436,10 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:1.3.1")
     implementation("androidx.camera:camera-view:1.3.1")
 
-    // PDF Export
-    implementation("com.itextpdf:itext7-core:7.2.5")
-
     // Tests
     testImplementation("junit:junit:4.13.2")
-    testImplementation("io.mockk:mockk:1.13.8")
-    testImplementation("app.cash.turbine:turbine:1.0.0")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
 ```
 
@@ -514,9 +505,23 @@ TaskFlow/
 │       │   └── AndroidManifest.xml
 │       ├── test/                              # Testes unitários (JUnit + MockK + Turbine)
 │       └── androidTest/                       # Testes instrumentados (Compose UI Testing)
+├── backend/
+│   ├── src/
+│   │   ├── config/                            # Cliente Supabase
+│   │   ├── middleware/                        # Auth/JWT middleware
+│   │   ├── routes/                            # Rotas Express (auth, projects, tasks...)
+│   │   ├── utils/                             # Helpers HTTP
+│   │   └── server.js                          # Entrada da API
+│   ├── supabase/
+│   │   └── schema.sql                         # Modelo remoto PostgreSQL/Supabase
+│   ├── .env.example                           # Exemplo de variáveis de ambiente
+│   ├── package.json
+│   ├── README.md
+│   └── RENDER_DEPLOY_GUIDE.md                 # Guia para publicar no Render
 ├── build.gradle.kts
 ├── settings.gradle.kts
 └── README.md
+```
 
 
 ## Configuração e Instalação
@@ -526,44 +531,81 @@ TaskFlow/
 | Ferramenta | Versão mínima |
 |---|---|
 | Android Studio | Hedgehog (2023.1.1) ou superior |
-| JDK | 17+ |
-| Android SDK | API 26 (Android 8.0) |
+| JDK | 21+ |
+| Android SDK | API 26 (Android 8.0), target/compile API 36 |
 | Git | 2.x |
-| Gradle | 8.x (gerido pelo wrapper) |
+| Gradle | 9.x (gerido pelo wrapper) |
+| Node.js | 20+ recomendado para o backend |
+| Conta Supabase | Para a base de dados remota |
 
 ### 1. Clonar o Repositório
 
-bash
+```bash
 git clone https://github.com/inesdelgado0/taskflow-android.git
 cd taskflow-android
 ```
 
-### 2. Configurar Variáveis de Ambiente
+### 2. Configurar Android
 
 Cria um ficheiro `local.properties` na raiz do projeto (não incluído no Git):
 
 ```properties
 # local.properties
 sdk.dir=/caminho/para/android/sdk
-
-# URL base da API (desenvolvimento)
-BASE_URL="https://api.taskflow.dev/"
-
-# Chave de debug (opcional, para serviços externos)
-MAPS_API_KEY=chave_opcional_para_google_maps
 ```
 
-Estas variáveis são injetadas no `BuildConfig` via `build.gradle.kts`:
+Em desenvolvimento local, a app Android aponta para a API em:
 
-```kotlin
-android {
-    defaultConfig {
-        buildConfigField("String", "BASE_URL", localProperties["BASE_URL"].toString())
-    }
-}
+```text
+http://10.0.2.2:3000/v1/
 ```
 
-### 3. Sincronizar Dependências
+Este URL está em `app/src/main/java/com/taskflow/app/di/NetworkModule.kt`. `10.0.2.2` permite ao emulador Android chamar o `localhost` do computador.
+
+### 3. Configurar Backend Local
+
+```bash
+cd backend
+npm install
+copy .env.example .env
+```
+
+Preenche `backend/.env` com:
+
+```env
+PORT=3000
+SUPABASE_URL=https://teu-project-ref.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=service_role_key_do_supabase
+JWT_SECRET=uma_chave_longa_aleatoria
+JWT_EXPIRES_IN=7d
+```
+
+Notas:
+- `SUPABASE_URL` não deve incluir `/rest/v1/`.
+- `SUPABASE_SERVICE_ROLE_KEY` deve ficar apenas no backend.
+- `backend/.env` está ignorado pelo Git.
+
+No Supabase, corre o ficheiro `backend/supabase/schema.sql` no SQL Editor para criar as tabelas remotas.
+
+Para iniciar a API:
+
+```bash
+npm run dev
+```
+
+Teste rápido:
+
+```text
+http://localhost:3000/health
+```
+
+Resposta esperada:
+
+```json
+{"status":"ok"}
+```
+
+### 4. Sincronizar Dependências Android
 
 ```bash
 ./gradlew build
@@ -571,11 +613,11 @@ android {
 
 Ou abre o projeto no Android Studio e clica em **"Sync Now"** quando solicitado.
 
-### 4. Configurar Dispositivo ou Emulador
+### 5. Configurar Dispositivo ou Emulador
 
 **Emulador:**
 1. Android Studio → Device Manager → Create Virtual Device
-2. Selecionar Pixel 6 (ou similar) com API 34
+2. Selecionar Pixel 6, Medium Phone ou similar com API 36
 3. Iniciar o AVD
 
 **Dispositivo Físico:**
@@ -583,7 +625,7 @@ Ou abre o projeto no Android Studio e clica em **"Sync Now"** quando solicitado.
 2. Ativar **Depuração USB**
 3. Ligar via USB e aceitar a ligação no dispositivo
 
-### 5. Executar a Aplicação
+### 6. Executar a Aplicação
 
 ```bash
 ./gradlew installDebug
@@ -683,12 +725,22 @@ Acesso: Menu lateral ou ícone de perfil no topo.
 
 ## API Reference
 
-A aplicação comunica com uma REST API via HTTPS. Todos os endpoints (exceto `/auth`) requerem autenticação Bearer JWT.
+A aplicação comunica com uma REST API em Node/Express localizada em `backend/`. Em desenvolvimento local, a base URL da app é `http://10.0.2.2:3000/v1/`. Em produção, a API pode ser publicada no Render; o guia está em `backend/RENDER_DEPLOY_GUIDE.md`.
+
+Os endpoints de autenticação devolvem JWT. Os restantes endpoints devem ser consumidos com `Authorization: Bearer <token>` quando a autorização estiver ativa no backend.
 
 ### Base URL
 
+Desenvolvimento local:
+
+```text
+http://10.0.2.2:3000/v1/
 ```
-https://api.taskflow.dev/api/v1/
+
+Produção no Render:
+
+```text
+https://taskflow-api.onrender.com/v1/
 ```
 
 ### Autenticação
@@ -700,11 +752,15 @@ Content-Type: application/json
 { "email": "user@example.com", "password": "secret" }
 
 → 200 OK
-{ "token": "eyJ...", "user": { "id": 1, "role": "ADMIN", ... } }
+{ "token": "eyJ...", "user": { "id": 1, "role": "ADMIN", "roles": ["ADMIN", "MANAGER"], ... } }
 ```
 
 ```http
 POST /auth/register
+Content-Type: application/json
+
+{ "name": "User", "username": "user", "email": "user@example.com", "password": "secret", "roles": ["USER"] }
+
 → 201 Created
 ```
 
@@ -717,6 +773,8 @@ GET    /projects/{id}              # Detalhes do projeto
 PUT    /projects/{id}              # Editar projeto (ADMIN)
 DELETE /projects/{id}              # Remover projeto (ADMIN)
 PUT    /projects/{id}/complete     # Concluir projeto (GESTOR)
+PUT    /projects/{id}/manager      # Associar gestor ao projeto
+PUT    /projects/{id}/status       # Atualizar estado do projeto
 ```
 
 ### Tarefas
@@ -727,20 +785,16 @@ POST   /projects/{id}/tasks        # Criar tarefa (GESTOR)
 GET    /tasks/{id}                 # Detalhes da tarefa
 PUT    /tasks/{id}                 # Editar tarefa (GESTOR)
 DELETE /tasks/{id}                 # Remover tarefa (GESTOR)
-PUT    /tasks/{id}/complete        # Concluir tarefa (UTILIZADOR)
-POST   /tasks/{id}/progress        # Registar progresso (UTILIZADOR)
+PUT    /tasks/{id}/status          # Atualizar estado da tarefa
 ```
 
 ### Utilizadores
 
 ```http
-GET    /users                      # Listar utilizadores (ADMIN)
-POST   /users                      # Criar utilizador (ADMIN)
-GET    /users/{id}                 # Detalhes do utilizador
-PUT    /users/{id}                 # Editar utilizador
-DELETE /users/{id}                 # Remover utilizador (ADMIN)
 PUT    /users/{id}/evaluate        # Avaliar utilizador (GESTOR)
 ```
+
+Nota: os endpoints CRUD de utilizadores administrativos ainda estão previstos no contrato funcional, mas o backend atual implementa autenticação/registo e avaliação.
 
 ### Observações
 
@@ -759,6 +813,8 @@ GET    /stats/tasks/{id}           # Stats por tarefa
 GET    /stats/export?format=pdf    # Exportar em PDF
 GET    /stats/export?format=csv    # Exportar em CSV
 ```
+
+Nota: estatísticas/exportação ainda fazem parte do roadmap funcional; não estão implementadas no backend atual.
 
 ---
 
@@ -779,6 +835,32 @@ A aplicação usa **Room** para persistência local (RNF03). Abaixo estão as pr
 | `sync_queue` | Fila de operações pendentes para sincronização (RNF05) |
 
 A tabela `sync_queue` é o coração do mecanismo offline: cada operação CRUD feita sem conectividade é inserida nesta fila com o payload JSON e o endpoint destino. A tabela `audit_log` regista autenticações, alterações de dados e operações de sincronização para fins de auditoria.
+
+## Base de Dados Remota
+
+A base de dados remota usa **Supabase/PostgreSQL**. O modelo está documentado em:
+
+```text
+backend/supabase/schema.sql
+```
+
+Tabelas principais:
+
+| Tabela | Descrição |
+|---|---|
+| `users` | Dados de identidade do utilizador |
+| `roles` | Roles disponíveis (`ADMIN`, `MANAGER`, `USER`) |
+| `user_roles` | Relação N:M entre utilizadores e roles |
+| `projects` | Projetos |
+| `tasks` | Tarefas |
+| `user_project` | Associação utilizador–projeto |
+| `user_task` | Associação utilizador–tarefa e progresso |
+| `observations` | Observações por tarefa |
+| `evaluations` | Avaliações por projeto |
+| `audit_log` | Auditoria |
+| `sync_queue` | Fila de sincronização |
+
+O campo `users.role` existe temporariamente por compatibilidade com partes do Android que ainda usam uma role principal. A fonte normalizada para múltiplas roles é `roles` + `user_roles`.
 
 ---
 

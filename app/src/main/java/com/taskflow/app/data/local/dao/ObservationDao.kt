@@ -14,6 +14,12 @@ interface ObservationDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(observation: ObservationEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(observation: ObservationEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(observations: List<ObservationEntity>)
+
     @Delete
     suspend fun delete(observation: ObservationEntity)
 

@@ -2,6 +2,10 @@ package com.taskflow.app.di
 
 import com.taskflow.app.BuildConfig
 import com.taskflow.app.data.remote.api.AuthApi
+import com.taskflow.app.data.remote.api.EvaluationApi
+import com.taskflow.app.data.remote.api.ObservationApi
+import com.taskflow.app.data.remote.api.ProjectApi
+import com.taskflow.app.data.remote.api.TaskApi
 import com.taskflow.app.data.remote.interceptor.AuthInterceptor
 import com.taskflow.app.data.remote.interceptor.NetworkErrorInterceptor
 import com.taskflow.app.data.remote.interceptor.TokenRefreshInterceptor
@@ -21,7 +25,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val BASE_URL        = "https://api.taskflow.com/v1/"
+    private const val BASE_URL        = "http://10.0.2.2:3000/v1/"
     private const val CONNECT_TIMEOUT = 15L
     private const val READ_TIMEOUT    = 30L
     private const val WRITE_TIMEOUT   = 30L
@@ -68,5 +72,24 @@ object NetworkModule {
     fun provideAuthApi(retrofit: Retrofit): AuthApi =
         retrofit.create(AuthApi::class.java)
 
+    @Provides
+    @Singleton
+    fun provideProjectApi(retrofit: Retrofit): ProjectApi =
+        retrofit.create(ProjectApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideTaskApi(retrofit: Retrofit): TaskApi =
+        retrofit.create(TaskApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideObservationApi(retrofit: Retrofit): ObservationApi =
+        retrofit.create(ObservationApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideEvaluationApi(retrofit: Retrofit): EvaluationApi =
+        retrofit.create(EvaluationApi::class.java)
 
 }

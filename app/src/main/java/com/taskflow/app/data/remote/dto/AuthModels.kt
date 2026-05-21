@@ -14,7 +14,8 @@ data class RegisterRequest(
     @SerializedName("username") val username: String,
     @SerializedName("email")    val email: String,
     @SerializedName("password") val password: String,
-    @SerializedName("role")     val role: String = "USER"
+    @SerializedName("role")     val role: String = "USER",
+    @SerializedName("roles")    val roles: List<String> = listOf(role)
 )
 
 data class AuthResponse(
@@ -28,6 +29,7 @@ data class UserDto(
     @SerializedName("username")   val username: String,
     @SerializedName("email")      val email: String,
     @SerializedName("role")       val role: String,
+    @SerializedName("roles")      val roles: List<String>? = null,
     @SerializedName("photo_url")  val photoUrl: String?  = null,
     @SerializedName("is_active")  val isActive: Boolean  = true,
     @SerializedName("created_at") val createdAt: Long?   = null,
