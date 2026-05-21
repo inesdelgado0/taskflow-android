@@ -6,12 +6,14 @@ import com.taskflow.app.data.repository.ObservationRepositoryImpl
 import com.taskflow.app.data.repository.ProjectRepositoryImpl
 import com.taskflow.app.data.repository.SyncQueueRepositoryImpl
 import com.taskflow.app.data.repository.TaskRepositoryImpl
+import com.taskflow.app.data.repository.UserRepositoryImpl
 import com.taskflow.app.domain.repository.AuditLogRepository
 import com.taskflow.app.domain.repository.EvaluationRepository
 import com.taskflow.app.domain.repository.ObservationRepository
 import com.taskflow.app.domain.repository.ProjectRepository
 import com.taskflow.app.domain.repository.SyncQueueRepository
 import com.taskflow.app.domain.repository.TaskRepository
+import com.taskflow.app.domain.repository.UserRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -58,4 +60,10 @@ abstract class RepositoryModule {
     abstract fun bindEvaluationRepository(
         impl: EvaluationRepositoryImpl
     ): EvaluationRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindUserRepository(
+        impl: UserRepositoryImpl
+    ): UserRepository
 }

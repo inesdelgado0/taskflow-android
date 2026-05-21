@@ -91,6 +91,11 @@ dependencies {
     implementation("androidx.hilt:hilt-work:1.2.0")
     ksp("androidx.hilt:hilt-compiler:1.2.0")
 
+    // Navigation Compose
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+
+    // Hilt Navigation Compose
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 // DataStore (para guardar o JWT)
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
