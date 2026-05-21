@@ -43,10 +43,6 @@ JWT_EXPIRES_IN=7d
 ```
 
 Notas:
-
-- `SUPABASE_URL` deve ficar sem `/rest/v1/`.
-- `SUPABASE_SERVICE_ROLE_KEY` vem do Supabase em **Project Settings > API > service_role**.
-- `JWT_SECRET` pode ser o mesmo valor que está no ficheiro local `backend/.env`.
 - Nunca colocar `backend/.env` no GitHub.
 
 
