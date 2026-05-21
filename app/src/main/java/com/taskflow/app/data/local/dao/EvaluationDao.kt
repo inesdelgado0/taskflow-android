@@ -15,6 +15,9 @@ interface EvaluationDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(evaluation: EvaluationEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(evaluations: List<EvaluationEntity>)
+
     @Query("SELECT * FROM evaluations WHERE id = :id")
     suspend fun getById(id: Long): EvaluationEntity?
 
