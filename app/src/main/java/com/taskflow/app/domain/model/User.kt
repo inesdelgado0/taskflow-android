@@ -10,6 +10,7 @@ data class User(
     val passwordHash: String,
     val photoUrl: String? = null,
     val role: UserRole,
+    val roles: List<UserRole> = listOf(role),
     val isActive: Boolean = true,
     val createdAt: Long,
     val updatedAt: Long
