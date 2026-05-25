@@ -1,23 +1,40 @@
 package com.taskflow.app.data.repository
 
 import com.taskflow.app.data.local.dao.UserDao
+import com.taskflow.app.data.local.database.AppDatabase
+import com.taskflow.app.data.local.entity.RoleEntity
 import com.taskflow.app.data.local.entity.UserEntity
+import com.taskflow.app.data.local.entity.UserRoleEntity
+import com.taskflow.app.data.local.entity.UserWithRoles
 import com.taskflow.app.domain.model.User
 import com.taskflow.app.domain.repository.UserRepository
 import com.taskflow.app.domain.util.UserRole
+import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(
-    private val userDao: UserDao
+    private val userDao: UserDao,
+    private val database: AppDatabase
 ) : UserRepository {
 
-    override suspend fun createUser(user: User): Long =
-        userDao.insert(user.toEntity())
+    override suspend fun createUser(user: User): Long {
+        return database.withTransaction {
+            seedRoles()
+            val userId = userDao.insert(user.toEntity())
+            userDao.replaceRolesForUser(userId, user.effectiveRoles())
+            userId
+        }
+    }
 
-    override suspend fun updateUser(user: User) =
-        userDao.update(user.toEntity())
+    override suspend fun updateUser(user: User) {
+        database.withTransaction {
+            seedRoles()
+            userDao.update(user.toEntity())
+            userDao.replaceRolesForUser(user.id, user.effectiveRoles())
+        }
+    }
 
     override suspend fun deleteUser(id: Long) {
         val entity = userDao.getById(id) ?: return
@@ -25,13 +42,13 @@ class UserRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getUserById(id: Long): User? =
-        userDao.getById(id)?.toDomain()
+        userDao.getWithRolesById(id)?.toDomain()
 
     override suspend fun getUserByEmail(email: String): User? =
-        userDao.getByEmail(email)?.toDomain()
+        userDao.getWithRolesByEmail(email)?.toDomain()
 
     override suspend fun getUserByUsername(username: String): User? =
-        userDao.getByUsername(username)?.toDomain()
+        userDao.getWithRolesByUsername(username)?.toDomain()
 
     override fun getAllUsersFlow(): Flow<List<User>> =
         userDao.getAllFlow().map { list -> list.map { it.toDomain() } }
@@ -46,7 +63,38 @@ class UserRepositoryImpl @Inject constructor(
         userDao.setActive(id, isActive, System.currentTimeMillis())
     }
 
-    // ── Mappers ──────────────────────────────────────────────────────────────
+    private suspend fun seedRoles() {
+        userDao.upsertRoles(
+            listOf(
+                RoleEntity(id = UserRole.ADMIN.roleId, code = UserRole.ADMIN, description = "Administrador"),
+                RoleEntity(id = UserRole.MANAGER.roleId, code = UserRole.MANAGER, description = "Gestor de Projeto"),
+                RoleEntity(id = UserRole.USER.roleId, code = UserRole.USER, description = "Utilizador")
+            )
+        )
+    }
+
+    private suspend fun UserDao.replaceRolesForUser(userId: Long, roles: List<UserRole>) {
+        deleteRolesForUser(userId)
+        insertUserRoles(
+            roles.map { role ->
+                UserRoleEntity(
+                    userId = userId,
+                    roleId = role.roleId,
+                    assignedAt = System.currentTimeMillis()
+                )
+            }
+        )
+    }
+
+    private fun User.effectiveRoles(): List<UserRole> =
+        roles.ifEmpty { listOf(role) }.distinct()
+
+    private val UserRole.roleId: Long
+        get() = when (this) {
+            UserRole.ADMIN -> 1L
+            UserRole.MANAGER -> 2L
+            UserRole.USER -> 3L
+        }
 
     private fun User.toEntity() = UserEntity(
         id = id,
@@ -55,23 +103,29 @@ class UserRepositoryImpl @Inject constructor(
         email = email,
         passwordHash = passwordHash,
         photoUrl = photoUrl,
-        role = role,
         isActive = isActive,
         createdAt = createdAt,
         updatedAt = updatedAt
     )
 
-    private fun UserEntity.toDomain() = User(
-        id = id,
-        name = name,
-        username = username,
-        email = email,
-        passwordHash = passwordHash,
-        photoUrl = photoUrl,
-        role = role,
-        roles = listOf(role),
-        isActive = isActive,
-        createdAt = createdAt,
-        updatedAt = updatedAt
-    )
+    private fun UserWithRoles.toDomain(): User {
+        val roleList = roles
+            .map { it.code }
+            .ifEmpty { listOf(UserRole.USER) }
+            .distinct()
+
+        return User(
+            id = user.id,
+            name = user.name,
+            username = user.username,
+            email = user.email,
+            passwordHash = user.passwordHash,
+            photoUrl = user.photoUrl,
+            role = roleList.first(),
+            roles = roleList,
+            isActive = user.isActive,
+            createdAt = user.createdAt,
+            updatedAt = user.updatedAt
+        )
+    }
 }

@@ -17,15 +17,19 @@ import com.taskflow.app.data.local.entity.AuditLogEntity
 import com.taskflow.app.data.local.entity.EvaluationEntity
 import com.taskflow.app.data.local.entity.ObservationEntity
 import com.taskflow.app.data.local.entity.ProjectEntity
+import com.taskflow.app.data.local.entity.RoleEntity
 import com.taskflow.app.data.local.entity.SyncQueueEntity
 import com.taskflow.app.data.local.entity.TaskEntity
 import com.taskflow.app.data.local.entity.UserEntity
 import com.taskflow.app.data.local.entity.UserProjectEntity
+import com.taskflow.app.data.local.entity.UserRoleEntity
 import com.taskflow.app.data.local.entity.UserTaskEntity
 
 @Database(
     entities = [
         UserEntity::class,
+        RoleEntity::class,
+        UserRoleEntity::class,
         ProjectEntity::class,
         TaskEntity::class,
         UserProjectEntity::class,
@@ -35,7 +39,7 @@ import com.taskflow.app.data.local.entity.UserTaskEntity
         AuditLogEntity::class,
         SyncQueueEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true  // gera JSON do schema em app/schemas/ — útil para migrações futuras
 )
 @TypeConverters(Converters::class)
