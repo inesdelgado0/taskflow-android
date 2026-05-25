@@ -1,6 +1,7 @@
 const express = require("express");
 const { supabase } = require("../config/supabase");
 const { asyncRoute, handleSupabase } = require("../utils/http");
+const { unixTimestamp } = require("../utils/time");
 
 const router = express.Router();
 
@@ -29,7 +30,7 @@ router.put("/users/:userId/evaluate", asyncRoute(async (req, res) => {
       evaluated_user_id: Number(req.params.userId),
       rating,
       comment: req.body.comment || null,
-      created_at: Date.now()
+      created_at: unixTimestamp()
     }, {
       onConflict: "project_id,evaluated_user_id"
     })

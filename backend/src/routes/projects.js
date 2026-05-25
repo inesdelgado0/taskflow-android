@@ -1,11 +1,12 @@
 const express = require("express");
 const { supabase } = require("../config/supabase");
 const { asyncRoute, handleSupabase, sendNoContent } = require("../utils/http");
+const { unixTimestamp } = require("../utils/time");
 
 const router = express.Router();
 
 function toProjectPayload(body) {
-  const now = Date.now();
+  const now = unixTimestamp();
 
   return {
     name: body.name,
@@ -43,7 +44,7 @@ router.post("/", asyncRoute(async (req, res) => {
     return res.status(400).json({ message: "Name and created_by are required." });
   }
 
-  const now = Date.now();
+  const now = unixTimestamp();
   const result = await supabase
     .from("projects")
     .insert({
@@ -72,7 +73,7 @@ router.put("/:id/manager", asyncRoute(async (req, res) => {
     .from("projects")
     .update({
       manager_id: req.body.manager_id || null,
-      updated_at: Date.now()
+      updated_at: unixTimestamp()
     })
     .eq("id", Number(req.params.id))
     .select()
@@ -86,7 +87,7 @@ router.put("/:id/complete", asyncRoute(async (req, res) => {
     .from("projects")
     .update({
       status: "COMPLETED",
-      updated_at: Date.now()
+      updated_at: unixTimestamp()
     })
     .eq("id", Number(req.params.id))
     .select()
@@ -100,7 +101,7 @@ router.put("/:id/status", asyncRoute(async (req, res) => {
     .from("projects")
     .update({
       status: req.body.status,
-      updated_at: Date.now()
+      updated_at: unixTimestamp()
     })
     .eq("id", Number(req.params.id))
     .select()
