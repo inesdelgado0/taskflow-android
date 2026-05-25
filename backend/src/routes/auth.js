@@ -22,7 +22,10 @@ function signToken(user) {
 function toAuthResponse(user) {
   return {
     token: signToken(user),
-    user
+    user: {
+      ...user,
+      is_active: user.is_active === true || user.is_active === 1 || user.is_active === "1"
+    }
   };
 }
 
@@ -93,7 +96,7 @@ router.post("/login", asyncRoute(async (req, res) => {
     .from("users")
     .select("*")
     .eq("email", email.trim())
-    .eq("is_active", true)
+    .eq("is_active", "1")
     .maybeSingle();
 
   if (error) {
@@ -127,7 +130,7 @@ router.post("/register", asyncRoute(async (req, res) => {
       email: email.trim(),
       password_hash: password,
       role: primaryRole,
-      is_active: true,
+      is_active: "1",
       created_at: now,
       updated_at: now
     })
