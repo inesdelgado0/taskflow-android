@@ -2,6 +2,7 @@ package com.taskflow.app.di
 
 import android.content.Context
 import androidx.room.Room
+import androidx.work.WorkManager
 import com.taskflow.app.data.local.dao.AuditLogDao
 import com.taskflow.app.data.local.dao.EvaluationDao
 import com.taskflow.app.data.local.dao.ObservationDao
@@ -43,5 +44,8 @@ object DatabaseModule {
     @Provides fun provideEvaluationDao(db: AppDatabase): EvaluationDao = db.evaluationDao()
     @Provides fun provideAuditLogDao(db: AppDatabase): AuditLogDao = db.auditLogDao()
     @Provides fun provideSyncQueueDao(db: AppDatabase): SyncQueueDao = db.syncQueueDao()
+
+    @Provides fun provideWorkManager(@ApplicationContext context: Context): WorkManager =
+        WorkManager.getInstance(context)
 }
 

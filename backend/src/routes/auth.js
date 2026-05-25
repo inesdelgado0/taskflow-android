@@ -2,7 +2,7 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const { supabase } = require("../config/supabase");
 const { asyncRoute, sendData, sendNoContent } = require("../utils/http");
-const { unixTimestamp } = require("../utils/time");
+const { unixTimestampMs } = require("../utils/time");
 
 const router = express.Router();
 
@@ -22,10 +22,7 @@ function signToken(user) {
 function toAuthResponse(user) {
   return {
     token: signToken(user),
-    user: {
-      ...user,
-      is_active: user.is_active === true || user.is_active === 1 || user.is_active === "1"
-    }
+    user
   };
 }
 
@@ -68,7 +65,7 @@ async function assignRoles(userId, roleCodes) {
     throw new Error("Invalid role.");
   }
 
-  const now = unixTimestamp();
+  const now = unixTimestampMs();
   const { error } = await supabase
     .from("user_roles")
     .upsert(
@@ -96,7 +93,7 @@ router.post("/login", asyncRoute(async (req, res) => {
     .from("users")
     .select("*")
     .eq("email", email.trim())
-    .eq("is_active", "1")
+    .eq("is_active", true)
     .maybeSingle();
 
   if (error) {
@@ -121,7 +118,7 @@ router.post("/register", asyncRoute(async (req, res) => {
     return res.status(400).json({ message: "Name, username, email and password are required." });
   }
 
-  const now = unixTimestamp();
+  const now = unixTimestampMs();
   const { data: user, error } = await supabase
     .from("users")
     .insert({
@@ -130,7 +127,7 @@ router.post("/register", asyncRoute(async (req, res) => {
       email: email.trim(),
       password_hash: password,
       role: primaryRole,
-      is_active: "1",
+      is_active: true,
       created_at: now,
       updated_at: now
     })
