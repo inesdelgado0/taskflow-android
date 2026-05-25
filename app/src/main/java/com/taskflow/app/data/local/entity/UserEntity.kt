@@ -4,7 +4,6 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.taskflow.app.domain.util.UserRole
 
 @Entity(
     tableName = "users",
@@ -31,9 +30,6 @@ data class UserEntity(
 
     @ColumnInfo(name = "photo_url")
     val photoUrl: String? = null,
-
-    @ColumnInfo(name = "role")
-    val role: UserRole,
 
     @ColumnInfo(name = "is_active", defaultValue = "1")
     val isActive: Boolean = true,
