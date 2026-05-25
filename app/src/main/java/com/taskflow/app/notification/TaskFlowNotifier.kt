@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
@@ -15,7 +16,6 @@ import com.taskflow.app.R
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
-import android.content.Intent
 
 @Singleton
 class TaskFlowNotifier @Inject constructor(
@@ -112,7 +112,11 @@ class TaskFlowNotifier @Inject constructor(
             .setPriority(priority)
             .build()
 
-        NotificationManagerCompat.from(context).notify(id, notification)
+        try {
+            NotificationManagerCompat.from(context).notify(id, notification)
+        } catch (_: SecurityException) {
+            return
+        }
     }
 
     private fun canPostNotifications(): Boolean =
@@ -148,4 +152,3 @@ class TaskFlowNotifier @Inject constructor(
         private const val SYNC_FAILED_NOTIFICATION_ID = 210_002
     }
 }
-
