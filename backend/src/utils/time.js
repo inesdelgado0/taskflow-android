@@ -1,6 +1,5 @@
-function unixTimestamp() {
-  return Math.floor(Date.now() / 1000);
+function unixTimestampMs() {
+  return Date.now();
 }
 
-module.exports = { unixTimestamp };
-
+module.exports = { unixTimestampMs };

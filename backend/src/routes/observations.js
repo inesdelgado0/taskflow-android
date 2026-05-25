@@ -1,7 +1,7 @@
 const express = require("express");
 const { supabase } = require("../config/supabase");
 const { asyncRoute, handleSupabase, sendNoContent } = require("../utils/http");
-const { unixTimestamp } = require("../utils/time");
+const { unixTimestampMs } = require("../utils/time");
 
 const router = express.Router();
 
@@ -30,7 +30,7 @@ router.post("/tasks/:taskId/observations", asyncRoute(async (req, res) => {
       user_id: req.body.user_id,
       text,
       photo_path: photoPath,
-      created_at: unixTimestamp()
+      created_at: unixTimestampMs()
     })
     .select()
     .single();

@@ -9,6 +9,7 @@ import com.taskflow.app.domain.model.Task
 import com.taskflow.app.domain.repository.TaskRepository
 import com.taskflow.app.domain.util.TaskPriority
 import com.taskflow.app.domain.util.TaskStatus
+import com.taskflow.app.notification.TaskNotificationScheduler
 import com.taskflow.app.util.ApiResult
 import com.taskflow.app.util.map
 import com.taskflow.app.util.onSuccess
@@ -19,18 +20,29 @@ import javax.inject.Inject
 
 class TaskRepositoryImpl @Inject constructor(
     private val taskDao: TaskDao,
-    private val taskApi: TaskApi
+    private val taskApi: TaskApi,
+    private val notificationScheduler: TaskNotificationScheduler
 ) : TaskRepository {
 
-    override suspend fun createTask(task: Task): Long =
-        taskDao.insert(task.toEntity())
+    override suspend fun createTask(task: Task): Long {
+        val id = taskDao.insert(task.toEntity())
+        notificationScheduler.onTaskAssigned(task.copy(id = id))
+        return id
+    }
 
-    override suspend fun updateTask(task: Task) =
+    override suspend fun updateTask(task: Task) {
         taskDao.update(task.toEntity())
+        if (task.status == TaskStatus.COMPLETED || task.status == TaskStatus.CANCELLED) {
+            notificationScheduler.cancelDeadlineReminder(task.id)
+        } else {
+            notificationScheduler.scheduleDeadlineReminder(task)
+        }
+    }
 
     override suspend fun deleteTask(id: Long) {
         val entity = taskDao.getById(id) ?: return
         taskDao.delete(entity)
+        notificationScheduler.cancelDeadlineReminder(id)
     }
 
     override suspend fun getTaskById(id: Long): Task? =
@@ -58,12 +70,18 @@ class TaskRepositoryImpl @Inject constructor(
 
     override suspend fun updateTaskStatus(id: Long, status: TaskStatus) {
         taskDao.updateStatus(id, status, System.currentTimeMillis())
+        if (status == TaskStatus.COMPLETED || status == TaskStatus.CANCELLED) {
+            notificationScheduler.cancelDeadlineReminder(id)
+        }
     }
 
     override suspend fun refreshTasks(projectId: Long): ApiResult<List<Task>> =
         safeApiCall { taskApi.getProjectTasks(projectId) }
             .map { tasks -> tasks.map { it.toDomain() } }
-            .onSuccess { tasks -> taskDao.upsertAll(tasks.map { it.toEntity() }) }
+            .onSuccess { tasks ->
+                taskDao.upsertAll(tasks.map { it.toEntity() })
+                tasks.forEach { notificationScheduler.scheduleDeadlineReminder(it) }
+            }
 
     override suspend fun pushTask(task: Task): ApiResult<Task> {
         val result = if (task.id == 0L) {
@@ -74,12 +92,18 @@ class TaskRepositoryImpl @Inject constructor(
 
         return result
             .map { it.toDomain() }
-            .onSuccess { synced -> taskDao.upsert(synced.toEntity()) }
+            .onSuccess { synced ->
+                taskDao.upsert(synced.toEntity())
+                notificationScheduler.scheduleDeadlineReminder(synced)
+            }
     }
 
     override suspend fun deleteTaskRemote(id: Long): ApiResult<Unit> =
         safeApiCall { taskApi.deleteTask(id) }
-            .onSuccess { deleteTask(id) }
+            .onSuccess {
+                deleteTask(id)
+                notificationScheduler.cancelDeadlineReminder(id)
+            }
 
     private fun Task.toEntity() = TaskEntity(
         id = id,

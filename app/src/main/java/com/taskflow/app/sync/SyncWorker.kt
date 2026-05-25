@@ -7,6 +7,7 @@ import androidx.work.*
 import com.taskflow.app.data.remote.TokenManager
 import com.taskflow.app.domain.repository.SyncQueueRepository
 import com.taskflow.app.domain.util.HttpMethod
+import com.taskflow.app.notification.TaskFlowNotifier
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
@@ -28,7 +29,8 @@ class SyncWorker @AssistedInject constructor(
     @Assisted workerParams: WorkerParameters,
     private val syncQueueRepository: SyncQueueRepository,
     private val tokenManager: TokenManager,
-    private val okHttpClient: OkHttpClient
+    private val okHttpClient: OkHttpClient,
+    private val notifier: TaskFlowNotifier
 ) : CoroutineWorker(context, workerParams) {
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
@@ -49,6 +51,7 @@ class SyncWorker @AssistedInject constructor(
         Log.d(TAG, "${items.size} item(s) na fila")
 
         var hasFailures = false
+        var syncedCount = 0
 
         for (item in items) {
             if (item.retryCount >= MAX_RETRIES) {
@@ -64,6 +67,7 @@ class SyncWorker @AssistedInject constructor(
                 if (response.isSuccessful) {
                     Log.d(TAG, "✅ Sincronizado: ${item.httpMethod} ${item.endpoint}")
                     syncQueueRepository.remove(item.id)
+                    syncedCount++
                 } else {
                     val error = "HTTP ${response.code}"
                     Log.w(TAG, "❌ Falhou (${error}): ${item.endpoint}")
@@ -82,9 +86,11 @@ class SyncWorker @AssistedInject constructor(
 
         if (hasFailures) {
             Log.d(TAG, "Sync concluído com falhas — reagendar")
+            notifier.showSyncFailed()
             Result.retry()
         } else {
             Log.d(TAG, "Sync concluído com sucesso")
+            notifier.showSyncCompleted(syncedCount)
             Result.success()
         }
     }

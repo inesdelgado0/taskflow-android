@@ -1,7 +1,7 @@
 const express = require("express");
 const { supabase } = require("../config/supabase");
 const { asyncRoute, handleSupabase, sendNoContent } = require("../utils/http");
-const { unixTimestamp } = require("../utils/time");
+const { unixTimestampMs } = require("../utils/time");
 
 const router = express.Router();
 
@@ -14,7 +14,7 @@ function toTaskPayload(body, projectId) {
     deadline: body.deadline || null,
     status: body.status || "PENDING",
     created_by: body.created_by,
-    updated_at: unixTimestamp()
+    updated_at: unixTimestampMs()
   };
 }
 
@@ -37,7 +37,7 @@ router.post("/projects/:projectId/tasks", asyncRoute(async (req, res) => {
     .from("tasks")
     .insert({
       ...toTaskPayload(req.body, Number(req.params.projectId)),
-      created_at: unixTimestamp()
+      created_at: unixTimestampMs()
     })
     .select()
     .single();
@@ -85,7 +85,7 @@ router.put("/tasks/:id/status", asyncRoute(async (req, res) => {
     .from("tasks")
     .update({
       status: req.body.status,
-      updated_at: unixTimestamp()
+      updated_at: unixTimestampMs()
     })
     .eq("id", Number(req.params.id))
     .select()
