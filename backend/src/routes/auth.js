@@ -2,6 +2,7 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const { supabase } = require("../config/supabase");
 const { asyncRoute, sendData, sendNoContent } = require("../utils/http");
+const { unixTimestamp } = require("../utils/time");
 
 const router = express.Router();
 
@@ -64,7 +65,7 @@ async function assignRoles(userId, roleCodes) {
     throw new Error("Invalid role.");
   }
 
-  const now = Date.now();
+  const now = unixTimestamp();
   const { error } = await supabase
     .from("user_roles")
     .upsert(
@@ -117,7 +118,7 @@ router.post("/register", asyncRoute(async (req, res) => {
     return res.status(400).json({ message: "Name, username, email and password are required." });
   }
 
-  const now = Date.now();
+  const now = unixTimestamp();
   const { data: user, error } = await supabase
     .from("users")
     .insert({
