@@ -115,6 +115,9 @@ private class FakeProjectRepository(
     override suspend fun assignManager(projectId: Long, managerId: Long?) = Unit
     override suspend fun refreshProjects(): ApiResult<List<Project>> = ApiResult.Success(listOf(project))
     override suspend fun pushProject(project: Project): ApiResult<Project> = ApiResult.Success(project)
+    override suspend fun assignManagerRemote(projectId: Long, managerId: Long?): ApiResult<Project> = ApiResult.Success(project)
+    override suspend fun completeProjectRemote(id: Long): ApiResult<Project> = ApiResult.Success(project)
+    override suspend fun updateProjectStatusRemote(id: Long, status: ProjectStatus): ApiResult<Project> = ApiResult.Success(project)
     override suspend fun deleteProjectRemote(id: Long): ApiResult<Unit> = ApiResult.Success(Unit)
 }
 
@@ -142,6 +145,8 @@ private class FakeTaskRepository(
     override suspend fun updateTaskStatus(id: Long, status: TaskStatus) = Unit
     override suspend fun refreshTasks(projectId: Long): ApiResult<List<Task>> = ApiResult.Success(tasks)
     override suspend fun pushTask(task: Task): ApiResult<Task> = ApiResult.Success(task)
+    override suspend fun updateTaskStatusRemote(id: Long, status: TaskStatus): ApiResult<Task> =
+        ApiResult.Success(tasks.first { it.id == id }.copy(status = status))
     override suspend fun deleteTaskRemote(id: Long): ApiResult<Unit> = ApiResult.Success(Unit)
 }
 
@@ -158,4 +163,5 @@ private class FakeUserRepository(
     override fun getUsersByRoleFlow(role: UserRole): Flow<List<User>> = flowOf(listOf(user))
     override fun searchUsersFlow(query: String): Flow<List<User>> = flowOf(listOf(user))
     override suspend fun setUserActive(id: Long, isActive: Boolean) = Unit
+    override suspend fun refreshUsers(): ApiResult<List<User>> = ApiResult.Success(listOf(user))
 }

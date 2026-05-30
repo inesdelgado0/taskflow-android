@@ -5,6 +5,8 @@ import com.taskflow.app.data.local.entity.ProjectEntity
 import com.taskflow.app.data.remote.api.ProjectApi
 import com.taskflow.app.data.remote.dto.ProjectDto
 import com.taskflow.app.data.remote.dto.ProjectRequest
+import com.taskflow.app.data.remote.dto.AssignManagerRequest
+import com.taskflow.app.data.remote.dto.ProjectStatusRequest
 import com.taskflow.app.domain.model.Project
 import com.taskflow.app.domain.repository.ProjectRepository
 import com.taskflow.app.domain.util.ProjectStatus
@@ -71,6 +73,21 @@ class ProjectRepositoryImpl @Inject constructor(
             .map { it.toDomain() }
             .onSuccess { synced -> projectDao.upsert(synced.toEntity()) }
     }
+
+    override suspend fun assignManagerRemote(projectId: Long, managerId: Long?): ApiResult<Project> =
+        safeApiCall { projectApi.assignManager(projectId, AssignManagerRequest(managerId)) }
+            .map { it.toDomain() }
+            .onSuccess { synced -> projectDao.upsert(synced.toEntity()) }
+
+    override suspend fun completeProjectRemote(id: Long): ApiResult<Project> =
+        safeApiCall { projectApi.completeProject(id) }
+            .map { it.toDomain() }
+            .onSuccess { synced -> projectDao.upsert(synced.toEntity()) }
+
+    override suspend fun updateProjectStatusRemote(id: Long, status: ProjectStatus): ApiResult<Project> =
+        safeApiCall { projectApi.updateStatus(id, ProjectStatusRequest(status)) }
+            .map { it.toDomain() }
+            .onSuccess { synced -> projectDao.upsert(synced.toEntity()) }
 
     override suspend fun deleteProjectRemote(id: Long): ApiResult<Unit> =
         safeApiCall { projectApi.deleteProject(id) }

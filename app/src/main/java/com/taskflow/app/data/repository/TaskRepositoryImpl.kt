@@ -5,6 +5,7 @@ import com.taskflow.app.data.local.entity.TaskEntity
 import com.taskflow.app.data.remote.api.TaskApi
 import com.taskflow.app.data.remote.dto.TaskDto
 import com.taskflow.app.data.remote.dto.TaskRequest
+import com.taskflow.app.data.remote.dto.TaskStatusRequest
 import com.taskflow.app.domain.model.Task
 import com.taskflow.app.domain.repository.TaskRepository
 import com.taskflow.app.domain.util.TaskPriority
@@ -97,6 +98,18 @@ class TaskRepositoryImpl @Inject constructor(
                 notificationScheduler.scheduleDeadlineReminder(synced)
             }
     }
+
+    override suspend fun updateTaskStatusRemote(id: Long, status: TaskStatus): ApiResult<Task> =
+        safeApiCall { taskApi.updateStatus(id, TaskStatusRequest(status)) }
+            .map { it.toDomain() }
+            .onSuccess { synced ->
+                taskDao.upsert(synced.toEntity())
+                if (synced.status == TaskStatus.COMPLETED || synced.status == TaskStatus.CANCELLED) {
+                    notificationScheduler.cancelDeadlineReminder(synced.id)
+                } else {
+                    notificationScheduler.scheduleDeadlineReminder(synced)
+                }
+            }
 
     override suspend fun deleteTaskRemote(id: Long): ApiResult<Unit> =
         safeApiCall { taskApi.deleteTask(id) }

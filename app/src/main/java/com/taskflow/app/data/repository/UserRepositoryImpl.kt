@@ -6,9 +6,15 @@ import com.taskflow.app.data.local.entity.RoleEntity
 import com.taskflow.app.data.local.entity.UserEntity
 import com.taskflow.app.data.local.entity.UserRoleEntity
 import com.taskflow.app.data.local.entity.UserWithRoles
+import com.taskflow.app.data.remote.api.UserApi
+import com.taskflow.app.data.remote.dto.UserDto
 import com.taskflow.app.domain.model.User
 import com.taskflow.app.domain.repository.UserRepository
 import com.taskflow.app.domain.util.UserRole
+import com.taskflow.app.util.ApiResult
+import com.taskflow.app.util.map
+import com.taskflow.app.util.onSuccess
+import com.taskflow.app.util.safeApiCall
 import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -16,7 +22,8 @@ import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(
     private val userDao: UserDao,
-    private val database: AppDatabase
+    private val database: AppDatabase,
+    private val userApi: UserApi
 ) : UserRepository {
 
     override suspend fun createUser(user: User): Long {
@@ -62,6 +69,19 @@ class UserRepositoryImpl @Inject constructor(
     override suspend fun setUserActive(id: Long, isActive: Boolean) {
         userDao.setActive(id, isActive, System.currentTimeMillis())
     }
+
+    override suspend fun refreshUsers(): ApiResult<List<User>> =
+        safeApiCall { userApi.getUsers() }
+            .map { users -> users.map { it.toDomain() } }
+            .onSuccess { users ->
+                database.withTransaction {
+                    seedRoles()
+                    userDao.upsertAll(users.map { it.toEntity() })
+                    users.forEach { user ->
+                        userDao.replaceRolesForUser(user.id, user.effectiveRoles())
+                    }
+                }
+            }
 
     private suspend fun seedRoles() {
         userDao.upsertRoles(
@@ -126,6 +146,28 @@ class UserRepositoryImpl @Inject constructor(
             isActive = user.isActive,
             createdAt = user.createdAt,
             updatedAt = user.updatedAt
+        )
+    }
+
+    private fun UserDto.toDomain(): User {
+        val roleList = roles
+            ?.mapNotNull { value -> runCatching { UserRole.valueOf(value) }.getOrNull() }
+            ?.ifEmpty { null }
+            ?: listOf(runCatching { UserRole.valueOf(role) }.getOrDefault(UserRole.USER))
+        val now = System.currentTimeMillis()
+
+        return User(
+            id = id,
+            name = name,
+            username = username,
+            email = email,
+            passwordHash = "",
+            photoUrl = photoUrl,
+            role = roleList.first(),
+            roles = roleList,
+            isActive = isActive,
+            createdAt = createdAt ?: now,
+            updatedAt = updatedAt ?: now
         )
     }
 }

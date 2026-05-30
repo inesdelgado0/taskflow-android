@@ -211,4 +211,129 @@
     <string name="user_role_manager_short">Manager</string>
     <string name="user_role_user_short">User</string>
 
+    <!-- Main screens / dashboards -->
+    <string name="dashboard_welcome">Welcome,</string>
+    <string name="dashboard_admin">Administrator</string>
+    <string name="dashboard_manager">Project Manager</string>
+    <string name="dashboard_user">User</string>
+    <string name="dashboard_projects_detail">%1$d active, %2$d completed</string>
+    <string name="dashboard_users_detail">%1$d managers, %2$d users</string>
+    <string name="dashboard_tasks_detail">%1$d pending, %2$d completed</string>
+    <string name="dashboard_active_members">Active members</string>
+    <string name="dashboard_active_projects">%1$d active</string>
+    <string name="dashboard_completion_rate">Completion rate</string>
+    <string name="dashboard_recent_activity">Recent Activity</string>
+    <string name="dashboard_priority_tasks">Priority Tasks</string>
+    <string name="dashboard_my_projects">My Projects</string>
+    <string name="dashboard_active_tasks">Active Tasks</string>
+    <string name="dashboard_completed">Completed</string>
+    <string name="dashboard_total_synced">Synced total</string>
+    <string name="dashboard_near_deadline">%1$d near deadline</string>
+
+    <!-- States/lists -->
+    <string name="syncing_data">Syncing data...</string>
+    <string name="empty_synced_data">No synced data.</string>
+    <string name="updated_project_activity">Project updated: %1$s</string>
+    <string name="all_statuses">All statuses</string>
+    <string name="all_managers">All managers</string>
+    <string name="search_projects_hint">Search projects...</string>
+    <string name="search_users_hint">Search users...</string>
+    <string name="search_tasks_hint">Search tasks... (RF14)</string>
+    <string name="new_action">New</string>
+    <string name="details">Details</string>
+    <string name="active_status">Active</string>
+    <string name="manager_prefix">Manager: %1$s</string>
+    <string name="tasks_count">%1$d tasks</string>
+
+    <!-- Statistics -->
+    <string name="export_data">Export Data</string>
+    <string name="report_type">Report Type</string>
+    <string name="general_summary">General Summary</string>
+    <string name="completed_tasks_metric">Completed Tasks</string>
+    <string name="pending_tasks_metric">Pending Tasks</string>
+    <string name="total_projects_metric">Total Projects</string>
+    <string name="top_users">Top Users</string>
+
+    <!-- Forms/details -->
+    <string name="change_photo">Change Photo</string>
+    <string name="add_photo">Add Photo</string>
+    <string name="new_password">New Password</string>
+    <string name="keep_current_password">Leave blank to keep current password</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="create_project">Create Project</string>
+    <string name="edit_project">Edit Project</string>
+    <string name="start_date">Start Date</string>
+    <string name="end_date">End Date</string>
+    <string name="assign_manager_hint">Assign a Project Manager to this project</string>
+    <string name="project_team_count">Project Team (%1$d members)</string>
+    <string name="full_name">Full Name</string>
+    <string name="minimum_password">Minimum 8 characters</string>
+    <string name="repeat_password">Repeat password</string>
+    <string name="create_user">Create User</string>
+    <string name="edit_user">Edit User</string>
+    <string name="active_user">Active user</string>
+    <string name="project_details">Project Details</string>
+    <string name="task_details">Task Details</string>
+    <string name="task_title">Task</string>
+    <string name="task_title_label">Task Title</string>
+    <string name="create_task_title">Create Task</string>
+    <string name="edit_task_title">Edit Task</string>
+    <string name="password_label">Password</string>
+    <string name="confirm_password_label">Confirm Password</string>
+    <string name="project_prefix">Project: %1$s</string>
+    <string name="deadline_prefix">Deadline: %1$s</string>
+    <string name="deadline_label">Deadline</string>
+    <string name="status_label">Status</string>
+    <string name="priority_label">Priority</string>
+    <string name="progress_label">Progress</string>
+    <string name="assigned_count">Assigned</string>
+    <string name="data_label">Date</string>
+    <string name="location_label">Location</string>
+    <string name="completion_percentage">Completion Percentage</string>
+    <string name="time_spent">Time Spent</string>
+    <string name="description_label">Description</string>
+    <string name="no_projects_synced">No synced projects</string>
+
+    <!-- Manager/tasks/team -->
+    <string name="task_management">Task Management</string>
+    <string name="team_title">Team</string>
+    <string name="add_action">Add</string>
+    <string name="associate_action">Assign</string>
+    <string name="evaluate_action">Evaluate</string>
+    <string name="view_tasks">View Tasks</string>
+    <string name="view_project_details">View Project Details</string>
+    <string name="view_all_tasks">View All Tasks</string>
+    <string name="view_full_team">View Full Team</string>
+    <string name="complete_project">Mark Project as Completed</string>
+    <string name="assigned_users">Assigned Users</string>
+    <string name="available_to_assign">Available to Assign</string>
+    <string name="select_project">Select Project</string>
+    <string name="assign_project_users_hint">Assign users to the selected project</string>
+    <string name="current_project_team">Current Project Team (%1$d)</string>
+    <string name="performance_evaluation">Performance Evaluation</string>
+    <string name="numeric_rating">Numeric Rating (1-5)</string>
+    <string name="save_evaluation">Save Evaluation</string>
+    <string name="assign_users">Assign Users</string>
+    <string name="add_to_team">Add to Team</string>
+    <string name="evaluate_user">Evaluate User</string>
+    <string name="available_users">Available Users</string>
+    <string name="active_tasks_metric">Active Tasks</string>
+    <string name="comment_optional">Comment (optional)</string>
+    <string name="comment_placeholder">Add observations about performance...</string>
+
+    <!-- User -->
+    <string name="task_progress_register">Register Progress</string>
+    <string name="save_progress">Save Progress</string>
+    <string name="new_observation_short">New Obs.</string>
+    <string name="observations_count">Observations (%1$d)</string>
+    <string name="view_completed_history">View Completed Task History</string>
+    <string name="all_filter">All</string>
+    <string name="completed_filter">Completed</string>
+    <string name="cancelled_filter">Cancelled</string>
+    <string name="monthly_summary">Monthly Summary</string>
+    <string name="total_time">Total Time</string>
+    <string name="average_rating">Average Rating</string>
+    <string name="completed_status">Completed</string>
+    <string name="now_time">now</string>
+
 </resources>

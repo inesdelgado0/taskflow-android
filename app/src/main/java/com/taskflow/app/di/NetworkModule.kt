@@ -6,6 +6,7 @@ import com.taskflow.app.data.remote.api.EvaluationApi
 import com.taskflow.app.data.remote.api.ObservationApi
 import com.taskflow.app.data.remote.api.ProjectApi
 import com.taskflow.app.data.remote.api.TaskApi
+import com.taskflow.app.data.remote.api.UserApi
 import com.taskflow.app.data.remote.interceptor.AuthInterceptor
 import com.taskflow.app.data.remote.interceptor.NetworkErrorInterceptor
 import com.taskflow.app.data.remote.interceptor.TokenRefreshInterceptor
@@ -81,6 +82,11 @@ object NetworkModule {
     @Singleton
     fun provideTaskApi(retrofit: Retrofit): TaskApi =
         retrofit.create(TaskApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideUserApi(retrofit: Retrofit): UserApi =
+        retrofit.create(UserApi::class.java)
 
     @Provides
     @Singleton

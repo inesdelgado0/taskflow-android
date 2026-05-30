@@ -21,6 +21,9 @@ interface UserDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(user: UserEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(users: List<UserEntity>)
+
     @Upsert
     suspend fun upsertRoles(roles: List<RoleEntity>)
 
