@@ -7,18 +7,20 @@ import com.taskflow.app.notification.TaskFlowNotifier
 import com.taskflow.app.sync.SyncManager
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
+import javax.inject.Provider
 
 @HiltAndroidApp
 class TaskFlowApp : Application(), Configuration.Provider {
 
-    @Inject lateinit var syncManager: SyncManager
-    @Inject lateinit var notifier: TaskFlowNotifier
     @Inject lateinit var workerFactory: HiltWorkerFactory
+    @Inject lateinit var notifier: TaskFlowNotifier
+    @Inject lateinit var syncManagerProvider: Provider<SyncManager>
 
     override fun onCreate() {
         super.onCreate()
+
         notifier.createNotificationChannels()
-        syncManager.startObserving()
+        syncManagerProvider.get().startObserving()
     }
 
     override val workManagerConfiguration: Configuration
