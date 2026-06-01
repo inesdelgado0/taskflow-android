@@ -211,4 +211,129 @@
     <string name="user_role_manager_short">Gestor</string>
     <string name="user_role_user_short">User</string>
 
+    <!-- Ecrãs principais / dashboards -->
+    <string name="dashboard_welcome">Bem-vindo,</string>
+    <string name="dashboard_admin">Administrador</string>
+    <string name="dashboard_manager">Gestor de Projeto</string>
+    <string name="dashboard_user">Utilizador</string>
+    <string name="dashboard_projects_detail">%1$d ativos, %2$d concluídos</string>
+    <string name="dashboard_users_detail">%1$d gestores, %2$d utilizadores</string>
+    <string name="dashboard_tasks_detail">%1$d pendentes, %2$d concluídas</string>
+    <string name="dashboard_active_members">Membros ativos</string>
+    <string name="dashboard_active_projects">%1$d ativos</string>
+    <string name="dashboard_completion_rate">Taxa de conclusão</string>
+    <string name="dashboard_recent_activity">Atividade Recente</string>
+    <string name="dashboard_priority_tasks">Tarefas Prioritárias</string>
+    <string name="dashboard_my_projects">Meus Projetos</string>
+    <string name="dashboard_active_tasks">Tarefas Ativas</string>
+    <string name="dashboard_completed">Concluídas</string>
+    <string name="dashboard_total_synced">Total sincronizado</string>
+    <string name="dashboard_near_deadline">%1$d com prazo próximo</string>
+
+    <!-- Estados/listas -->
+    <string name="syncing_data">A sincronizar dados...</string>
+    <string name="empty_synced_data">Sem dados sincronizados.</string>
+    <string name="updated_project_activity">Projeto atualizado: %1$s</string>
+    <string name="all_statuses">Todos os estados</string>
+    <string name="all_managers">Todos os gestores</string>
+    <string name="search_projects_hint">Pesquisar projetos...</string>
+    <string name="search_users_hint">Pesquisar utilizadores...</string>
+    <string name="search_tasks_hint">Pesquisar tarefas... (RF14)</string>
+    <string name="new_action">Novo</string>
+    <string name="details">Detalhes</string>
+    <string name="active_status">Ativo</string>
+    <string name="manager_prefix">Gestor: %1$s</string>
+    <string name="tasks_count">%1$d tarefas</string>
+
+    <!-- Estatísticas -->
+    <string name="export_data">Exportar Dados</string>
+    <string name="report_type">Tipo de Relatório</string>
+    <string name="general_summary">Resumo Geral</string>
+    <string name="completed_tasks_metric">Tarefas Concluídas</string>
+    <string name="pending_tasks_metric">Tarefas Pendentes</string>
+    <string name="total_projects_metric">Total de Projetos</string>
+    <string name="top_users">Top Utilizadores</string>
+
+    <!-- Formulários/detalhes -->
+    <string name="change_photo">Alterar Foto</string>
+    <string name="add_photo">Adicionar Fotografia</string>
+    <string name="new_password">Nova Palavra-passe</string>
+    <string name="keep_current_password">Deixe em branco para manter a atual</string>
+    <string name="save_changes">Guardar Alterações</string>
+    <string name="create_project">Criar Projeto</string>
+    <string name="edit_project">Editar Projeto</string>
+    <string name="start_date">Data Início</string>
+    <string name="end_date">Data Fim</string>
+    <string name="assign_manager_hint">Associar um Gestor de Projeto a este projeto</string>
+    <string name="project_team_count">Equipa do Projeto (%1$d membros)</string>
+    <string name="full_name">Nome Completo</string>
+    <string name="minimum_password">Mínimo 8 caracteres</string>
+    <string name="repeat_password">Repita a palavra-passe</string>
+    <string name="create_user">Criar Utilizador</string>
+    <string name="edit_user">Editar Utilizador</string>
+    <string name="active_user">Utilizador ativo</string>
+    <string name="project_details">Detalhes do Projeto</string>
+    <string name="task_details">Detalhes da Tarefa</string>
+    <string name="task_title">Tarefa</string>
+    <string name="task_title_label">Título da Tarefa</string>
+    <string name="create_task_title">Criar Tarefa</string>
+    <string name="edit_task_title">Editar Tarefa</string>
+    <string name="password_label">Palavra-passe</string>
+    <string name="confirm_password_label">Confirmar Palavra-passe</string>
+    <string name="project_prefix">Projeto: %1$s</string>
+    <string name="deadline_prefix">Prazo: %1$s</string>
+    <string name="deadline_label">Prazo</string>
+    <string name="status_label">Estado</string>
+    <string name="priority_label">Prioridade</string>
+    <string name="progress_label">Progresso</string>
+    <string name="assigned_count">Atribuídos</string>
+    <string name="data_label">Data</string>
+    <string name="location_label">Local</string>
+    <string name="completion_percentage">Percentagem de Conclusão</string>
+    <string name="time_spent">Tempo Dispensado</string>
+    <string name="description_label">Descrição</string>
+    <string name="no_projects_synced">Sem projetos sincronizados</string>
+
+    <!-- Gestor/tarefas/equipa -->
+    <string name="task_management">Gestão de Tarefas</string>
+    <string name="team_title">Equipa</string>
+    <string name="add_action">Adicionar</string>
+    <string name="associate_action">Associar</string>
+    <string name="evaluate_action">Avaliar</string>
+    <string name="view_tasks">Ver Tarefas</string>
+    <string name="view_project_details">Ver Detalhes do Projeto</string>
+    <string name="view_all_tasks">Ver Todas as Tarefas</string>
+    <string name="view_full_team">Ver Toda a Equipa</string>
+    <string name="complete_project">Marcar Projeto como Concluído</string>
+    <string name="assigned_users">Utilizadores Atribuídos</string>
+    <string name="available_to_assign">Disponíveis para Associar</string>
+    <string name="select_project">Selecionar Projeto</string>
+    <string name="assign_project_users_hint">Associar utilizadores ao projeto selecionado</string>
+    <string name="current_project_team">Equipa Atual do Projeto (%1$d)</string>
+    <string name="performance_evaluation">Avaliação de Desempenho</string>
+    <string name="numeric_rating">Classificação Numérica (1-5)</string>
+    <string name="save_evaluation">Guardar Avaliação</string>
+    <string name="assign_users">Associar Utilizadores</string>
+    <string name="add_to_team">Adicionar a Equipa</string>
+    <string name="evaluate_user">Avaliar Utilizador</string>
+    <string name="available_users">Utilizadores Disponíveis</string>
+    <string name="active_tasks_metric">Tarefas Ativas</string>
+    <string name="comment_optional">Comentário (opcional)</string>
+    <string name="comment_placeholder">Adicione observações sobre o desempenho...</string>
+
+    <!-- Utilizador -->
+    <string name="task_progress_register">Registar Progresso</string>
+    <string name="save_progress">Guardar Progresso</string>
+    <string name="new_observation_short">Nova Obs.</string>
+    <string name="observations_count">Observações (%1$d)</string>
+    <string name="view_completed_history">Ver Histórico de Tarefas Concluídas</string>
+    <string name="all_filter">Todas</string>
+    <string name="completed_filter">Concluídas</string>
+    <string name="cancelled_filter">Canceladas</string>
+    <string name="monthly_summary">Resumo do Mês</string>
+    <string name="total_time">Tempo Total</string>
+    <string name="average_rating">Avaliação Média</string>
+    <string name="completed_status">Concluída</string>
+    <string name="now_time">agora</string>
+
 </resources>

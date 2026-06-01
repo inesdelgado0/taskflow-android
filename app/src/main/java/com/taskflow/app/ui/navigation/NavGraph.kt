@@ -21,19 +21,36 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.taskflow.app.ui.admin.users.AdminUsersScreen
-import com.taskflow.app.ui.admin.users.AdminUsersViewModel
 import com.taskflow.app.ui.auth.AuthViewModel
 import com.taskflow.app.ui.auth.LoginScreen
 import com.taskflow.app.ui.auth.RegisterScreen
-import com.taskflow.app.ui.manager.tasks.ManagerTasksScreen
-import com.taskflow.app.ui.manager.tasks.ManagerTasksViewModel
-import com.taskflow.app.ui.onboarding.OnboardingScreen
-import com.taskflow.app.ui.user.UserDashboardScreen
+import com.taskflow.app.ui.common.AddTeamScreen
+import com.taskflow.app.ui.common.AdminDashboardScreen
+import com.taskflow.app.ui.common.AdminProjectDetailsScreen
+import com.taskflow.app.ui.common.AdminProjectsScreen
+import com.taskflow.app.ui.common.AdminStatsScreen
+import com.taskflow.app.ui.common.AdminUsersListScreen
+import com.taskflow.app.ui.common.AssignUsersScreen
+import com.taskflow.app.ui.common.EvaluateUserScreen
+import com.taskflow.app.ui.common.TaskFlowOnboardingScreen
+import com.taskflow.app.ui.common.ManagerDashboardScreen
+import com.taskflow.app.ui.common.ManagerProjectDetailsScreen
+import com.taskflow.app.ui.common.ManagerProjectsScreen
+import com.taskflow.app.ui.common.ManagerTaskDetailsScreen
+import com.taskflow.app.ui.common.ManagerTasksListScreen
+import com.taskflow.app.ui.common.ManagerTeamScreen
+import com.taskflow.app.ui.common.ProfileScreen
+import com.taskflow.app.ui.common.ProjectFormScreen
+import com.taskflow.app.ui.common.TaskFormScreen
+import com.taskflow.app.ui.common.UserDashboardScreen
+import com.taskflow.app.ui.common.UserFormScreen
+import com.taskflow.app.ui.common.UserHistoryScreen
+import com.taskflow.app.ui.common.UserTaskDetailsScreen
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 
 
 private val Context.dataStore by preferencesDataStore(name = "taskflow_preferences")
@@ -70,8 +87,25 @@ fun TaskFlowNavGraph() {
         }
     ) {
         composable(Routes.ONBOARDING) {
-            OnboardingScreen(
-                onLoginRequested = {
+            TaskFlowOnboardingScreen(
+                step = 0,
+                onNext = { navController.navigate(Routes.ONBOARDING_TEAM) },
+                onBack = {}
+            )
+        }
+
+        composable(Routes.ONBOARDING_TEAM) {
+            TaskFlowOnboardingScreen(
+                step = 1,
+                onNext = { navController.navigate(Routes.ONBOARDING_PROGRESS) },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.ONBOARDING_PROGRESS) {
+            TaskFlowOnboardingScreen(
+                step = 2,
+                onNext = {
                     coroutineScope.launch {
                         context.dataStore.edit { preferences ->
                             preferences[onboardingCompletedKey] = true
@@ -84,7 +118,8 @@ fun TaskFlowNavGraph() {
                             launchSingleTop = true
                         }
                     }
-                }
+                },
+                onBack = { navController.popBackStack() }
             )
         }
 
@@ -105,19 +140,26 @@ fun TaskFlowNavGraph() {
         }
 
         composable(Routes.ADMIN_DASHBOARD) {
-            val viewModel: AdminUsersViewModel = hiltViewModel()
-            AdminUsersScreen(
-                navController = navController,
-                viewModel = viewModel
+            AdminDashboardScreen(
+                nav = navController,
+                onLogout = {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
             )
         }
 
         composable(Routes.MANAGER_DASHBOARD) {
-            val viewModel: ManagerTasksViewModel = hiltViewModel()
-            ManagerTasksScreen(
-                navController = navController,
-                managerId = 0L,
-                viewModel = viewModel
+            ManagerDashboardScreen(
+                nav = navController,
+                onLogout = {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
             )
         }
 
@@ -130,17 +172,21 @@ fun TaskFlowNavGraph() {
                 }
             )
         ) { backStackEntry ->
-            val viewModel: ManagerTasksViewModel = hiltViewModel()
-            val managerId = backStackEntry.arguments?.getLong(Routes.MANAGER_ID_ARG) ?: 0L
-            ManagerTasksScreen(
-                navController = navController,
-                managerId = managerId,
-                viewModel = viewModel
+            backStackEntry.arguments?.getLong(Routes.MANAGER_ID_ARG) ?: 0L
+            ManagerDashboardScreen(
+                nav = navController,
+                onLogout = {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
             )
         }
 
         composable(Routes.USER_DASHBOARD) {
             UserDashboardScreen(
+                nav = navController,
                 onLogout = {
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(Routes.LOGIN) {
@@ -150,6 +196,38 @@ fun TaskFlowNavGraph() {
                     }
                 }
             )
+        }
+
+        composable(Routes.ADMIN_PROJECTS) { AdminProjectsScreen(navController) }
+        composable(Routes.ADMIN_PROJECT_CREATE) { ProjectFormScreen(navController, edit = false) }
+        composable(Routes.ADMIN_PROJECT_EDIT) { ProjectFormScreen(navController, edit = true) }
+        composable(Routes.ADMIN_PROJECT_DETAILS) { AdminProjectDetailsScreen(navController) }
+        composable(Routes.ADMIN_USERS_LIST) { AdminUsersListScreen(navController) }
+        composable(Routes.ADMIN_USER_CREATE) { UserFormScreen(navController, edit = false) }
+        composable(Routes.ADMIN_USER_EDIT) { UserFormScreen(navController, edit = true) }
+        composable(Routes.ADMIN_STATS) { AdminStatsScreen(navController) }
+        composable(Routes.ADMIN_PROFILE) {
+            ProfileScreen(navController, role = "A", accent = Color(0xFF2F7DF6))
+        }
+
+        composable(Routes.MANAGER_TASKS_LIST) { ManagerTasksListScreen(navController) }
+        composable(Routes.MANAGER_TASK_CREATE) { TaskFormScreen(navController, edit = false) }
+        composable(Routes.MANAGER_TASK_EDIT) { TaskFormScreen(navController, edit = true) }
+        composable(Routes.MANAGER_TASK_DETAILS) { ManagerTaskDetailsScreen(navController) }
+        composable(Routes.MANAGER_TEAM) { ManagerTeamScreen(navController) }
+        composable(Routes.MANAGER_ADD_TEAM) { AddTeamScreen(navController) }
+        composable(Routes.MANAGER_ASSIGN_USERS) { AssignUsersScreen(navController) }
+        composable(Routes.MANAGER_EVALUATE_USER) { EvaluateUserScreen(navController) }
+        composable(Routes.MANAGER_PROJECTS) { ManagerProjectsScreen(navController) }
+        composable(Routes.MANAGER_PROJECT_DETAILS) { ManagerProjectDetailsScreen(navController) }
+        composable(Routes.MANAGER_PROFILE) {
+            ProfileScreen(navController, role = "G", accent = Color(0xFF06C167))
+        }
+
+        composable(Routes.USER_TASK_DETAILS) { UserTaskDetailsScreen(navController) }
+        composable(Routes.USER_HISTORY) { UserHistoryScreen(navController) }
+        composable(Routes.USER_PROFILE) {
+            ProfileScreen(navController, role = "U", accent = Color(0xFFFF6A00))
         }
     }
 }

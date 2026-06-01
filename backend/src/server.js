@@ -9,6 +9,7 @@ const evaluationRoutes = require("./routes/evaluations");
 const observationRoutes = require("./routes/observations");
 const projectRoutes = require("./routes/projects");
 const taskRoutes = require("./routes/tasks");
+const userRoutes = require("./routes/users");
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -23,6 +24,7 @@ app.get("/health", (_req, res) => {
 
 app.use("/v1/auth", authRoutes);
 app.use("/v1/projects", projectRoutes);
+app.use("/v1/users", userRoutes);
 app.use("/v1", taskRoutes);
 app.use("/v1", observationRoutes);
 app.use("/v1", evaluationRoutes);

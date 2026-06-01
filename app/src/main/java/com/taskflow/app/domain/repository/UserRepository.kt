@@ -2,6 +2,7 @@ package com.taskflow.app.domain.repository
 
 import com.taskflow.app.domain.model.User
 import com.taskflow.app.domain.util.UserRole
+import com.taskflow.app.util.ApiResult
 import kotlinx.coroutines.flow.Flow
 
 interface UserRepository {
@@ -16,5 +17,6 @@ interface UserRepository {
     fun getUsersByRoleFlow(role: UserRole): Flow<List<User>>
     fun searchUsersFlow(query: String): Flow<List<User>>
     suspend fun setUserActive(id: Long, isActive: Boolean)
+    suspend fun refreshUsers(): ApiResult<List<User>>
 }
 
