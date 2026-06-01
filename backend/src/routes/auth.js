@@ -1,10 +1,12 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 const { supabase } = require("../config/supabase");
 const { asyncRoute, sendData, sendNoContent } = require("../utils/http");
 const { unixTimestampMs } = require("../utils/time");
 
 const router = express.Router();
+const BCRYPT_SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
 
 function signToken(user) {
   return jwt.sign(
@@ -47,6 +49,18 @@ async function attachRoles(user) {
     role: normalizedRoles[0],
     roles: normalizedRoles
   };
+}
+
+async function verifyPassword(password, passwordHash) {
+  if (!passwordHash) {
+    return false;
+  }
+
+  if (passwordHash.startsWith("$2a$") || passwordHash.startsWith("$2b$") || passwordHash.startsWith("$2y$")) {
+    return bcrypt.compare(password, passwordHash);
+  }
+
+  return passwordHash === password;
 }
 
 async function assignRoles(userId, roleCodes) {
@@ -100,7 +114,7 @@ router.post("/login", asyncRoute(async (req, res) => {
     return res.status(400).json({ message: error.message });
   }
 
-  if (!user || user.password_hash !== password) {
+  if (!user || !(await verifyPassword(password, user.password_hash))) {
     return res.status(401).json({ message: "Invalid credentials." });
   }
 
@@ -119,13 +133,14 @@ router.post("/register", asyncRoute(async (req, res) => {
   }
 
   const now = unixTimestampMs();
+  const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
   const { data: user, error } = await supabase
     .from("users")
     .insert({
       name: name.trim(),
       username: username.trim(),
       email: email.trim(),
-      password_hash: password,
+      password_hash: passwordHash,
       role: primaryRole,
       is_active: true,
       created_at: now,
