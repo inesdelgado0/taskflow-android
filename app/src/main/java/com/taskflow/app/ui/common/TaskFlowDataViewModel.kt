@@ -16,6 +16,7 @@ import com.taskflow.app.domain.usecase.sync.PopulateLocalDatabaseUseCase
 import com.taskflow.app.domain.util.ProjectStatus
 import com.taskflow.app.domain.util.TaskPriority
 import com.taskflow.app.domain.util.TaskStatus
+import com.taskflow.app.data.remote.TokenManager
 import com.taskflow.app.util.ApiResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -35,6 +36,7 @@ data class TaskFlowDataUiState(
     val projects: List<Project> = emptyList(),
     val tasks: List<Task> = emptyList(),
     val users: List<User> = emptyList(),
+    val currentUser: User? = null,
     val observations: List<Observation> = emptyList(),
     val evaluations: List<Evaluation> = emptyList(),
     val selectedProjectId: Long? = null,
@@ -59,10 +61,12 @@ class TaskFlowDataViewModel @Inject constructor(
     private val taskRepository: TaskRepository,
     private val userRepository: UserRepository,
     private val observationRepository: ObservationRepository,
-    private val evaluationRepository: EvaluationRepository
+    private val evaluationRepository: EvaluationRepository,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
     private val selectedProjectId = MutableStateFlow<Long?>(null)
     private val selectedTaskId = MutableStateFlow<Long?>(null)
+    private val currentUserId = MutableStateFlow<Long?>(null)
     private val transient = MutableStateFlow(TaskFlowDataUiState())
 
     private val projects = projectRepository.getAllProjectsFlow()
@@ -115,11 +119,12 @@ class TaskFlowDataViewModel @Inject constructor(
         )
     }
 
-    val uiState: StateFlow<TaskFlowDataUiState> = combine(core, transient) { coreValue, transientValue ->
+    val uiState: StateFlow<TaskFlowDataUiState> = combine(core, transient, currentUserId) { coreValue, transientValue, currentUserIdValue ->
         transientValue.copy(
             projects = coreValue.projects,
             tasks = coreValue.tasks,
             users = coreValue.users,
+            currentUser = coreValue.users.firstOrNull { user -> user.id == currentUserIdValue },
             observations = coreValue.observations,
             evaluations = coreValue.evaluations,
             selectedProjectId = selectedProjectId.value,
@@ -132,6 +137,9 @@ class TaskFlowDataViewModel @Inject constructor(
     )
 
     init {
+        viewModelScope.launch {
+            currentUserId.value = tokenManager.getUserId()
+        }
         refreshFromApi()
     }
 

@@ -36,6 +36,14 @@ data class UserDto(
     @SerializedName("updated_at") val updatedAt: Long?   = null
 )
 
+data class UpdateProfileRequest(
+    @SerializedName("name")      val name: String,
+    @SerializedName("username")  val username: String,
+    @SerializedName("email")     val email: String,
+    @SerializedName("photo_url") val photoUrl: String? = null,
+    @SerializedName("password")  val password: String? = null
+)
+
 data class RefreshTokenRequest(
     @SerializedName("refresh_token") val refreshToken: String
 )

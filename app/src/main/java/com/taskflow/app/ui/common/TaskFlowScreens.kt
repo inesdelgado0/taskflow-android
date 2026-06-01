@@ -1,5 +1,9 @@
 package com.taskflow.app.ui.common
 
+import android.net.Uri
+import android.widget.ImageView
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -12,9 +16,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -39,6 +46,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -61,6 +69,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.res.stringResource
@@ -73,6 +82,8 @@ import com.taskflow.app.domain.util.ProjectStatus
 import com.taskflow.app.domain.util.TaskPriority
 import com.taskflow.app.domain.util.TaskStatus
 import com.taskflow.app.ui.navigation.Routes
+import com.taskflow.app.ui.profile.ProfileUiState
+import com.taskflow.app.ui.profile.ProfileViewModel
 
 private val Blue = Color(0xFF2F7DF6)
 private val Green = Color(0xFF06C167)
@@ -142,6 +153,7 @@ fun AdminDashboardScreen(nav: NavController, onLogout: () -> Unit) {
         role = "A",
         accent = Blue,
         onLogout = onLogout,
+        onProfile = { nav.navigate(Routes.ADMIN_PROFILE) },
         content = {
             Welcome(stringResource(R.string.dashboard_admin))
             SyncStatus(state)
@@ -245,22 +257,155 @@ fun AdminStatsScreen(nav: NavController) {
 
 @Composable
 fun ProfileScreen(nav: NavController, role: String, accent: Color) {
-    val state by taskFlowState()
-    val user = state.users.firstOrNull()
-    FormScreen(stringResource(R.string.profile_title), onBack = { nav.popBackStack() }) {
-        Avatar(role, accent, size = 82)
-        TextButton(onClick = {}, modifier = Modifier.align(Alignment.CenterHorizontally)) { Text(stringResource(R.string.change_photo), color = Blue) }
-        Field(stringResource(R.string.profile_label_name), user?.name.orEmpty())
-        Field(stringResource(R.string.register_label_username), user?.username.orEmpty())
-        Field(stringResource(R.string.profile_label_email), user?.email.orEmpty())
-        Field(stringResource(R.string.user_label_role), if (role == "A") stringResource(R.string.dashboard_admin) else if (role == "G") stringResource(R.string.dashboard_manager) else stringResource(R.string.dashboard_user), enabled = false)
-        Field(stringResource(R.string.new_password), stringResource(R.string.keep_current_password))
-        Button(onClick = {}, modifier = Modifier.fillMaxWidth().height(48.dp), colors = ButtonDefaults.buttonColors(Blue), shape = RoundedCornerShape(8.dp)) {
+    val viewModel: ProfileViewModel = hiltViewModel()
+    val state by viewModel.uiState.collectAsState()
+    val photoPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri -> viewModel.onPhotoSelected(uri?.toString()) }
+    )
+
+    ProfileFormScreen(title = stringResource(R.string.profile_title), onBack = { nav.popBackStack() }) {
+        ProfileCard {
+            if (state.isLoading && state.user == null) {
+                Box(Modifier.fillMaxWidth().height(220.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = accent)
+                }
+            } else {
+                EditableProfileContent(
+                    state = state,
+                    role = role,
+                    accent = accent,
+                    onNameChange = viewModel::onNameChange,
+                    onUsernameChange = viewModel::onUsernameChange,
+                    onEmailChange = viewModel::onEmailChange,
+                    onPasswordChange = viewModel::onPasswordChange,
+                    onPhotoClick = { photoPicker.launch("image/*") },
+                    onSave = viewModel::saveProfile,
+                    onCancel = { nav.popBackStack() }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileFormScreen(title: String, onBack: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+    Column(Modifier.fillMaxSize().background(Page)) {
+        TopBar(title, onBack)
+        LazyColumn(
+            Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            item { content() }
+        }
+    }
+}
+
+@Composable
+private fun ProfileCard(content: @Composable ColumnScope.() -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth().widthIn(max = 430.dp),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(Color.White),
+        border = BorderStroke(1.dp, Border),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            content = content
+        )
+    }
+}
+
+@Composable
+private fun ColumnScope.EditableProfileContent(
+    state: ProfileUiState,
+    role: String,
+    accent: Color,
+    onNameChange: (String) -> Unit,
+    onUsernameChange: (String) -> Unit,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onPhotoClick: () -> Unit,
+    onSave: () -> Unit,
+    onCancel: () -> Unit
+) {
+    ProfileAvatar(
+        initial = state.name.initial().ifBlank { role },
+        photoUrl = state.photoUrl,
+        accent = accent,
+        size = 80,
+        modifier = Modifier.align(Alignment.CenterHorizontally)
+    )
+    OutlinedButton(
+        onClick = onPhotoClick,
+        modifier = Modifier.align(Alignment.CenterHorizontally).height(38.dp),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, Border),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
+    ) {
+        Icon(Icons.Default.CameraAlt, null, modifier = Modifier.size(16.dp), tint = Blue)
+        Spacer(Modifier.width(6.dp))
+        Text(stringResource(R.string.change_photo), style = MaterialTheme.typography.bodySmall)
+    }
+    Spacer(Modifier.height(2.dp))
+    ProfileField(
+        label = stringResource(R.string.profile_label_name),
+        value = state.name,
+        onValueChange = onNameChange
+    )
+    state.nameError?.let { FormError(it) }
+    ProfileField(
+        label = stringResource(R.string.register_label_username),
+        value = state.username,
+        onValueChange = onUsernameChange
+    )
+    state.usernameError?.let { FormError(it) }
+    ProfileField(
+        label = stringResource(R.string.profile_label_email),
+        value = state.email,
+        onValueChange = onEmailChange
+    )
+    state.emailError?.let { FormError(it) }
+    ProfileField(
+        label = stringResource(R.string.user_label_role),
+        value = if (role == "A") stringResource(R.string.dashboard_admin) else if (role == "G") stringResource(R.string.dashboard_manager) else stringResource(R.string.dashboard_user),
+        enabled = false
+    )
+    ProfileField(
+        label = stringResource(R.string.new_password),
+        value = state.newPassword,
+        onValueChange = onPasswordChange,
+        placeholder = stringResource(R.string.keep_current_password)
+    )
+    state.passwordError?.let { FormError(it) }
+    state.errorMessage?.let { FormError(it) }
+    state.successMessage?.let {
+        Text(it, color = Green, style = MaterialTheme.typography.bodySmall)
+    }
+    Button(
+        onClick = onSave,
+        enabled = !state.isLoading,
+        modifier = Modifier.fillMaxWidth().height(50.dp),
+        colors = ButtonDefaults.buttonColors(Blue),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        if (state.isLoading) {
+            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
+        } else {
             Text(stringResource(R.string.save_changes))
         }
-        OutlinedButton(onClick = { nav.popBackStack() }, modifier = Modifier.fillMaxWidth().height(48.dp), shape = RoundedCornerShape(8.dp)) {
-            Text(stringResource(R.string.btn_cancel))
-        }
+    }
+    OutlinedButton(
+        onClick = onCancel,
+        modifier = Modifier.fillMaxWidth().height(50.dp),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, Border),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
+    ) {
+        Text(stringResource(R.string.btn_cancel))
     }
 }
 
@@ -372,7 +517,12 @@ fun UserFormScreen(nav: NavController, edit: Boolean) {
 @Composable
 fun ManagerDashboardScreen(nav: NavController, onLogout: () -> Unit) {
     val state by taskFlowState()
-    AppScaffold(role = "G", accent = Green, onLogout = onLogout) {
+    AppScaffold(
+        role = "G",
+        accent = Green,
+        onLogout = onLogout,
+        onProfile = { nav.navigate(Routes.MANAGER_PROFILE) }
+    ) {
         Welcome(stringResource(R.string.dashboard_manager))
         SyncStatus(state)
         val pending = state.tasks.count { it.status != TaskStatus.COMPLETED && it.status != TaskStatus.CANCELLED }
@@ -625,8 +775,13 @@ fun EvaluateUserScreen(nav: NavController) {
 fun UserDashboardScreen(nav: NavController, onLogout: () -> Unit) {
     val viewModel: TaskFlowDataViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsState()
-    AppScaffold(role = "U", accent = Orange, onLogout = onLogout) {
-        Welcome(state.users.firstOrNull()?.name ?: stringResource(R.string.dashboard_user))
+    AppScaffold(
+        role = "U",
+        accent = Orange,
+        onLogout = onLogout,
+        onProfile = { nav.navigate(Routes.USER_PROFILE) }
+    ) {
+        Welcome(state.currentUser?.name ?: stringResource(R.string.dashboard_user))
         SyncStatus(state)
         val activeTasks = state.tasks.filter { it.status != TaskStatus.COMPLETED && it.status != TaskStatus.CANCELLED }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
@@ -745,17 +900,30 @@ private data class OnboardData(val title: String, val subtitle: String, val icon
 private data class DemoUser(val name: String, val email: String, val role: String, val initial: String, val color: Color)
 
 @Composable
-private fun AppScaffold(role: String, accent: Color, onLogout: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+private fun AppScaffold(
+    role: String,
+    accent: Color,
+    onLogout: () -> Unit,
+    onProfile: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit
+) {
     Column(Modifier.fillMaxSize().background(Page)) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(72.dp).background(Color.White).padding(horizontal = 20.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .height(64.dp)
+                .background(Color.White)
+                .padding(horizontal = 20.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text("TaskFlow", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 Icon(Icons.Default.Notifications, null, modifier = Modifier.size(22.dp))
-                Avatar(role, accent, 34)
+                Box(modifier = Modifier.clickable(onClick = onProfile)) {
+                    Avatar(role, accent, 34)
+                }
                 IconButton(onClick = onLogout) { Icon(Icons.Default.ExitToApp, null) }
             }
         }
@@ -791,7 +959,12 @@ private fun FormScreen(title: String, onBack: () -> Unit, content: @Composable C
 @Composable
 private fun TopBar(title: String, onBack: () -> Unit, actionText: String? = null, onAction: () -> Unit = {}) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(62.dp).background(Color.White).padding(horizontal = 12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .height(56.dp)
+            .background(Color.White)
+            .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null) }
@@ -902,6 +1075,38 @@ private fun Field(
 }
 
 @Composable
+private fun ProfileField(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier.fillMaxWidth(),
+    enabled: Boolean = true,
+    placeholder: String = "",
+    onValueChange: (String) -> Unit = {}
+) {
+    Column(modifier) {
+        Label(label)
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+            enabled = enabled,
+            placeholder = {
+                Text(placeholder, color = Muted, style = MaterialTheme.typography.bodySmall)
+            },
+            singleLine = true,
+            shape = RoundedCornerShape(8.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Border,
+                unfocusedBorderColor = Border,
+                disabledBorderColor = Border,
+                disabledContainerColor = Soft,
+                disabledTextColor = Color.Black
+            )
+        )
+    }
+}
+
+@Composable
 private fun Label(text: String) {
     Text(text, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
     Spacer(Modifier.height(4.dp))
@@ -922,6 +1127,43 @@ private fun Avatar(text: String, color: Color, size: Int, camera: Boolean = fals
     ) {
         if (camera) Icon(Icons.Default.CameraAlt, null, tint = Muted) else Text(text, color = Color.White, fontWeight = FontWeight.Bold)
     }
+}
+
+@Composable
+private fun ProfileAvatar(
+    initial: String,
+    photoUrl: String?,
+    accent: Color,
+    size: Int,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier.size(size.dp).clip(CircleShape).background(accent),
+        contentAlignment = Alignment.Center
+    ) {
+        if (photoUrl != null) {
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { context ->
+                    ImageView(context).apply {
+                        scaleType = ImageView.ScaleType.CENTER_CROP
+                        setImageURI(Uri.parse(photoUrl))
+                    }
+                },
+                update = { image ->
+                    image.scaleType = ImageView.ScaleType.CENTER_CROP
+                    image.setImageURI(Uri.parse(photoUrl))
+                }
+            )
+        } else {
+            Text(initial, color = Color.White, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun FormError(text: String) {
+    Text(text, color = Red, style = MaterialTheme.typography.bodySmall)
 }
 
 @Composable
