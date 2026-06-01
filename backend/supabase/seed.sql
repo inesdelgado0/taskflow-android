@@ -23,13 +23,13 @@ INSERT INTO public.roles (id, code, description, created_at) OVERRIDING SYSTEM V
 -- 2. USERS
 -- =============================================================
 INSERT INTO public.users (id, name, username, email, password_hash, photo_url, role, is_active, created_at, updated_at) OVERRIDING SYSTEM VALUE VALUES
-  (1, 'Ana Ferreira',    'ana.ferreira',    'ana@taskflow.pt',     '$2b$12$KIX.O.ZnCJqDFvFxJkQpCuTcMwKqM7ZFkLpHbB1YlFx5CvMzNqP2W', NULL, 'ADMIN',   TRUE,  1700000000000, 1700000000000),
-  (2, 'Bruno Carvalho',  'bruno.carvalho',  'bruno@taskflow.pt',   '$2b$12$KIX.O.ZnCJqDFvFxJkQpCuTcMwKqM7ZFkLpHbB1YlFx5CvMzNqP2W', NULL, 'MANAGER', TRUE,  1700100000000, 1700100000000),
-  (3, 'Catarina Sousa',  'catarina.sousa',  'catarina@taskflow.pt','$2b$12$KIX.O.ZnCJqDFvFxJkQpCuTcMwKqM7ZFkLpHbB1YlFx5CvMzNqP2W', NULL, 'MANAGER', TRUE,  1700200000000, 1700200000000),
-  (4, 'Diogo Martins',   'diogo.martins',   'diogo@taskflow.pt',   '$2b$12$KIX.O.ZnCJqDFvFxJkQpCuTcMwKqM7ZFkLpHbB1YlFx5CvMzNqP2W', NULL, 'USER',    TRUE,  1700300000000, 1700300000000),
-  (5, 'Eva Rodrigues',   'eva.rodrigues',   'eva@taskflow.pt',     '$2b$12$KIX.O.ZnCJqDFvFxJkQpCuTcMwKqM7ZFkLpHbB1YlFx5CvMzNqP2W', NULL, 'USER',    TRUE,  1700400000000, 1700400000000),
-  (6, 'Filipe Costa',    'filipe.costa',    'filipe@taskflow.pt',  '$2b$12$KIX.O.ZnCJqDFvFxJkQpCuTcMwKqM7ZFkLpHbB1YlFx5CvMzNqP2W', NULL, 'USER',    TRUE,  1700500000000, 1700500000000),
-  (7, 'Gabriela Nunes',  'gabriela.nunes',  'gabriela@taskflow.pt','$2b$12$KIX.O.ZnCJqDFvFxJkQpCuTcMwKqM7ZFkLpHbB1YlFx5CvMzNqP2W', NULL, 'USER',    FALSE, 1700600000000, 1700600000000); -- conta inativa
+  (1, 'Ana Ferreira',    'ana.ferreira',    'ana@taskflow.pt',     '$2b$12$Ad8G0pWUuKkqYZfAygVAleQwwLsy8MpiwnnSucBx0uxE/yoEMli6K', NULL, 'ADMIN',   TRUE,  1700000000000, 1700000000000),
+  (2, 'Bruno Carvalho',  'bruno.carvalho',  'bruno@taskflow.pt',   '$2b$12$Ad8G0pWUuKkqYZfAygVAleQwwLsy8MpiwnnSucBx0uxE/yoEMli6K', NULL, 'MANAGER', TRUE,  1700100000000, 1700100000000),
+  (3, 'Catarina Sousa',  'catarina.sousa',  'catarina@taskflow.pt','$2b$12$Ad8G0pWUuKkqYZfAygVAleQwwLsy8MpiwnnSucBx0uxE/yoEMli6K', NULL, 'MANAGER', TRUE,  1700200000000, 1700200000000),
+  (4, 'Diogo Martins',   'diogo.martins',   'diogo@taskflow.pt',   '$2b$12$Ad8G0pWUuKkqYZfAygVAleQwwLsy8MpiwnnSucBx0uxE/yoEMli6K', NULL, 'USER',    TRUE,  1700300000000, 1700300000000),
+  (5, 'Eva Rodrigues',   'eva.rodrigues',   'eva@taskflow.pt',     '$2b$12$Ad8G0pWUuKkqYZfAygVAleQwwLsy8MpiwnnSucBx0uxE/yoEMli6K', NULL, 'USER',    TRUE,  1700400000000, 1700400000000),
+  (6, 'Filipe Costa',    'filipe.costa',    'filipe@taskflow.pt',  '$2b$12$Ad8G0pWUuKkqYZfAygVAleQwwLsy8MpiwnnSucBx0uxE/yoEMli6K', NULL, 'USER',    TRUE,  1700500000000, 1700500000000),
+  (7, 'Gabriela Nunes',  'gabriela.nunes',  'gabriela@taskflow.pt','$2b$12$Ad8G0pWUuKkqYZfAygVAleQwwLsy8MpiwnnSucBx0uxE/yoEMli6K', NULL, 'USER',    FALSE, 1700600000000, 1700600000000); -- conta inativa
 
 -- =============================================================
 -- 3. USER_ROLES
