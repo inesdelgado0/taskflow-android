@@ -335,5 +335,15 @@
     <string name="average_rating">Avaliação Média</string>
     <string name="completed_status">Concluída</string>
     <string name="now_time">agora</string>
+    <string name="this_week">Esta semana</string>
+    <string name="progress_saved_success">Progresso guardado com sucesso.</string>
+    <string name="no_description">Sem descrição.</string>
+    <string name="members_count">%1$d membros</string>
+    <string name="location_placeholder">Ex: Escritório, casa, etc.</string>
+    <string name="time_spent_placeholder">Ex: 2h 30min ou 150</string>
+    <string name="observations_placeholder">Observações e fotografias ficam para o módulo de observações.</string>
+    <string name="error_invalid_date">Data inválida. Use AAAA-MM-DD.</string>
+    <string name="error_invalid_percentage">Use uma percentagem entre 0 e 100.</string>
+    <string name="error_invalid_time_spent">Indique um tempo válido.</string>
 
 </resources>

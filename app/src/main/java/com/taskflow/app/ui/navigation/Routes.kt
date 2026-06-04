@@ -37,10 +37,15 @@ object Routes {
     const val USER_TASK_DETAILS = "user/tasks/details"
     const val USER_HISTORY = "user/history"
     const val USER_PROFILE = "user/profile"
+    const val USER_TASKS = "user/tasks"
+    const val USER_TASK_HISTORY = "user/tasks/history"
 
     const val MANAGER_ID_ARG = "managerId"
     const val MANAGER_DASHBOARD_WITH_ID = "$MANAGER_DASHBOARD/{$MANAGER_ID_ARG}"
+    const val USER_TASK_ID_ARG = "taskId"
+    const val USER_TASK_EXECUTION = "user/tasks/{$USER_TASK_ID_ARG}/execution"
 
     fun managerDashboard(managerId: Long): String = "$MANAGER_DASHBOARD/$managerId"
+    fun userTaskExecution(taskId: Long): String = "user/tasks/$taskId/execution"
 }
 
