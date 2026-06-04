@@ -18,5 +18,6 @@ interface UserRepository {
     fun searchUsersFlow(query: String): Flow<List<User>>
     suspend fun setUserActive(id: Long, isActive: Boolean)
     suspend fun refreshUsers(): ApiResult<List<User>>
+    suspend fun updateProfileRemote(user: User, newPassword: String?): ApiResult<User>
 }
 

@@ -6,6 +6,7 @@ import com.taskflow.app.data.local.entity.RoleEntity
 import com.taskflow.app.data.local.entity.UserEntity
 import com.taskflow.app.data.local.entity.UserRoleEntity
 import com.taskflow.app.data.local.entity.UserWithRoles
+import com.taskflow.app.data.remote.dto.UpdateProfileRequest
 import com.taskflow.app.data.remote.api.UserApi
 import com.taskflow.app.data.remote.dto.UserDto
 import com.taskflow.app.domain.model.User
@@ -80,6 +81,32 @@ class UserRepositoryImpl @Inject constructor(
                     users.forEach { user ->
                         userDao.replaceRolesForUser(user.id, user.effectiveRoles())
                     }
+                }
+            }
+
+    override suspend fun updateProfileRemote(user: User, newPassword: String?): ApiResult<User> =
+        safeApiCall {
+            userApi.updateProfile(
+                UpdateProfileRequest(
+                    name = user.name,
+                    username = user.username,
+                    email = user.email,
+                    photoUrl = user.photoUrl,
+                    password = newPassword?.takeIf { it.isNotBlank() }
+                )
+            )
+        }
+            .map { updatedUser -> updatedUser.toDomain() }
+            .onSuccess { updatedUser ->
+                database.withTransaction {
+                    seedRoles()
+                    val existing = userDao.getById(updatedUser.id)
+                    if (existing == null) {
+                        userDao.insert(updatedUser.toEntity())
+                    } else {
+                        userDao.update(updatedUser.toEntity())
+                    }
+                    userDao.replaceRolesForUser(updatedUser.id, updatedUser.effectiveRoles())
                 }
             }
 
