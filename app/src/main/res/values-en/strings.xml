@@ -335,5 +335,15 @@
     <string name="average_rating">Average Rating</string>
     <string name="completed_status">Completed</string>
     <string name="now_time">now</string>
+    <string name="this_week">This week</string>
+    <string name="progress_saved_success">Progress saved successfully.</string>
+    <string name="no_description">No description.</string>
+    <string name="members_count">%1$d members</string>
+    <string name="location_placeholder">Ex: Office, home, etc.</string>
+    <string name="time_spent_placeholder">Ex: 2h 30min or 150</string>
+    <string name="observations_placeholder">Observations and photos belong to the observations module.</string>
+    <string name="error_invalid_date">Invalid date. Use YYYY-MM-DD.</string>
+    <string name="error_invalid_percentage">Use a percentage between 0 and 100.</string>
+    <string name="error_invalid_time_spent">Enter a valid time.</string>
 
 </resources>

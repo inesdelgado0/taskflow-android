@@ -42,15 +42,17 @@ import com.taskflow.app.ui.common.ManagerTeamScreen
 import com.taskflow.app.ui.common.ProfileScreen
 import com.taskflow.app.ui.common.ProjectFormScreen
 import com.taskflow.app.ui.common.TaskFormScreen
-import com.taskflow.app.ui.common.UserDashboardScreen
 import com.taskflow.app.ui.common.UserFormScreen
-import com.taskflow.app.ui.common.UserHistoryScreen
-import com.taskflow.app.ui.common.UserTaskDetailsScreen
+import com.taskflow.app.ui.common.UserHistoryScreen as LegacyUserHistoryScreen
+import com.taskflow.app.ui.common.UserTaskDetailsScreen as LegacyUserTaskDetailsScreen
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.taskflow.app.ui.user.UserDashboardScreen
+import com.taskflow.app.ui.user.history.UserTaskHistoryScreen
+import com.taskflow.app.ui.user.tasks.TaskExecutionScreen
 
 
 private val Context.dataStore by preferencesDataStore(name = "taskflow_preferences")
@@ -198,6 +200,21 @@ fun TaskFlowNavGraph() {
             )
         }
 
+        composable(
+            route = Routes.USER_TASK_EXECUTION,
+            arguments = listOf(
+                navArgument(Routes.USER_TASK_ID_ARG) {
+                    type = NavType.LongType
+                }
+            )
+        ) {
+            TaskExecutionScreen(nav = navController)
+        }
+
+        composable(Routes.USER_TASK_HISTORY) {
+            UserTaskHistoryScreen(nav = navController)
+        }
+
         composable(Routes.ADMIN_PROJECTS) { AdminProjectsScreen(navController) }
         composable(Routes.ADMIN_PROJECT_CREATE) { ProjectFormScreen(navController, edit = false) }
         composable(Routes.ADMIN_PROJECT_EDIT) { ProjectFormScreen(navController, edit = true) }
@@ -224,8 +241,8 @@ fun TaskFlowNavGraph() {
             ProfileScreen(navController, role = "G", accent = Color(0xFF06C167))
         }
 
-        composable(Routes.USER_TASK_DETAILS) { UserTaskDetailsScreen(navController) }
-        composable(Routes.USER_HISTORY) { UserHistoryScreen(navController) }
+        composable(Routes.USER_TASK_DETAILS) { LegacyUserTaskDetailsScreen(navController) }
+        composable(Routes.USER_HISTORY) { LegacyUserHistoryScreen(navController) }
         composable(Routes.USER_PROFILE) {
             ProfileScreen(navController, role = "U", accent = Color(0xFFFF6A00))
         }

@@ -1,8 +1,7 @@
 package com.taskflow.app.ui.user
 
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,23 +13,41 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AccessTime
+import androidx.compose.material.icons.outlined.CheckBox
+import androidx.compose.material.icons.outlined.Logout
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import com.taskflow.app.R
+import com.taskflow.app.ui.navigation.Routes
+import com.taskflow.app.ui.user.tasks.UserTaskItemUi
+import com.taskflow.app.ui.user.tasks.UserTasksViewModel
 
 private val PageBackground = Color(0xFFF6F7F9)
 private val CardBorder = Color(0xFFE2E6EA)
@@ -41,8 +58,12 @@ private val ProgressTrack = Color(0xFFE5E7EB)
 
 @Composable
 fun UserDashboardScreen(
-    onLogout: () -> Unit
+    nav: NavController,
+    onLogout: () -> Unit,
+    viewModel: UserTasksViewModel = hiltViewModel()
 ) {
+    val state by viewModel.uiState.collectAsState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -50,107 +71,113 @@ fun UserDashboardScreen(
     ) {
         UserTopBar(onLogout = onLogout)
 
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
-        ) {
-            Text(
-                text = "Bem-vindo,",
-                style = MaterialTheme.typography.bodyMedium,
-                color = TextSecondary
-            )
-            Text(
-                text = "João Silva",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                StatCard(
-                    modifier = Modifier.weight(1f),
-                    title = "Tarefas Ativas",
-                    value = "8",
-                    detail = "3 com prazo próximo",
-                    accentColor = Orange,
-                    icon = StatIcon.Tasks
-                )
-                StatCard(
-                    modifier = Modifier.weight(1f),
-                    title = "Tempo Total",
-                    value = "24h",
-                    detail = "Esta semana",
-                    accentColor = PrimaryBlue,
-                    icon = StatIcon.Clock
-                )
+        when {
+            state.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = PrimaryBlue)
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Tarefas Pendentes",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    PendingTaskCard(
-                        title = "Desenvolver página de login",
-                        project = "Website Redesign",
-                        deadline = "2 dias",
-                        progress = 0.60f
-                    )
-                    PendingTaskCard(
-                        title = "Testar integração API",
-                        project = "Mobile App",
-                        deadline = "5 dias",
-                        progress = 0.30f
-                    )
-                    PendingTaskCard(
-                        title = "Documentar endpoints",
-                        project = "API Development",
-                        deadline = "1 semana",
-                        progress = 0f
-                    )
-                }
+            state.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(text = state.error.orEmpty(), color = MaterialTheme.colorScheme.error)
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
-
-            OutlinedButton(
-                onClick = { },
+            else -> Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
+                    .verticalScroll(rememberScrollState())
+                    .padding(20.dp)
             ) {
-                Text(text = "Ver Histórico de Tarefas Concluídas")
+                Text(
+                    text = stringResource(R.string.dashboard_welcome),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextSecondary
+                )
+                Text(
+                    text = state.userName,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    StatCard(
+                        modifier = Modifier.weight(1f),
+                        title = stringResource(R.string.dashboard_active_tasks),
+                        value = state.activeTasks.toString(),
+                        detail = stringResource(R.string.dashboard_near_deadline, state.nearDeadlineCount),
+                        accentColor = Orange,
+                        icon = { Icon(Icons.Outlined.CheckBox, contentDescription = null, tint = Orange) }
+                    )
+                    StatCard(
+                        modifier = Modifier.weight(1f),
+                        title = stringResource(R.string.total_time),
+                        value = state.totalMinutes.toHoursText(),
+                        detail = stringResource(R.string.this_week),
+                        accentColor = PrimaryBlue,
+                        icon = { Icon(Icons.Outlined.AccessTime, contentDescription = null, tint = PrimaryBlue) }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                    border = BorderStroke(1.dp, CardBorder)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = stringResource(R.string.pending_tasks_title),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        if (state.pendingTasks.isEmpty()) {
+                            Text(
+                                text = stringResource(R.string.pending_empty),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = TextSecondary
+                            )
+                        } else {
+                            state.pendingTasks.forEach { task ->
+                                PendingTaskCard(
+                                    task = task,
+                                    onClick = { nav.navigate(Routes.userTaskExecution(task.id)) }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                OutlinedButton(
+                    onClick = { nav.navigate(Routes.USER_TASK_HISTORY) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black),
+                    border = BorderStroke(1.dp, Color(0xFFC9D0D8))
+                ) {
+                    Text(text = stringResource(R.string.view_completed_history))
+                }
             }
         }
     }
 }
 
 @Composable
-private fun UserTopBar(
-    onLogout: () -> Unit
-) {
+private fun UserTopBar(onLogout: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -161,7 +188,7 @@ private fun UserTopBar(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            text = "TaskFlow",
+            text = stringResource(R.string.app_name),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = Color.Black
@@ -169,22 +196,22 @@ private fun UserTopBar(
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(18.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            NotificationIcon()
+            IconButton(onClick = { }) {
+                Icon(Icons.Outlined.Notifications, contentDescription = null, tint = Color.Black)
+            }
             Box(
                 modifier = Modifier
                     .size(34.dp)
                     .background(Orange, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "U",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
-                )
+                Text(text = "U", color = Color.White, fontWeight = FontWeight.Bold)
             }
-            LogoutIcon(onClick = onLogout)
+            IconButton(onClick = onLogout) {
+                Icon(Icons.Outlined.Logout, contentDescription = null, tint = Color.Black)
+            }
         }
     }
 }
@@ -196,14 +223,14 @@ private fun StatCard(
     value: String,
     detail: String,
     accentColor: Color,
-    icon: StatIcon
+    icon: @Composable () -> Unit
 ) {
     Card(
         modifier = modifier.height(132.dp),
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
+        border = BorderStroke(1.dp, CardBorder)
     ) {
         Column(
             modifier = Modifier
@@ -211,7 +238,7 @@ private fun StatCard(
                 .padding(14.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            StatIconView(icon = icon, color = accentColor)
+            Box(modifier = Modifier.size(30.dp), contentAlignment = Alignment.Center) { icon() }
             Column {
                 Text(
                     text = title,
@@ -237,18 +264,17 @@ private fun StatCard(
 
 @Composable
 private fun PendingTaskCard(
-    title: String,
-    project: String,
-    deadline: String,
-    progress: Float
+    task: UserTaskItemUi,
+    onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 12.dp),
+            .padding(bottom = 12.dp)
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
+        border = BorderStroke(1.dp, CardBorder)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
@@ -258,19 +284,23 @@ private fun PendingTaskCard(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = title,
+                        text = task.title,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black
+                        color = Color.Black,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = project,
+                        text = task.projectName,
                         style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary
+                        color = TextSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 Text(
-                    text = deadline,
+                    text = task.deadlineText,
                     style = MaterialTheme.typography.bodySmall,
                     color = TextSecondary
                 )
@@ -283,12 +313,16 @@ private fun PendingTaskCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                ProgressBar(
-                    progress = progress,
-                    modifier = Modifier.weight(1f)
+                LinearProgressIndicator(
+                    progress = { task.progress / 100f },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(7.dp),
+                    color = PrimaryBlue,
+                    trackColor = ProgressTrack
                 )
                 Text(
-                    text = "${(progress * 100).toInt()}%",
+                    text = "${task.progress}%",
                     style = MaterialTheme.typography.bodySmall,
                     color = TextSecondary
                 )
@@ -297,157 +331,13 @@ private fun PendingTaskCard(
     }
 }
 
-@Composable
-private fun ProgressBar(
-    progress: Float,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .height(8.dp)
-            .background(ProgressTrack, RoundedCornerShape(50))
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(progress.coerceIn(0f, 1f))
-                .height(8.dp)
-                .background(PrimaryBlue, RoundedCornerShape(50))
-        )
+private fun Int.toHoursText(): String {
+    val hours = this / 60
+    val minutes = this % 60
+    return when {
+        this == 0 -> "0h"
+        minutes == 0 -> "${hours}h"
+        hours == 0 -> "${minutes}min"
+        else -> "${hours}h ${minutes}min"
     }
 }
-
-@Composable
-private fun NotificationIcon() {
-    Canvas(modifier = Modifier.size(24.dp)) {
-        val stroke = Stroke(width = 2.4f)
-        drawArc(
-            color = Color.Black,
-            startAngle = 200f,
-            sweepAngle = 140f,
-            useCenter = false,
-            topLeft = Offset(size.width * 0.22f, size.height * 0.18f),
-            size = Size(size.width * 0.56f, size.height * 0.58f),
-            style = stroke
-        )
-        drawLine(
-            color = Color.Black,
-            start = Offset(size.width * 0.26f, size.height * 0.68f),
-            end = Offset(size.width * 0.74f, size.height * 0.68f),
-            strokeWidth = 2.4f
-        )
-        drawCircle(
-            color = Color.Black,
-            radius = 2.2f,
-            center = Offset(size.width * 0.5f, size.height * 0.80f)
-        )
-    }
-}
-
-@Composable
-private fun LogoutIcon(
-    onClick: () -> Unit
-) {
-    Canvas(
-        modifier = Modifier
-            .size(24.dp)
-            .clickable(onClick = onClick)
-    ) {
-        val stroke = Stroke(width = 2.3f)
-        drawLine(
-            color = Color.Black,
-            start = Offset(size.width * 0.18f, size.height * 0.20f),
-            end = Offset(size.width * 0.18f, size.height * 0.80f),
-            strokeWidth = 2.3f
-        )
-        drawLine(
-            color = Color.Black,
-            start = Offset(size.width * 0.18f, size.height * 0.20f),
-            end = Offset(size.width * 0.44f, size.height * 0.20f),
-            strokeWidth = 2.3f
-        )
-        drawLine(
-            color = Color.Black,
-            start = Offset(size.width * 0.18f, size.height * 0.80f),
-            end = Offset(size.width * 0.44f, size.height * 0.80f),
-            strokeWidth = 2.3f
-        )
-        drawLine(
-            color = Color.Black,
-            start = Offset(size.width * 0.36f, size.height * 0.50f),
-            end = Offset(size.width * 0.82f, size.height * 0.50f),
-            strokeWidth = 2.3f
-        )
-        drawLine(
-            color = Color.Black,
-            start = Offset(size.width * 0.66f, size.height * 0.34f),
-            end = Offset(size.width * 0.82f, size.height * 0.50f),
-            strokeWidth = 2.3f
-        )
-        drawLine(
-            color = Color.Black,
-            start = Offset(size.width * 0.66f, size.height * 0.66f),
-            end = Offset(size.width * 0.82f, size.height * 0.50f),
-            strokeWidth = 2.3f
-        )
-    }
-}
-
-@Composable
-private fun StatIconView(
-    icon: StatIcon,
-    color: Color
-) {
-    Canvas(modifier = Modifier.size(30.dp)) {
-        when (icon) {
-            StatIcon.Tasks -> {
-                val stroke = Stroke(width = 2.8f)
-                drawRoundRect(
-                    color = color,
-                    topLeft = Offset(size.width * 0.16f, size.height * 0.18f),
-                    size = Size(size.width * 0.58f, size.height * 0.62f),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f),
-                    style = stroke
-                )
-                drawLine(
-                    color = color,
-                    start = Offset(size.width * 0.34f, size.height * 0.48f),
-                    end = Offset(size.width * 0.46f, size.height * 0.60f),
-                    strokeWidth = 3f
-                )
-                drawLine(
-                    color = color,
-                    start = Offset(size.width * 0.46f, size.height * 0.60f),
-                    end = Offset(size.width * 0.84f, size.height * 0.24f),
-                    strokeWidth = 3f
-                )
-            }
-            StatIcon.Clock -> {
-                val stroke = Stroke(width = 2.8f)
-                drawCircle(
-                    color = color,
-                    radius = size.minDimension * 0.38f,
-                    center = Offset(size.width * 0.5f, size.height * 0.5f),
-                    style = stroke
-                )
-                drawLine(
-                    color = color,
-                    start = Offset(size.width * 0.5f, size.height * 0.5f),
-                    end = Offset(size.width * 0.5f, size.height * 0.28f),
-                    strokeWidth = 2.8f
-                )
-                drawLine(
-                    color = color,
-                    start = Offset(size.width * 0.5f, size.height * 0.5f),
-                    end = Offset(size.width * 0.66f, size.height * 0.58f),
-                    strokeWidth = 2.8f
-                )
-            }
-        }
-    }
-}
-
-private enum class StatIcon {
-    Tasks,
-    Clock
-}
-
