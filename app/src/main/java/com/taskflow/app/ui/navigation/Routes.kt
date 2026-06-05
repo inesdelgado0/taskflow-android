@@ -32,9 +32,11 @@ object Routes {
     const val MANAGER_EVALUATE_USER = "manager/evaluate-user"
     const val MANAGER_PROJECTS = "manager/projects"
     const val MANAGER_PROJECT_DETAILS = "manager/projects/details"
+    const val MANAGER_STATS = "manager/statistics"
     const val MANAGER_PROFILE = "manager/profile"
 
     const val USER_TASK_DETAILS = "user/tasks/details"
+    const val USER_OBSERVATIONS = "user/tasks/observations"
     const val USER_HISTORY = "user/history"
     const val USER_PROFILE = "user/profile"
     const val USER_TASKS = "user/tasks"
