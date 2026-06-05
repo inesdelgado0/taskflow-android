@@ -6,6 +6,7 @@ const morgan = require("morgan");
 
 const auditRoutes = require("./routes/audit");
 const authRoutes = require("./routes/auth");
+const deviceRoutes = require("./routes/devices");
 const evaluationRoutes = require("./routes/evaluations");
 const observationRoutes = require("./routes/observations");
 const projectRoutes = require("./routes/projects");
@@ -27,6 +28,7 @@ app.get("/health", (_req, res) => {
 
 app.use("/v1/auth", authRoutes);
 app.use("/v1/audit-log", auditRoutes);
+app.use("/v1/devices", deviceRoutes);
 app.use("/v1/projects", projectRoutes);
 app.use("/v1/stats", statsRoutes);
 app.use("/v1/sync-queue", syncQueueRoutes);

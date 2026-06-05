@@ -809,6 +809,13 @@ PUT    /users/me                   # Atualizar perfil autenticado
 PUT    /users/{id}/evaluate        # Avaliar utilizador (GESTOR)
 ```
 
+### Dispositivos e Notificações
+
+```http
+GET    /devices                    # Listar tokens FCM registados
+POST   /devices                    # Registar/atualizar token FCM do dispositivo
+DELETE /devices/{token}            # Desativar token FCM
+```
 
 ### Observações
 
@@ -826,6 +833,8 @@ GET    /stats/projects/{id}        # Stats por projeto
 GET    /stats/tasks/{id}           # Stats por tarefa
 GET    /stats/export?format=pdf    # Exportar em PDF
 GET    /stats/export?format=csv    # Exportar em CSV
+GET    /stats/export?scope=project&id=1&format=csv # Export filtrado
+GET    /stats/export?scope=user&id=4&format=pdf    # Export filtrado
 ```
 
 ### Auditoria e Sincronização

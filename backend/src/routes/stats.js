@@ -130,22 +130,21 @@ function snapshotToPdf(snapshot) {
   return Buffer.from(pdf, "utf8");
 }
 
-router.get("/users/:id", asyncRoute(async (req, res) => {
-  const userId = Number(req.params.id);
+async function buildUserSnapshot(userId) {
   const { data: user, error: userError } = await supabase
     .from("users")
     .select("name")
     .eq("id", userId)
     .maybeSingle();
 
-  if (userError) return res.status(400).json({ message: userError.message });
+  if (userError) throw userError;
 
   const { data: assignments, error } = await supabase
     .from("user_task")
     .select("time_spent_minutes, tasks(*)")
     .eq("user_id", userId);
 
-  if (error) return res.status(400).json({ message: error.message });
+  if (error) throw error;
 
   const tasks = (assignments || []).map((row) => ({
     ...row.tasks,
@@ -153,51 +152,49 @@ router.get("/users/:id", asyncRoute(async (req, res) => {
   })).filter(Boolean);
 
   const label = user?.name || `Utilizador ${userId}`;
-  return res.json(buildSnapshot(`Estatisticas do utilizador: ${label}`, [toRow(label, tasks)]));
-}));
+  return buildSnapshot(`Estatisticas do utilizador: ${label}`, [toRow(label, tasks)]);
+}
 
-router.get("/projects/:id", asyncRoute(async (req, res) => {
-  const projectId = Number(req.params.id);
+async function buildProjectSnapshot(projectId) {
   const { data: project, error: projectError } = await supabase
     .from("projects")
     .select("name")
     .eq("id", projectId)
     .maybeSingle();
 
-  if (projectError) return res.status(400).json({ message: projectError.message });
+  if (projectError) throw projectError;
 
   const { data: tasks, error } = await supabase
     .from("tasks")
     .select("*, user_task(time_spent_minutes)")
     .eq("project_id", projectId);
 
-  if (error) return res.status(400).json({ message: error.message });
+  if (error) throw error;
 
   const label = project?.name || `Projeto ${projectId}`;
-  return res.json(buildSnapshot(`Estatisticas do projeto: ${label}`, [toRow(label, tasks || [])]));
-}));
+  return buildSnapshot(`Estatisticas do projeto: ${label}`, [toRow(label, tasks || [])]);
+}
 
-router.get("/tasks/:id", asyncRoute(async (req, res) => {
+async function buildTaskSnapshot(taskId) {
   const { data: task, error } = await supabase
     .from("tasks")
     .select("*, user_task(time_spent_minutes)")
-    .eq("id", Number(req.params.id))
+    .eq("id", taskId)
     .maybeSingle();
 
-  if (error) return res.status(400).json({ message: error.message });
-  if (!task) return res.status(404).json({ message: "Task not found." });
+  if (error) throw error;
+  if (!task) return null;
 
-  return res.json(buildSnapshot(`Estatisticas da tarefa: ${task.title}`, [toRow(task.title, [task])]));
-}));
+  return buildSnapshot(`Estatisticas da tarefa: ${task.title}`, [toRow(task.title, [task])]);
+}
 
-router.get("/export", asyncRoute(async (req, res) => {
-  const format = String(req.query.format || "csv").toLowerCase();
+async function buildGlobalSnapshot() {
   const { data: tasks, error } = await supabase
     .from("tasks")
-    .select("*, user_task(time_spent_minutes)")
+    .select("*, projects(name), user_task(time_spent_minutes)")
     .order("project_id", { ascending: true });
 
-  if (error) return res.status(400).json({ message: error.message });
+  if (error) throw error;
 
   const tasksByProject = (tasks || []).reduce((groups, task) => {
     const key = task.project_id || 0;
@@ -206,20 +203,84 @@ router.get("/export", asyncRoute(async (req, res) => {
     return groups;
   }, {});
   const rows = Object.entries(tasksByProject).map(([projectId, projectTasks]) =>
-    toRow(`Projeto ${projectId}`, projectTasks)
+    toRow(projectTasks[0]?.projects?.name || `Projeto ${projectId}`, projectTasks)
   );
-  const snapshot = buildSnapshot("Estatisticas globais", rows.length ? rows : [toRow("Sem tarefas", [])]);
+
+  return buildSnapshot("Estatisticas globais", rows.length ? rows : [toRow("Sem tarefas", [])]);
+}
+
+async function buildExportSnapshot(scope, id) {
+  if (scope === "user") return buildUserSnapshot(id);
+  if (scope === "project") return buildProjectSnapshot(id);
+  if (scope === "task") return buildTaskSnapshot(id);
+  return buildGlobalSnapshot();
+}
+
+router.get("/users/:id", asyncRoute(async (req, res) => {
+  try {
+    return res.json(await buildUserSnapshot(Number(req.params.id)));
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+}));
+
+router.get("/projects/:id", asyncRoute(async (req, res) => {
+  try {
+    return res.json(await buildProjectSnapshot(Number(req.params.id)));
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+}));
+
+router.get("/tasks/:id", asyncRoute(async (req, res) => {
+  try {
+    const snapshot = await buildTaskSnapshot(Number(req.params.id));
+    if (!snapshot) return res.status(404).json({ message: "Task not found." });
+    return res.json(snapshot);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+}));
+
+router.get("/export", asyncRoute(async (req, res) => {
+  const format = String(req.query.format || "csv").toLowerCase();
+  const scope = String(req.query.scope || "global").toLowerCase();
+  const id = Number(req.query.id || req.query[`${scope}_id`] || 0);
+
+  if (!["csv", "pdf", "json"].includes(format)) {
+    return res.status(400).json({ message: "format must be csv, pdf or json." });
+  }
+
+  if (!["global", "user", "project", "task"].includes(scope)) {
+    return res.status(400).json({ message: "scope must be global, user, project or task." });
+  }
+
+  if (scope !== "global" && !id) {
+    return res.status(400).json({ message: "id is required for filtered exports." });
+  }
+
+  let snapshot;
+  try {
+    snapshot = await buildExportSnapshot(scope, id);
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+
+  if (!snapshot) {
+    return res.status(404).json({ message: "Statistics scope not found." });
+  }
+
   if (format === "json") return res.json(snapshot);
 
   if (format === "pdf") {
     const pdf = snapshotToPdf(snapshot);
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", "attachment; filename=taskflow-stats.pdf");
+    res.setHeader("Content-Disposition", `attachment; filename=taskflow-stats-${scope}.pdf`);
     return res.send(pdf);
   }
 
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
-  res.setHeader("Content-Disposition", "attachment; filename=taskflow-stats.csv");
+  res.setHeader("Content-Disposition", `attachment; filename=taskflow-stats-${scope}.csv`);
   return res.send(snapshotToCsv(snapshot));
 }));
 

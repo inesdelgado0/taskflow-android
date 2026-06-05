@@ -6,7 +6,7 @@
 -- =============================================================
 
 -- Limpar dados existentes (respeitando ordem das FK)
-TRUNCATE TABLE public.sync_queue, public.audit_log, public.evaluations, public.observations,
+TRUNCATE TABLE public.device_tokens, public.sync_queue, public.audit_log, public.evaluations, public.observations,
               public.user_task, public.user_project, public.tasks, public.projects,
               public.user_roles, public.roles, public.users
 RESTART IDENTITY CASCADE;
@@ -235,3 +235,4 @@ select setval(pg_get_serial_sequence('public.observations', 'id'), coalesce((sel
 select setval(pg_get_serial_sequence('public.evaluations', 'id'), coalesce((select max(id) from public.evaluations), 1), true);
 select setval(pg_get_serial_sequence('public.audit_log', 'id'), coalesce((select max(id) from public.audit_log), 1), true);
 select setval(pg_get_serial_sequence('public.sync_queue', 'id'), coalesce((select max(id) from public.sync_queue), 1), true);
+select setval(pg_get_serial_sequence('public.device_tokens', 'id'), coalesce((select max(id) from public.device_tokens), 1), true);
