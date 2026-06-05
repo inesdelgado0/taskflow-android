@@ -162,6 +162,46 @@ router.put("/tasks/:id/progress", asyncRoute(async (req, res) => {
   });
 }));
 
+router.get("/tasks/:id/users", asyncRoute(async (req, res) => {
+  const result = await supabase
+    .from("user_task")
+    .select(`
+      work_date,
+      location,
+      completion_percentage,
+      time_spent_minutes,
+      is_completed,
+      updated_at,
+      users (
+        id,
+        name,
+        username,
+        email,
+        role,
+        photo_url,
+        is_active,
+        created_at,
+        updated_at
+      )
+    `)
+    .eq("task_id", Number(req.params.id))
+    .order("updated_at", { ascending: false });
+
+  if (result.error) {
+    return res.status(400).json({ message: result.error.message });
+  }
+
+  return res.json((result.data || []).map((row) => ({
+    ...row.users,
+    work_date: row.work_date,
+    location: row.location,
+    completion_percentage: row.completion_percentage,
+    time_spent_minutes: row.time_spent_minutes,
+    is_completed: row.is_completed,
+    assignment_updated_at: row.updated_at
+  })));
+}));
+
 router.post("/tasks/:id/users", asyncRoute(async (req, res) => {
   const userId = Number(req.body.user_id);
 

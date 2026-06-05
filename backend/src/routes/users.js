@@ -7,6 +7,22 @@ const { unixTimestampMs } = require("../utils/time");
 
 const router = express.Router();
 const BCRYPT_SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
+const USER_SELECT = `
+  id,
+  name,
+  username,
+  email,
+  role,
+  photo_url,
+  is_active,
+  created_at,
+  updated_at,
+  user_roles (
+    roles (
+      code
+    )
+  )
+`;
 
 async function replaceRoles(userId, roleCodes) {
   const codes = Array.from(new Set(roleCodes && roleCodes.length ? roleCodes : ["USER"]));
@@ -56,25 +72,28 @@ function toUserResponse(user) {
   };
 }
 
+async function getUserResponseById(userId) {
+  const result = await supabase
+    .from("users")
+    .select(USER_SELECT)
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (result.error) {
+    throw result.error;
+  }
+
+  if (!result.data) {
+    return null;
+  }
+
+  return toUserResponse(result.data);
+}
+
 router.get("/", asyncRoute(async (_req, res) => {
   const result = await supabase
     .from("users")
-    .select(`
-      id,
-      name,
-      username,
-      email,
-      role,
-      photo_url,
-      is_active,
-      created_at,
-      updated_at,
-      user_roles (
-        roles (
-          code
-        )
-      )
-    `)
+    .select(USER_SELECT)
     .order("name", { ascending: true });
 
   if (result.error) {
@@ -87,36 +106,13 @@ router.get("/", asyncRoute(async (_req, res) => {
 }));
 
 router.get("/:id(\\d+)", asyncRoute(async (req, res) => {
-  const result = await supabase
-    .from("users")
-    .select(`
-      id,
-      name,
-      username,
-      email,
-      role,
-      photo_url,
-      is_active,
-      created_at,
-      updated_at,
-      user_roles (
-        roles (
-          code
-        )
-      )
-    `)
-    .eq("id", Number(req.params.id))
-    .maybeSingle();
+  const user = await getUserResponseById(Number(req.params.id));
 
-  if (result.error) {
-    return res.status(400).json({ message: result.error.message });
-  }
-
-  if (!result.data) {
+  if (!user) {
     return res.status(404).json({ message: "User not found." });
   }
 
-  return handleSupabase(res, { data: toUserResponse(result.data), error: null });
+  return handleSupabase(res, { data: user, error: null });
 }));
 
 router.post("/", asyncRoute(async (req, res) => {
@@ -156,7 +152,7 @@ router.post("/", asyncRoute(async (req, res) => {
     return res.status(400).json({ message: error.message });
   }
 
-  return handleSupabase(res, { data: toUserResponse({ ...result.data, user_roles: [] }), error: null });
+  return handleSupabase(res, { data: await getUserResponseById(result.data.id), error: null });
 }));
 
 router.put("/:id(\\d+)", asyncRoute(async (req, res) => {
@@ -196,13 +192,14 @@ router.put("/:id(\\d+)", asyncRoute(async (req, res) => {
     }
   }
 
-  return handleSupabase(res, { data: toUserResponse({ ...result.data, user_roles: [] }), error: null });
+  return handleSupabase(res, { data: await getUserResponseById(userId), error: null });
 }));
 
 router.put("/:id(\\d+)/roles", asyncRoute(async (req, res) => {
   try {
-    await replaceRoles(Number(req.params.id), req.body.roles);
-    return res.json({ user_id: Number(req.params.id), roles: req.body.roles || ["USER"] });
+    const userId = Number(req.params.id);
+    await replaceRoles(userId, req.body.roles);
+    return res.json(await getUserResponseById(userId));
   } catch (error) {
     return res.status(400).json({ message: error.message });
   }

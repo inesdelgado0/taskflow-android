@@ -110,6 +110,36 @@ router.put("/:id/status", asyncRoute(async (req, res) => {
   return handleSupabase(res, result, "Project not found.");
 }));
 
+router.get("/:id/users", asyncRoute(async (req, res) => {
+  const result = await supabase
+    .from("user_project")
+    .select(`
+      joined_at,
+      users (
+        id,
+        name,
+        username,
+        email,
+        role,
+        photo_url,
+        is_active,
+        created_at,
+        updated_at
+      )
+    `)
+    .eq("project_id", Number(req.params.id))
+    .order("joined_at", { ascending: true });
+
+  if (result.error) {
+    return res.status(400).json({ message: result.error.message });
+  }
+
+  return res.json((result.data || []).map((row) => ({
+    ...row.users,
+    joined_at: row.joined_at
+  })));
+}));
+
 router.post("/:id/users", asyncRoute(async (req, res) => {
   const userId = Number(req.body.user_id);
 

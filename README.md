@@ -1,4 +1,4 @@
-# TaskFlow – Gestão de Projetos e Tarefas
+﻿# TaskFlow – Gestão de Projetos e Tarefas
 
 ---
 
@@ -775,6 +775,9 @@ DELETE /projects/{id}              # Remover projeto (ADMIN)
 PUT    /projects/{id}/complete     # Concluir projeto (GESTOR)
 PUT    /projects/{id}/manager      # Associar gestor ao projeto
 PUT    /projects/{id}/status       # Atualizar estado do projeto
+GET    /projects/{id}/users        # Listar utilizadores do projeto
+POST   /projects/{id}/users        # Associar utilizador ao projeto
+DELETE /projects/{id}/users/{userId} # Remover utilizador do projeto
 ```
 
 ### Tarefas
@@ -786,15 +789,26 @@ GET    /tasks/{id}                 # Detalhes da tarefa
 PUT    /tasks/{id}                 # Editar tarefa (GESTOR)
 DELETE /tasks/{id}                 # Remover tarefa (GESTOR)
 PUT    /tasks/{id}/status          # Atualizar estado da tarefa
+PUT    /tasks/{id}/complete        # Marcar tarefa como concluída
+PUT    /tasks/{id}/progress        # Registar progresso do utilizador
+GET    /tasks/{id}/users           # Listar utilizadores atribuídos à tarefa
+POST   /tasks/{id}/users           # Associar utilizador à tarefa
+DELETE /tasks/{id}/users/{userId}  # Remover utilizador da tarefa
 ```
 
 ### Utilizadores
 
 ```http
+GET    /users                      # Listar utilizadores (ADMIN)
+POST   /users                      # Criar utilizador (ADMIN)
+GET    /users/{id}                 # Detalhes do utilizador
+PUT    /users/{id}                 # Editar utilizador (ADMIN)
+PUT    /users/{id}/roles           # Atualizar roles do utilizador
+DELETE /users/{id}                 # Remover utilizador (ADMIN)
+PUT    /users/me                   # Atualizar perfil autenticado
 PUT    /users/{id}/evaluate        # Avaliar utilizador (GESTOR)
 ```
 
-Nota: os endpoints CRUD de utilizadores administrativos ainda estão previstos no contrato funcional, mas o backend atual implementa autenticação/registo e avaliação.
 
 ### Observações
 
@@ -814,7 +828,19 @@ GET    /stats/export?format=pdf    # Exportar em PDF
 GET    /stats/export?format=csv    # Exportar em CSV
 ```
 
-Nota: estatísticas/exportação ainda fazem parte do roadmap funcional; não estão implementadas no backend atual.
+### Auditoria e Sincronização
+
+```http
+GET    /audit-log                  # Listar registos de auditoria
+POST   /audit-log                  # Criar registo de auditoria
+GET    /audit-log/{id}             # Detalhes de um registo
+DELETE /audit-log/{id}             # Remover registo técnico
+
+GET    /sync-queue                 # Listar fila remota de sincronização
+POST   /sync-queue                 # Criar operação pendente
+PUT    /sync-queue/{id}/retry      # Incrementar retry e guardar último erro
+DELETE /sync-queue/{id}            # Remover operação sincronizada
+```
 
 ---
 
