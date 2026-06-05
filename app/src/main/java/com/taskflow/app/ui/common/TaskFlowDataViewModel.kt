@@ -96,7 +96,6 @@ class TaskFlowDataViewModel @Inject constructor(
     ) { projectsValue, tasksValue, usersValue, observationsValue, evaluationsValue ->
         val projectId = selectedProjectId.value
             .takeIf { id -> id != null && projectsValue.any { it.id == id } }
-            ?: projectsValue.firstOrNull()?.id
 
         if (projectId != selectedProjectId.value) {
             selectedProjectId.value = projectId
@@ -154,7 +153,7 @@ class TaskFlowDataViewModel @Inject constructor(
                     transient.update {
                         it.copy(
                             isRefreshing = false,
-                            refreshError = error.message ?: "Nao foi possivel sincronizar dados."
+                            refreshError = null
                         )
                     }
                 }
@@ -173,6 +172,8 @@ class TaskFlowDataViewModel @Inject constructor(
         existing: Project?,
         name: String,
         description: String?,
+        startDate: Long? = existing?.startDate,
+        endDate: Long? = existing?.endDate,
         managerId: Long?,
         status: ProjectStatus = ProjectStatus.ACTIVE,
         onDone: () -> Unit = {}
@@ -188,10 +189,10 @@ class TaskFlowDataViewModel @Inject constructor(
                 id = existing?.id ?: 0L,
                 name = cleanedName,
                 description = description?.trim()?.ifBlank { null },
-                startDate = existing?.startDate,
-                endDate = existing?.endDate,
-                status = existing?.status ?: status,
-                managerId = managerId ?: existing?.managerId,
+                startDate = startDate,
+                endDate = endDate,
+                status = status,
+                managerId = managerId,
                 createdBy = creatorId,
                 createdAt = existing?.createdAt ?: now,
                 updatedAt = now
@@ -211,6 +212,12 @@ class TaskFlowDataViewModel @Inject constructor(
 
     fun deleteProject(project: Project?, onDone: () -> Unit = {}) {
         val id = project?.id?.takeIf { it != 0L } ?: return
+        if (uiState.value.tasks.any { it.projectId == id }) {
+            transient.update {
+                it.copy(refreshError = "Nao e possivel remover este projeto porque tem tarefas associadas.")
+            }
+            return
+        }
         viewModelScope.launch {
             transient.update { it.copy(isRefreshing = true, refreshError = null) }
             when (val result = projectRepository.deleteProjectRemote(id)) {
@@ -218,7 +225,12 @@ class TaskFlowDataViewModel @Inject constructor(
                     transient.update { it.copy(isRefreshing = false, refreshError = null) }
                     onDone()
                 }
-                is ApiResult.Error -> transient.update { it.copy(isRefreshing = false, refreshError = result.error.message) }
+                is ApiResult.Error -> transient.update {
+                    it.copy(
+                        isRefreshing = false,
+                        refreshError = result.error.message.toProjectDeleteMessage()
+                    )
+                }
             }
         }
     }
@@ -353,3 +365,12 @@ class TaskFlowDataViewModel @Inject constructor(
         }
     }
 }
+
+private fun String?.toProjectDeleteMessage(): String =
+    when {
+        this == null -> "Nao foi possivel remover o projeto."
+        contains("FOREIGN KEY", ignoreCase = true) ||
+            contains("constraint", ignoreCase = true) ->
+            "Nao e possivel remover este projeto porque tem tarefas associadas."
+        else -> this
+    }
