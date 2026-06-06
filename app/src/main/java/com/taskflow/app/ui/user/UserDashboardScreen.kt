@@ -161,6 +161,20 @@ fun UserDashboardScreen(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 OutlinedButton(
+                    onClick = { nav.navigate(Routes.USER_TASKS) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black),
+                    border = BorderStroke(1.dp, Color(0xFFC9D0D8))
+                ) {
+                    Text(text = stringResource(R.string.tasks_title))
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedButton(
                     onClick = { nav.navigate(Routes.USER_TASK_HISTORY) },
                     modifier = Modifier
                         .fillMaxWidth()

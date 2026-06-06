@@ -36,9 +36,11 @@ import com.taskflow.app.ui.common.TaskFlowOnboardingScreen
 import com.taskflow.app.ui.common.ManagerDashboardScreen
 import com.taskflow.app.ui.common.ManagerProjectDetailsScreen
 import com.taskflow.app.ui.common.ManagerProjectsScreen
+import com.taskflow.app.ui.common.ManagerStatsScreen
 import com.taskflow.app.ui.common.ManagerTaskDetailsScreen
 import com.taskflow.app.ui.common.ManagerTasksListScreen
 import com.taskflow.app.ui.common.ManagerTeamScreen
+import com.taskflow.app.ui.common.ObservationsScreen
 import com.taskflow.app.ui.common.ProfileScreen
 import com.taskflow.app.ui.common.ProjectFormScreen
 import com.taskflow.app.ui.common.TaskFormScreen
@@ -53,6 +55,7 @@ import androidx.compose.ui.graphics.Color
 import com.taskflow.app.ui.user.UserDashboardScreen
 import com.taskflow.app.ui.user.history.UserTaskHistoryScreen
 import com.taskflow.app.ui.user.tasks.TaskExecutionScreen
+import com.taskflow.app.ui.user.tasks.UserTasksScreen
 
 
 private val Context.dataStore by preferencesDataStore(name = "taskflow_preferences")
@@ -215,6 +218,14 @@ fun TaskFlowNavGraph() {
             UserTaskHistoryScreen(nav = navController)
         }
 
+        composable(Routes.USER_TASKS) {
+            UserTasksScreen(nav = navController)
+        }
+
+        composable(Routes.USER_OBSERVATIONS) {
+            ObservationsScreen(nav = navController)
+        }
+
         composable(Routes.ADMIN_PROJECTS) { AdminProjectsScreen(navController) }
         composable(Routes.ADMIN_PROJECT_CREATE) { ProjectFormScreen(navController, edit = false) }
         composable(Routes.ADMIN_PROJECT_EDIT) { ProjectFormScreen(navController, edit = true) }
@@ -237,6 +248,7 @@ fun TaskFlowNavGraph() {
         composable(Routes.MANAGER_EVALUATE_USER) { EvaluateUserScreen(navController) }
         composable(Routes.MANAGER_PROJECTS) { ManagerProjectsScreen(navController) }
         composable(Routes.MANAGER_PROJECT_DETAILS) { ManagerProjectDetailsScreen(navController) }
+        composable(Routes.MANAGER_STATS) { ManagerStatsScreen(navController) }
         composable(Routes.MANAGER_PROFILE) {
             ProfileScreen(navController, role = "G", accent = Color(0xFF06C167))
         }

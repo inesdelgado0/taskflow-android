@@ -103,9 +103,14 @@ class SyncWorker @AssistedInject constructor(
     ): Request {
         val mediaType = "application/json".toMediaType()
         val body = payload?.toRequestBody(mediaType)
+        val url = if (endpoint.startsWith("http://") || endpoint.startsWith("https://")) {
+            endpoint
+        } else {
+            "${API_BASE_URL}${endpoint.trimStart('/')}"
+        }
 
         return Request.Builder()
-            .url(endpoint)
+            .url(url)
             .header("Authorization", "Bearer $token")
             .header("Content-Type", "application/json")
             .apply {
@@ -121,6 +126,7 @@ class SyncWorker @AssistedInject constructor(
 
     companion object {
         const val WORK_NAME = "SyncWorker"
+        private const val API_BASE_URL = "https://taskflow-api-fvln.onrender.com/v1/"
 
         fun buildOneTimeRequest(): OneTimeWorkRequest =
             OneTimeWorkRequestBuilder<SyncWorker>()

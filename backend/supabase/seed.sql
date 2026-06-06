@@ -6,7 +6,7 @@
 -- =============================================================
 
 -- Limpar dados existentes (respeitando ordem das FK)
-TRUNCATE TABLE public.sync_queue, public.audit_log, public.evaluations, public.observations,
+TRUNCATE TABLE public.device_tokens, public.sync_queue, public.audit_log, public.evaluations, public.observations,
               public.user_task, public.user_project, public.tasks, public.projects,
               public.user_roles, public.roles, public.users
 RESTART IDENTITY CASCADE;
@@ -197,15 +197,15 @@ INSERT INTO public.audit_log (id, user_id, action, entity_type, entity_id, detai
 -- =============================================================
 INSERT INTO public.sync_queue (id, endpoint, http_method, payload, created_at, retry_count, last_error) OVERRIDING SYSTEM VALUE VALUES
   (1, '/tasks/2/progress', 'PUT',
-   '{"completion_percentage":60,"time_spent_minutes":300}',
+   '{"user_id":4,"completion_percentage":60,"time_spent_minutes":300}',
    1703000000000, 0, NULL),
 
-  (2, '/observations',     'POST',
-   '{"task_id":3,"user_id":5,"text":"Filtros por estado e prioridade funcionais."}',
+  (2, '/tasks/3/observations', 'POST',
+   '{"user_id":5,"text":"Filtros por estado e prioridade funcionais."}',
    1703110000000, 1, 'Connection timeout after 30s'),
 
   (3, '/tasks/6/progress', 'PUT',
-   '{"completion_percentage":55,"time_spent_minutes":360}',
+   '{"user_id":4,"completion_percentage":55,"time_spent_minutes":360}',
    1703600000000, 0, NULL);
 
 -- =============================================================
@@ -235,3 +235,4 @@ select setval(pg_get_serial_sequence('public.observations', 'id'), coalesce((sel
 select setval(pg_get_serial_sequence('public.evaluations', 'id'), coalesce((select max(id) from public.evaluations), 1), true);
 select setval(pg_get_serial_sequence('public.audit_log', 'id'), coalesce((select max(id) from public.audit_log), 1), true);
 select setval(pg_get_serial_sequence('public.sync_queue', 'id'), coalesce((select max(id) from public.sync_queue), 1), true);
+select setval(pg_get_serial_sequence('public.device_tokens', 'id'), coalesce((select max(id) from public.device_tokens), 1), true);
