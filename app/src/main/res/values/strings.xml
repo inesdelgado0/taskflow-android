@@ -337,6 +337,7 @@
     <string name="total_time">Tempo Total</string>
     <string name="average_rating">Avaliação Média</string>
     <string name="completed_status">Concluída</string>
+    <string name="cancelled_status">Cancelada</string>
     <string name="now_time">agora</string>
     <string name="this_week">Esta semana</string>
     <string name="progress_saved_success">Progresso guardado com sucesso.</string>

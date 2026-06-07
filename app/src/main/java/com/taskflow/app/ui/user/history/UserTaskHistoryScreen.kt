@@ -55,6 +55,8 @@ private val PrimaryBlue = Color(0xFF2F7DF6)
 private val TextSecondary = Color(0xFF667085)
 private val SuccessGreen = Color(0xFF20A464)
 private val SuccessGreenBg = Color(0xFFD8F8E4)
+private val ErrorRed = Color(0xFFD92D20)
+private val ErrorRedBg = Color(0xFFFEE4E2)
 private val StarYellow = Color(0xFFFFB000)
 
 private enum class HistoryFilter {
@@ -88,10 +90,12 @@ fun UserTaskHistoryScreen(
             }
 
             else -> {
+                val completedOnlyTasks = state.completedTasks.filter { it.status == TaskStatus.COMPLETED }
+                val cancelledTasks = state.completedTasks.filter { it.status == TaskStatus.CANCELLED }
                 val tasks = when (selectedFilter) {
                     HistoryFilter.ALL -> state.completedTasks
-                    HistoryFilter.COMPLETED -> state.completedTasks
-                    HistoryFilter.CANCELLED -> state.completedTasks.filter { it.status == TaskStatus.CANCELLED }
+                    HistoryFilter.COMPLETED -> completedOnlyTasks
+                    HistoryFilter.CANCELLED -> cancelledTasks
                 }
 
                 Column(
@@ -114,7 +118,7 @@ fun UserTaskHistoryScreen(
                         }
                     }
 
-                    MonthlySummaryCard(tasks = state.completedTasks)
+                    MonthlySummaryCard(tasks = tasks)
                 }
             }
         }
@@ -239,7 +243,7 @@ private fun HistoryTaskCard(task: UserTaskItemUi) {
 
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = SuccessGreenBg,
+                color = if (task.status == TaskStatus.CANCELLED) ErrorRedBg else SuccessGreenBg,
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Row(
@@ -247,11 +251,19 @@ private fun HistoryTaskCard(task: UserTaskItemUi) {
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Outlined.CheckBox, contentDescription = null, tint = SuccessGreen)
+                    Icon(
+                        Icons.Outlined.CheckBox,
+                        contentDescription = null,
+                        tint = if (task.status == TaskStatus.CANCELLED) ErrorRed else SuccessGreen
+                    )
                     Spacer(modifier = Modifier.padding(horizontal = 3.dp))
                     Text(
-                        text = stringResource(R.string.completed_status),
-                        color = SuccessGreen,
+                        text = if (task.status == TaskStatus.CANCELLED) {
+                            stringResource(R.string.cancelled_status)
+                        } else {
+                            stringResource(R.string.completed_status)
+                        },
+                        color = if (task.status == TaskStatus.CANCELLED) ErrorRed else SuccessGreen,
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.bodySmall
                     )

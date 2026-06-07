@@ -228,7 +228,7 @@ fun TaskFlowNavGraph() {
         }
 
         composable(Routes.USER_TASK_HISTORY) {
-            UserTaskHistoryScreen(nav = navController)
+            UserHistoryScreen(navController)
         }
 
         composable(Routes.USER_TASKS) {
