@@ -238,7 +238,7 @@
     <string name="all_managers">Todos os gestores</string>
     <string name="search_projects_hint">Pesquisar projetos...</string>
     <string name="search_users_hint">Pesquisar utilizadores...</string>
-    <string name="search_tasks_hint">Pesquisar tarefas... (RF14)</string>
+    <string name="search_tasks_hint">Pesquisar tarefas...</string>
     <string name="new_action">Novo</string>
     <string name="details">Detalhes</string>
     <string name="active_status">Ativo</string>

@@ -759,14 +759,42 @@ fun ManagerDashboardScreen(nav: NavController, onLogout: () -> Unit) {
 fun ManagerTasksListScreen(nav: NavController) {
     val viewModel: TaskFlowDataViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsState()
+    var query by rememberSaveable { androidx.compose.runtime.mutableStateOf("") }
+    var statusFilter by rememberSaveable { androidx.compose.runtime.mutableStateOf(ManagerTaskListFilter.PENDING) }
+    val visibleTasks = state.tasks
+        .filter { task ->
+            when (statusFilter) {
+                ManagerTaskListFilter.PENDING ->
+                    task.status != TaskStatus.COMPLETED && task.status != TaskStatus.CANCELLED
+                ManagerTaskListFilter.COMPLETED -> task.status == TaskStatus.COMPLETED
+            }
+        }
+        .filter { task ->
+            query.isBlank() ||
+                task.title.contains(query, ignoreCase = true) ||
+                task.description.orEmpty().contains(query, ignoreCase = true)
+        }
+
     ListScreen(stringResource(R.string.task_management), stringResource(R.string.new_action), { nav.popBackStack() }, { nav.navigate(Routes.MANAGER_TASK_CREATE) }) {
         SyncStatus(state)
-        SearchField(stringResource(R.string.search_tasks_hint))
+        SearchField(
+            placeholder = stringResource(R.string.search_tasks_hint),
+            value = query,
+            onValueChange = { query = it }
+        )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(selected = true, onClick = {}, label = { Text(stringResource(R.string.pending_tasks_metric)) })
-            FilterChip(selected = false, onClick = {}, label = { Text(stringResource(R.string.completed_filter)) })
+            FilterChip(
+                selected = statusFilter == ManagerTaskListFilter.PENDING,
+                onClick = { statusFilter = ManagerTaskListFilter.PENDING },
+                label = { Text(stringResource(R.string.pending_tasks_metric)) }
+            )
+            FilterChip(
+                selected = statusFilter == ManagerTaskListFilter.COMPLETED,
+                onClick = { statusFilter = ManagerTaskListFilter.COMPLETED },
+                label = { Text(stringResource(R.string.completed_filter)) }
+            )
         }
-        state.tasks.forEach { task ->
+        visibleTasks.forEach { task ->
             ManagerTaskCard(task, state.projects, { 
                 viewModel.selectTask(task.id)
                 nav.navigate(Routes.MANAGER_ASSIGN_USERS)
@@ -775,7 +803,7 @@ fun ManagerTasksListScreen(nav: NavController) {
                 nav.navigate(Routes.MANAGER_TASK_EDIT)
             })
         }
-        if (state.tasks.isEmpty()) EmptyData()
+        if (visibleTasks.isEmpty()) EmptyData()
     }
 }
 
@@ -1269,6 +1297,11 @@ private fun SearchField(
         shape = RoundedCornerShape(8.dp),
         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Border, unfocusedBorderColor = Border)
     )
+}
+
+private enum class ManagerTaskListFilter {
+    PENDING,
+    COMPLETED
 }
 
 @Composable
