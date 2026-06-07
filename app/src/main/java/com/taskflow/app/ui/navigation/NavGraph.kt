@@ -245,7 +245,19 @@ fun TaskFlowNavGraph() {
         composable(Routes.MANAGER_TEAM) { ManagerTeamScreen(navController) }
         composable(Routes.MANAGER_ADD_TEAM) { AddTeamScreen(navController) }
         composable(Routes.MANAGER_ASSIGN_USERS) { AssignUsersScreen(navController) }
-        composable(Routes.MANAGER_EVALUATE_USER) { EvaluateUserScreen(navController) }
+        composable(
+            route = Routes.MANAGER_EVALUATE_USER,
+            arguments = listOf(
+                navArgument(Routes.MANAGER_USER_ID_ARG) {
+                    type = NavType.LongType
+                }
+            )
+        ) { backStackEntry ->
+            EvaluateUserScreen(
+                nav = navController,
+                userId = backStackEntry.arguments?.getLong(Routes.MANAGER_USER_ID_ARG)
+            )
+        }
         composable(Routes.MANAGER_PROJECTS) { ManagerProjectsScreen(navController) }
         composable(Routes.MANAGER_PROJECT_DETAILS) { ManagerProjectDetailsScreen(navController) }
         composable(Routes.MANAGER_STATS) { ManagerStatsScreen(navController) }

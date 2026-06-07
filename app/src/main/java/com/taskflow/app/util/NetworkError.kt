@@ -1,7 +1,8 @@
 package com.taskflow.app.util
 
+import java.io.IOException
 
-sealed class NetworkError : Exception() {
+sealed class NetworkError : IOException() {
 
     /** 401 — token expirado ou inválido → redirecionar para login */
     object Unauthorized : NetworkError()

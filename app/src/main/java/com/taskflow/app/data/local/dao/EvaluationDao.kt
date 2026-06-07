@@ -30,6 +30,9 @@ interface EvaluationDao {
     @Query("SELECT * FROM evaluations WHERE evaluated_user_id = :userId ORDER BY created_at DESC")
     fun getByUserFlow(userId: Long): Flow<List<EvaluationEntity>>
 
+    @Query("SELECT * FROM evaluations ORDER BY created_at DESC")
+    fun getAllFlow(): Flow<List<EvaluationEntity>>
+
     @Query("SELECT AVG(rating) FROM evaluations WHERE evaluated_user_id = :userId")
     suspend fun getAverageRating(userId: Long): Float?
 }

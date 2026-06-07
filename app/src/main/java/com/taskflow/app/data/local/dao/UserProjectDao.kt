@@ -27,6 +27,9 @@ interface UserProjectDao {
     @Query("SELECT * FROM user_project WHERE user_id = :userId")
     fun getProjectsByUserFlow(userId: Long): Flow<List<UserProjectEntity>>
 
+    @Query("SELECT * FROM user_project")
+    fun getAllFlow(): Flow<List<UserProjectEntity>>
+
     @Query("SELECT COUNT(*) FROM user_project WHERE user_id = :userId AND project_id = :projectId")
     suspend fun isUserInProject(userId: Long, projectId: Long): Int
 
