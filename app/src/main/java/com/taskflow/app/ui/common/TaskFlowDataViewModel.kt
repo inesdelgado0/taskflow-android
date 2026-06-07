@@ -26,6 +26,7 @@ import com.taskflow.app.util.ApiResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -82,6 +83,11 @@ class TaskFlowDataViewModel @Inject constructor(
     private val userTaskDao: UserTaskDao,
     private val tokenManager: TokenManager
 ) : ViewModel() {
+    companion object {
+        @Volatile
+        private var initialRefreshDone = false
+    }
+
     private val selectedProjectId = MutableStateFlow<Long?>(null)
     private val selectedTaskId = MutableStateFlow<Long?>(null)
     private val selectedUserId = MutableStateFlow<Long?>(null)
@@ -195,11 +201,11 @@ class TaskFlowDataViewModel @Inject constructor(
         viewModelScope.launch {
             currentUserId.value = tokenManager.getUserId()
         }
-        refreshFromApi()
+        ensureInitialRefresh()
     }
 
     fun refreshFromApi() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             transient.update { it.copy(isRefreshing = true, refreshError = null) }
             populateLocalDatabase()
                 .onSuccess {
@@ -214,6 +220,17 @@ class TaskFlowDataViewModel @Inject constructor(
                     }
                 }
         }
+    }
+
+    private fun ensureInitialRefresh() {
+        if (initialRefreshDone) return
+
+        synchronized(TaskFlowDataViewModel::class.java) {
+            if (initialRefreshDone) return
+            initialRefreshDone = true
+        }
+
+        refreshFromApi()
     }
 
     fun selectProject(projectId: Long) {

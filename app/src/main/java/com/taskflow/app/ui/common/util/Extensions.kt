@@ -209,3 +209,13 @@ internal fun ProjectStatus.label(): String {
         ProjectStatus.CANCELLED -> if (isPortuguese) "Cancelado" else "Cancelled"
     }
 }
+
+internal fun TaskPriority.label(): String {
+    val isPortuguese = java.util.Locale.getDefault().language == "pt"
+    return when (this) {
+        TaskPriority.LOW -> if (isPortuguese) "Baixa" else "Low"
+        TaskPriority.MEDIUM -> if (isPortuguese) "Media" else "Medium"
+        TaskPriority.HIGH -> if (isPortuguese) "Alta" else "High"
+        TaskPriority.CRITICAL -> if (isPortuguese) "Critica" else "Critical"
+    }
+}
