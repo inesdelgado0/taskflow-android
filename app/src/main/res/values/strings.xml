@@ -236,6 +236,7 @@
     <string name="updated_project_activity">Projeto atualizado: %1$s</string>
     <string name="all_statuses">Todos os estados</string>
     <string name="all_managers">Todos os gestores</string>
+    <string name="all_priorities">Todas as prioridades</string>
     <string name="search_projects_hint">Pesquisar projetos...</string>
     <string name="search_users_hint">Pesquisar utilizadores...</string>
     <string name="search_tasks_hint">Pesquisar tarefas...</string>

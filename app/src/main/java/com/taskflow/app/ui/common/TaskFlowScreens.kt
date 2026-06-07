@@ -761,6 +761,11 @@ fun ManagerTasksListScreen(nav: NavController) {
     val state by viewModel.uiState.collectAsState()
     var query by rememberSaveable { androidx.compose.runtime.mutableStateOf("") }
     var statusFilter by rememberSaveable { androidx.compose.runtime.mutableStateOf(ManagerTaskListFilter.PENDING) }
+    var selectedPriority by rememberSaveable { androidx.compose.runtime.mutableStateOf<TaskPriority?>(null) }
+    var selectedManagerId by rememberSaveable { androidx.compose.runtime.mutableStateOf<Long?>(null) }
+    val managers = state.users
+        .filter { user -> user.isActive && user.roles.any { it == UserRole.MANAGER } }
+        .sortedBy { user -> user.name }
     val visibleTasks = state.tasks
         .filter { task ->
             when (statusFilter) {
@@ -769,6 +774,11 @@ fun ManagerTasksListScreen(nav: NavController) {
                 ManagerTaskListFilter.COMPLETED -> task.status == TaskStatus.COMPLETED
             }
         }
+        .filter { task -> selectedPriority == null || task.priority == selectedPriority }
+        .filter { task ->
+            selectedManagerId == null ||
+                state.projects.firstOrNull { project -> project.id == task.projectId }?.managerId == selectedManagerId
+        }
         .filter { task ->
             query.isBlank() ||
                 task.title.contains(query, ignoreCase = true) ||
@@ -776,12 +786,31 @@ fun ManagerTasksListScreen(nav: NavController) {
         }
 
     ListScreen(stringResource(R.string.task_management), stringResource(R.string.new_action), { nav.popBackStack() }, { nav.navigate(Routes.MANAGER_TASK_CREATE) }) {
-        SyncStatus(state)
         SearchField(
             placeholder = stringResource(R.string.search_tasks_hint),
             value = query,
             onValueChange = { query = it }
         )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            ProjectFilterDropdown(
+                selectedText = selectedPriority?.label() ?: stringResource(R.string.all_priorities),
+                modifier = Modifier.weight(1f)
+            ) {
+                DropdownMenuItem(text = { Text(stringResource(R.string.all_priorities)) }, onClick = { selectedPriority = null })
+                TaskPriority.entries.forEach { priority ->
+                    DropdownMenuItem(text = { Text(priority.label()) }, onClick = { selectedPriority = priority })
+                }
+            }
+            ProjectFilterDropdown(
+                selectedText = managers.firstOrNull { it.id == selectedManagerId }?.name ?: stringResource(R.string.all_managers),
+                modifier = Modifier.weight(1f)
+            ) {
+                DropdownMenuItem(text = { Text(stringResource(R.string.all_managers)) }, onClick = { selectedManagerId = null })
+                managers.forEach { manager ->
+                    DropdownMenuItem(text = { Text(manager.name) }, onClick = { selectedManagerId = manager.id })
+                }
+            }
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(
                 selected = statusFilter == ManagerTaskListFilter.PENDING,
@@ -795,7 +824,7 @@ fun ManagerTasksListScreen(nav: NavController) {
             )
         }
         visibleTasks.forEach { task ->
-            ManagerTaskCard(task, state.projects, { 
+            ManagerTaskCard(task, state.projects, {
                 viewModel.selectTask(task.id)
                 nav.navigate(Routes.MANAGER_ASSIGN_USERS)
             }, {
@@ -1305,6 +1334,15 @@ private enum class ManagerTaskListFilter {
 }
 
 @Composable
+private fun TaskPriority.label(): String =
+    when (this) {
+        TaskPriority.LOW -> stringResource(R.string.task_priority_low)
+        TaskPriority.MEDIUM -> stringResource(R.string.task_priority_medium)
+        TaskPriority.HIGH -> stringResource(R.string.task_priority_high)
+        TaskPriority.CRITICAL -> stringResource(R.string.task_priority_critical)
+    }
+
+@Composable
 private fun Field(
     label: String,
     value: String,
@@ -1758,20 +1796,72 @@ private fun TaskPriorityLine(level: String, title: String, color: Color) {
 
 @Composable
 private fun ManagerTaskCard(task: Task, projects: List<Project>, onAssign: () -> Unit, onEdit: () -> Unit) {
+    val projectName = projects.firstOrNull { it.id == task.projectId }?.name.orEmpty()
     val progress = if (task.status == TaskStatus.COMPLETED) 1f else if (task.status == TaskStatus.IN_PROGRESS) 0.6f else 0f
-    SectionCard("") {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Column {
-                Text(task.title, fontWeight = FontWeight.Bold)
-                Text(projects.firstOrNull { it.id == task.projectId }?.name.orEmpty(), color = Muted, style = MaterialTheme.typography.bodySmall)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(Color.White),
+        border = BorderStroke(1.dp, Border),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
+                Column(Modifier.weight(1f)) {
+                    Text(task.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                    if (projectName.isNotBlank()) {
+                        Text(projectName, color = Muted, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                StatusPill(task.priority.label(), task.priority.color())
             }
-            StatusPill(task.priority.name, task.priority.color())
-        }
-        Text(task.status.name, color = Muted, style = MaterialTheme.typography.bodySmall)
-        ProgressLine(stringResource(R.string.progress_label), "${(progress * 100).toInt()}%", progress)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            OutlinedButton(onClick = onAssign, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.associate_action)) }
-            Button(onClick = onEdit, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(Blue)) { Text(stringResource(R.string.btn_edit)) }
+
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Icon(Icons.Default.Group, null, tint = Muted, modifier = Modifier.size(14.dp))
+                Text(
+                    text = when (task.status) {
+                        TaskStatus.COMPLETED -> stringResource(R.string.completed_filter)
+                        TaskStatus.IN_PROGRESS -> stringResource(R.string.task_status_in_progress)
+                        TaskStatus.CANCELLED -> stringResource(R.string.task_status_cancelled)
+                        TaskStatus.PENDING -> stringResource(R.string.pending_tasks_metric)
+                    },
+                    color = Muted,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            Column {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(stringResource(R.string.progress_label), color = Color.Black, style = MaterialTheme.typography.bodySmall)
+                    Text("${(progress * 100).toInt()}%", color = Color.Black, style = MaterialTheme.typography.bodySmall)
+                }
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp),
+                    color = Blue,
+                    trackColor = Border
+                )
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(
+                    onClick = onAssign,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text(stringResource(R.string.associate_action), color = Color.Black)
+                }
+                Button(
+                    onClick = onEdit,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(Blue),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text(stringResource(R.string.btn_edit))
+                }
+            }
         }
     }
 }
