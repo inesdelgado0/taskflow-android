@@ -24,38 +24,39 @@ import androidx.navigation.navArgument
 import com.taskflow.app.ui.auth.AuthViewModel
 import com.taskflow.app.ui.auth.LoginScreen
 import com.taskflow.app.ui.auth.RegisterScreen
-import com.taskflow.app.ui.common.AddTeamScreen
-import com.taskflow.app.ui.common.AdminDashboardScreen
-import com.taskflow.app.ui.common.AdminProjectDetailsScreen
-import com.taskflow.app.ui.common.AdminProjectsScreen
-import com.taskflow.app.ui.common.AdminStatsScreen
-import com.taskflow.app.ui.common.AdminUsersListScreen
-import com.taskflow.app.ui.common.AssignUsersScreen
-import com.taskflow.app.ui.common.EvaluateUserScreen
-import com.taskflow.app.ui.common.TaskFlowOnboardingScreen
-import com.taskflow.app.ui.common.ManagerDashboardScreen
-import com.taskflow.app.ui.common.ManagerProjectDetailsScreen
-import com.taskflow.app.ui.common.ManagerProjectsScreen
-import com.taskflow.app.ui.common.ManagerStatsScreen
-import com.taskflow.app.ui.common.ManagerTaskDetailsScreen
-import com.taskflow.app.ui.common.ManagerTasksListScreen
-import com.taskflow.app.ui.common.ManagerTeamScreen
-import com.taskflow.app.ui.common.ObservationsScreen
-import com.taskflow.app.ui.common.ProfileScreen
-import com.taskflow.app.ui.common.ProjectFormScreen
-import com.taskflow.app.ui.common.TaskFormScreen
-import com.taskflow.app.ui.common.UserFormScreen
-import com.taskflow.app.ui.common.UserHistoryScreen as LegacyUserHistoryScreen
-import com.taskflow.app.ui.common.UserTaskDetailsScreen as LegacyUserTaskDetailsScreen
+import com.taskflow.app.ui.onboarding.TaskFlowOnboardingScreen
+import com.taskflow.app.ui.profile.ProfileScreen
+import com.taskflow.app.ui.project.ProjectFormScreen
+import com.taskflow.app.ui.admin.AdminDashboardScreen
+import com.taskflow.app.ui.admin.AdminProjectsScreen
+import com.taskflow.app.ui.admin.AdminProjectDetailsScreen
+import com.taskflow.app.ui.admin.AdminUsersListScreen
+import com.taskflow.app.ui.admin.UserFormScreen
+import com.taskflow.app.ui.admin.AdminStatsScreen
+import com.taskflow.app.ui.manager.ManagerDashboardScreen
+import com.taskflow.app.ui.manager.ManagerTasksListScreen
+import com.taskflow.app.ui.manager.ManagerTaskDetailsScreen
+import com.taskflow.app.ui.manager.ManagerTeamScreen
+import com.taskflow.app.ui.manager.ManagerProjectsScreen
+import com.taskflow.app.ui.manager.ManagerProjectDetailsScreen
+import com.taskflow.app.ui.manager.ManagerStatsScreen
+import com.taskflow.app.ui.manager.TaskFormScreen
+import com.taskflow.app.ui.manager.AssignUsersScreen
+import com.taskflow.app.ui.manager.AddTeamScreen
+import com.taskflow.app.ui.manager.EvaluateUserScreen
+import com.taskflow.app.ui.user.UserDashboardScreen
+import com.taskflow.app.ui.user.UserTaskDetailsScreen
+import com.taskflow.app.ui.user.UserHistoryScreen
+import com.taskflow.app.ui.user.ObservationsScreen
+import com.taskflow.app.ui.user.history.UserTaskHistoryScreen
+import com.taskflow.app.ui.user.tasks.TaskExecutionScreen
+import com.taskflow.app.ui.user.tasks.UserTasksScreen
+import com.taskflow.app.ui.common.TaskFlowDataViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.taskflow.app.ui.user.UserDashboardScreen
-import com.taskflow.app.ui.user.history.UserTaskHistoryScreen
-import com.taskflow.app.ui.user.tasks.TaskExecutionScreen
-import com.taskflow.app.ui.user.tasks.UserTasksScreen
 
 
 private val Context.dataStore by preferencesDataStore(name = "taskflow_preferences")
@@ -253,8 +254,8 @@ fun TaskFlowNavGraph() {
             ProfileScreen(navController, role = "G", accent = Color(0xFF06C167))
         }
 
-        composable(Routes.USER_TASK_DETAILS) { LegacyUserTaskDetailsScreen(navController) }
-        composable(Routes.USER_HISTORY) { LegacyUserHistoryScreen(navController) }
+        composable(Routes.USER_TASK_DETAILS) { UserTaskDetailsScreen(navController) }
+        composable(Routes.USER_HISTORY) { UserHistoryScreen(navController) }
         composable(Routes.USER_PROFILE) {
             ProfileScreen(navController, role = "U", accent = Color(0xFFFF6A00))
         }

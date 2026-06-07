@@ -1,11 +1,5 @@
 package com.taskflow.app.ui.onboarding
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,245 +9,85 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Dashboard
-import androidx.compose.material.icons.outlined.Groups
-import androidx.compose.material.icons.outlined.Insights
+import androidx.compose.material.icons.filled.CheckBox
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.taskflow.app.R
+import com.taskflow.app.ui.common.components.Dots
+import com.taskflow.app.ui.common.theme.Blue
+import com.taskflow.app.ui.common.theme.Green
+import com.taskflow.app.ui.common.theme.Muted
+import com.taskflow.app.ui.common.theme.OnboardingPage
+import com.taskflow.app.ui.common.theme.Purple
 
-private data class OnboardingPage(
-    val title: String,
-    val description: String,
-    val accent: Color,
-    val icon: OnboardingIcon
-)
-
-private enum class OnboardingIcon {
-    Board,
-    Team,
-    Progress
-}
-
-private val pages = listOf(
-    OnboardingPage(
-        title = "Bem-vindo ao TaskFlow",
-        description = "Gerir os seus projetos e tarefas de forma eficiente",
-        accent = Color(0xFF2F7DF6),
-        icon = OnboardingIcon.Board
-    ),
-    OnboardingPage(
-        title = "Trabalho em Equipa",
-        description = "Colabore com a sua equipa em tempo real",
-        accent = Color(0xFF00C853),
-        icon = OnboardingIcon.Team
-    ),
-    OnboardingPage(
-        title = "Acompanhe o Progresso",
-        description = "Monitorize tarefas e avalie o desempenho",
-        accent = Color(0xFFA855F7),
-        icon = OnboardingIcon.Progress
-    )
-)
+private data class OnboardData(val title: String, val subtitle: String, val icon: ImageVector)
 
 @Composable
-fun OnboardingScreen(
-    onLoginRequested: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var selectedPage by remember { mutableIntStateOf(0) }
-    val page = pages[selectedPage]
-    val isLastPage = selectedPage == pages.lastIndex
+fun TaskFlowOnboardingScreen(step: Int, onNext: () -> Unit, onBack: () -> Unit) {
+    val data = listOf(
+        OnboardData(stringResource(R.string.onboarding_title_1), stringResource(R.string.onboarding_desc_1), Icons.Default.Work),
+        OnboardData(stringResource(R.string.onboarding_title_2), stringResource(R.string.onboarding_desc_2), Icons.Default.Group),
+        OnboardData(stringResource(R.string.onboarding_title_3), stringResource(R.string.onboarding_desc_3), Icons.Default.CheckBox)
+    )
+    val item = data[step.coerceIn(data.indices)]
 
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = Color(0xFFEAF4FF)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(OnboardingPage)
+            .padding(horizontal = 20.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .navigationBarsPadding()
-                .padding(horizontal = 24.dp),
-            contentAlignment = Alignment.Center
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
         ) {
-            AnimatedContent(
-                targetState = page,
-                transitionSpec = {
-                    fadeIn(animationSpec = tween(220)) togetherWith
-                        fadeOut(animationSpec = tween(160)) using
-                        SizeTransform(clip = false)
-                },
-                label = "onboarding_page"
-            ) { currentPage ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .shadow(
-                            elevation = 18.dp,
-                            shape = RoundedCornerShape(8.dp),
-                            ambientColor = Color(0x33000000),
-                            spotColor = Color(0x33000000)
-                        )
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color.White)
-                        .padding(horizontal = 24.dp, vertical = 26.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    OnboardingIconView(
-                        icon = currentPage.icon,
-                        accent = currentPage.accent
-                    )
-
-                    Spacer(modifier = Modifier.height(22.dp))
-
-                    Text(
-                        text = currentPage.title,
-                        color = Color(0xFF111827),
-                        fontSize = 17.sp,
-                        lineHeight = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Text(
-                        text = currentPage.description,
-                        color = Color(0xFF536171),
-                        fontSize = 12.sp,
-                        lineHeight = 17.sp,
-                        textAlign = TextAlign.Center
-                    )
-
-                    Spacer(modifier = Modifier.height(30.dp))
-
-                    PageIndicator(
-                        pageCount = pages.size,
-                        selectedPage = selectedPage
-                    )
-
-                    Spacer(modifier = Modifier.height(28.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        if (selectedPage > 0) {
-                            OutlinedButton(
-                                onClick = { selectedPage = (selectedPage - 1).coerceAtLeast(0) },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(44.dp),
-                                shape = RoundedCornerShape(6.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = Color(0xFF111827)
-                                )
-                            ) {
-                                Text(
-                                    text = "Anterior",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
+            Column(
+                modifier = Modifier.padding(28.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(item.icon, null, tint = if (step == 1) Green else if (step == 2) Purple else Blue, modifier = Modifier.size(56.dp))
+                Spacer(Modifier.height(36.dp))
+                Text(item.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(12.dp))
+                Text(item.subtitle, color = Muted, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(28.dp))
+                Dots(step)
+                Spacer(Modifier.height(28.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                    if (step > 0) {
+                        OutlinedButton(onClick = onBack, modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp)) {
+                            Text(stringResource(R.string.btn_back))
                         }
-
-                        Button(
-                            onClick = {
-                                if (isLastPage) {
-                                    onLoginRequested()
-                                } else {
-                                    selectedPage += 1
-                                }
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(44.dp),
-                            shape = RoundedCornerShape(6.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2F7DF6))
-                        ) {
-                            Text(
-                                text = if (isLastPage) "Começar" else "Próximo",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
+                    }
+                    Button(onClick = onNext, modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), colors = ButtonDefaults.buttonColors(Blue)) {
+                        Text(if (step == 2) stringResource(R.string.onboarding_btn_start) else stringResource(R.string.onboarding_btn_next))
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun OnboardingIconView(
-    icon: OnboardingIcon,
-    accent: Color,
-    modifier: Modifier = Modifier
-) {
-    val imageVector = when (icon) {
-        OnboardingIcon.Board -> Icons.Outlined.Dashboard
-        OnboardingIcon.Team -> Icons.Outlined.Groups
-        OnboardingIcon.Progress -> Icons.Outlined.Insights
-    }
-
-    Icon(
-        imageVector = imageVector,
-        contentDescription = null,
-        tint = accent,
-        modifier = modifier.size(56.dp)
-    )
-}
-
-@Composable
-private fun PageIndicator(
-    pageCount: Int,
-    selectedPage: Int,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        repeat(pageCount) { index ->
-            val isSelected = index == selectedPage
-            Box(
-                modifier = Modifier
-                    .width(7.dp)
-                    .height(7.dp)
-                    .clip(CircleShape)
-                    .background(
-                        if (isSelected) Color(0xFF2F7DF6)
-                        else Color(0xFFD1D7DF)
-                    )
-            )
         }
     }
 }
