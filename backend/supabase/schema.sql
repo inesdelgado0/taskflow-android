@@ -5,9 +5,6 @@ create table if not exists users (
   email text not null unique,
   password_hash text not null,
   photo_url text,
-  -- Temporary compatibility column while Android still models one role per user.
-  -- The normalized source of truth is roles + user_roles below.
-  role text not null default 'USER' check (role in ('ADMIN', 'MANAGER', 'USER')),
   is_active boolean not null default true,
   created_at bigint not null,
   updated_at bigint not null
@@ -34,11 +31,11 @@ create table if not exists user_roles (
   primary key (user_id, role_id)
 );
 
--- Backfill existing Supabase users that still only have users.role.
+-- Seed roles (one-time insert, harmless on re-run)
 insert into user_roles (user_id, role_id, assigned_at)
 select users.id, roles.id, coalesce(users.created_at, 0)
 from users
-join roles on roles.code = users.role
+join roles on roles.code = 'USER'
 on conflict (user_id, role_id) do nothing;
 
 create table if not exists projects (
