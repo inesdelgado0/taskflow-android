@@ -204,9 +204,8 @@ class UserRepositoryImpl @Inject constructor(
 
     private fun UserDto.toDomain(): User {
         val roleList = roles
-            ?.mapNotNull { value -> runCatching { UserRole.valueOf(value) }.getOrNull() }
-            ?.ifEmpty { null }
-            ?: listOf(runCatching { UserRole.valueOf(role) }.getOrDefault(UserRole.USER))
+            .mapNotNull { value -> runCatching { UserRole.valueOf(value) }.getOrNull() }
+            .ifEmpty { listOf(UserRole.USER) }
         val now = System.currentTimeMillis()
 
         return User(
@@ -229,7 +228,6 @@ class UserRepositoryImpl @Inject constructor(
         username = username,
         email = email,
         password = password?.takeIf { it.isNotBlank() },
-        role = role.name,
         roles = effectiveRoles().map { it.name },
         photoUrl = photoUrl,
         isActive = isActive

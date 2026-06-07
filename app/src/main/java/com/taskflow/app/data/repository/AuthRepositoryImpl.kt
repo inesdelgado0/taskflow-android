@@ -51,7 +51,6 @@ class AuthRepositoryImpl @Inject constructor(
             username = username.trim(),
             email = email.trim(),
             password = password,
-            role = UserRole.USER.name,
             roles = listOf(UserRole.USER.name)
         )
 
@@ -85,9 +84,8 @@ class AuthRepositoryImpl @Inject constructor(
 
     private fun UserDto.toDomain(activeRole: UserRole? = null): User {
         val parsedRoles = roles
-            ?.mapNotNull { value -> value.toUserRoleOrNull() }
-            ?.takeIf { it.isNotEmpty() }
-            ?: listOf(role.toUserRoleOrNull() ?: UserRole.USER)
+            .mapNotNull { value -> value.toUserRoleOrNull() }
+            .ifEmpty { listOf(UserRole.USER) }
 
         val primaryRole = activeRole?.takeIf { parsedRoles.contains(it) } ?: parsedRoles.first()
         val now = System.currentTimeMillis()
