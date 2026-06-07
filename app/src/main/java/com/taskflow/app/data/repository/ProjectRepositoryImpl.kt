@@ -1,8 +1,11 @@
 package com.taskflow.app.data.repository
 
 import com.taskflow.app.data.local.dao.ProjectDao
+import com.taskflow.app.data.local.dao.UserProjectDao
 import com.taskflow.app.data.local.entity.ProjectEntity
+import com.taskflow.app.data.local.entity.UserProjectEntity
 import com.taskflow.app.data.remote.api.ProjectApi
+import com.taskflow.app.data.remote.dto.AssignUserRequest
 import com.taskflow.app.data.remote.dto.ProjectDto
 import com.taskflow.app.data.remote.dto.ProjectRequest
 import com.taskflow.app.data.remote.dto.AssignManagerRequest
@@ -20,6 +23,7 @@ import javax.inject.Inject
 
 class ProjectRepositoryImpl @Inject constructor(
     private val projectDao: ProjectDao,
+    private val userProjectDao: UserProjectDao,
     private val projectApi: ProjectApi
 ) : ProjectRepository {
 
@@ -78,6 +82,38 @@ class ProjectRepositoryImpl @Inject constructor(
         safeApiCall { projectApi.assignManager(projectId, AssignManagerRequest(managerId)) }
             .map { it.toDomain() }
             .onSuccess { synced -> projectDao.upsert(synced.toEntity()) }
+
+    override suspend fun refreshProjectUsers(projectId: Long): ApiResult<List<Long>> =
+        safeApiCall { projectApi.getProjectUsers(projectId) }
+            .map { users -> users.map { it.id } }
+            .onSuccess { userIds ->
+                userIds.forEach { userId ->
+                    userProjectDao.upsert(
+                        UserProjectEntity(
+                            userId = userId,
+                            projectId = projectId,
+                            joinedAt = System.currentTimeMillis()
+                        )
+                    )
+                }
+            }
+
+    override suspend fun assignUserToProjectRemote(projectId: Long, userId: Long): ApiResult<Unit> =
+        safeApiCall { projectApi.assignUser(projectId, AssignUserRequest(userId)) }
+            .map { Unit }
+            .onSuccess {
+                userProjectDao.upsert(
+                    UserProjectEntity(
+                        userId = userId,
+                        projectId = projectId,
+                        joinedAt = System.currentTimeMillis()
+                    )
+                )
+            }
+
+    override suspend fun removeUserFromProjectRemote(projectId: Long, userId: Long): ApiResult<Unit> =
+        safeApiCall { projectApi.removeUser(projectId, userId) }
+            .onSuccess { userProjectDao.delete(projectId, userId) }
 
     override suspend fun completeProjectRemote(id: Long): ApiResult<Project> =
         safeApiCall { projectApi.completeProject(id) }

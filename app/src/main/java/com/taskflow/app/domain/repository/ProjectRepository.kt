@@ -19,6 +19,9 @@ interface ProjectRepository {
     suspend fun refreshProjects(): ApiResult<List<Project>>
     suspend fun pushProject(project: Project): ApiResult<Project>
     suspend fun assignManagerRemote(projectId: Long, managerId: Long?): ApiResult<Project>
+    suspend fun refreshProjectUsers(projectId: Long): ApiResult<List<Long>>
+    suspend fun assignUserToProjectRemote(projectId: Long, userId: Long): ApiResult<Unit>
+    suspend fun removeUserFromProjectRemote(projectId: Long, userId: Long): ApiResult<Unit>
     suspend fun completeProjectRemote(id: Long): ApiResult<Project>
     suspend fun updateProjectStatusRemote(id: Long, status: ProjectStatus): ApiResult<Project>
     suspend fun deleteProjectRemote(id: Long): ApiResult<Unit>

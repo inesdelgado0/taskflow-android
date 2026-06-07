@@ -1,9 +1,12 @@
 package com.taskflow.app.data.remote.api
 
+import com.google.gson.JsonObject
+import com.taskflow.app.data.remote.dto.AssignUserRequest
 import com.taskflow.app.data.remote.dto.AssignManagerRequest
 import com.taskflow.app.data.remote.dto.ProjectDto
 import com.taskflow.app.data.remote.dto.ProjectRequest
 import com.taskflow.app.data.remote.dto.ProjectStatusRequest
+import com.taskflow.app.data.remote.dto.UserDto
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -42,6 +45,21 @@ interface ProjectApi {
         @Path("id") id: Long,
         @Body body: ProjectStatusRequest
     ): Response<ProjectDto>
+
+    @GET("projects/{id}/users")
+    suspend fun getProjectUsers(@Path("id") id: Long): Response<List<UserDto>>
+
+    @POST("projects/{id}/users")
+    suspend fun assignUser(
+        @Path("id") id: Long,
+        @Body body: AssignUserRequest
+    ): Response<JsonObject>
+
+    @DELETE("projects/{id}/users/{userId}")
+    suspend fun removeUser(
+        @Path("id") id: Long,
+        @Path("userId") userId: Long
+    ): Response<Unit>
 
     @DELETE("projects/{id}")
     suspend fun deleteProject(@Path("id") id: Long): Response<Unit>
