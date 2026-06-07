@@ -32,6 +32,9 @@ class EvaluationRepositoryImpl @Inject constructor(
     override suspend fun getEvaluationForUserInProject(projectId: Long, userId: Long): Evaluation? =
         evaluationDao.getForUserInProject(projectId, userId)?.toDomain()
 
+    override fun getAllEvaluationsFlow(): Flow<List<Evaluation>> =
+        evaluationDao.getAllFlow().map { list -> list.map { it.toDomain() } }
+
     override fun getEvaluationsByProjectFlow(projectId: Long): Flow<List<Evaluation>> =
         evaluationDao.getByProjectFlow(projectId).map { list -> list.map { it.toDomain() } }
 

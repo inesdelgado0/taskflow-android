@@ -340,6 +340,7 @@
     <string name="progress_saved_success">Progress saved successfully.</string>
     <string name="no_description">No description.</string>
     <string name="members_count">%1$d members</string>
+    <string name="active_tasks_count">%1$d active tasks</string>
     <string name="location_placeholder">Ex: Office, home, etc.</string>
     <string name="time_spent_placeholder">Ex: 2h 30min or 150</string>
     <string name="observations_placeholder">Observations and photos belong to the observations module.</string>

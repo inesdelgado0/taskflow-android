@@ -68,6 +68,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -838,13 +839,39 @@ fun ManagerTasksListScreen(nav: NavController) {
 
 @Composable
 fun ManagerTeamScreen(nav: NavController) {
-    val state by taskFlowState()
+    val viewModel: TaskFlowDataViewModel = hiltViewModel()
+    val state by viewModel.uiState.collectAsState()
+    val visibleUsers = state.users
+        .filter { user -> user.isActive && user.roles.any { it == UserRole.USER } }
+        .sortedBy { user -> user.name }
+
     ListScreen(stringResource(R.string.team_title), stringResource(R.string.add_action), { nav.popBackStack() }, { nav.navigate(Routes.MANAGER_ADD_TEAM) }) {
         SyncStatus(state)
-        state.users.forEach { user ->
-            TeamMemberCard(user.toDemoUser()) { nav.navigate(Routes.MANAGER_EVALUATE_USER) }
+        visibleUsers.forEach { user ->
+            val userAssignments = state.userTaskAssignments.filter { assignment -> assignment.userId == user.id }
+            val assignedTasks = userAssignments.mapNotNull { assignment ->
+                state.tasks.firstOrNull { task ->
+                    task.id == assignment.taskId
+                }
+            }
+            val completedTasks = assignedTasks.count { task -> task.status == TaskStatus.COMPLETED } 
+            val activeTasks = assignedTasks.count { task -> task.status != TaskStatus.COMPLETED && task.status != TaskStatus.CANCELLED }
+            val userRatings = state.allEvaluations.filter { evaluation -> evaluation.evaluatedUserId == user.id }
+            val averageRating = userRatings.takeIf { it.isNotEmpty() }?.map { it.rating }?.average()
+
+            TeamMemberCard(
+                user = user,
+                rating = averageRating,
+                completedTasks = completedTasks,
+                activeTasks = activeTasks,
+                onViewTasks = { nav.navigate(Routes.MANAGER_TASKS_LIST) },
+                onEvaluate = {
+                    viewModel.selectUser(user.id)
+                    nav.navigate(Routes.managerEvaluateUser(user.id))
+                }
+            )
         }
-        if (state.users.isEmpty()) EmptyData()
+        if (visibleUsers.isEmpty()) EmptyData()
     }
 }
 
@@ -896,7 +923,12 @@ fun ManagerProjectDetailsScreen(nav: NavController) {
             }
         }
         SectionCard(stringResource(R.string.project_team_count, state.users.take(3).size)) {
-            state.users.take(3).forEach { EvalLine(it.toDemoUser()) { nav.navigate(Routes.MANAGER_EVALUATE_USER) } }
+            state.users.take(3).forEach {
+                EvalLine(it.toDemoUser()) {
+                    viewModel.selectUser(it.id)
+                    nav.navigate(Routes.managerEvaluateUser(it.id))
+                }
+            }
             if (state.users.isEmpty()) EmptyData()
             OutlinedButton(onClick = { nav.navigate(Routes.MANAGER_TEAM) }, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.view_full_team))
@@ -994,31 +1026,54 @@ fun AddTeamScreen(nav: NavController) {
 }
 
 @Composable
-fun EvaluateUserScreen(nav: NavController) {
+fun EvaluateUserScreen(nav: NavController, userId: Long? = null) {
     val viewModel: TaskFlowDataViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsState()
-    val user = state.users.firstOrNull()
+    LaunchedEffect(state.selectedProjectId, state.projects) {
+        if (state.selectedProjectId == null && state.projects.isNotEmpty()) {
+            viewModel.selectProject(state.projects.first().id)
+        }
+    }
+    val user = state.users.firstOrNull { it.id == userId }
+        ?: state.users.firstOrNull { it.id == state.selectedUserId }
+        ?: state.users.firstOrNull { it.isActive && it.roles.any { role -> role == UserRole.USER } }
     val project = state.projects.firstOrNull { it.id == state.selectedProjectId } ?: state.projects.firstOrNull()
-    var rating by rememberSaveable { androidx.compose.runtime.mutableStateOf(5) }
-    var comment by rememberSaveable { androidx.compose.runtime.mutableStateOf("") }
+    val existingEvaluation = state.evaluations.firstOrNull { evaluation ->
+        evaluation.evaluatedUserId == user?.id && evaluation.projectId == project?.id
+    }
+    var rating by rememberSaveable(user?.id, project?.id, existingEvaluation?.rating) {
+        androidx.compose.runtime.mutableStateOf(existingEvaluation?.rating ?: 5)
+    }
+    var comment by rememberSaveable(user?.id, project?.id, existingEvaluation?.comment) {
+        androidx.compose.runtime.mutableStateOf(existingEvaluation?.comment.orEmpty())
+    }
     FormScreen(stringResource(R.string.evaluate_user), { nav.popBackStack() }) {
         SyncStatus(state)
+        if (user == null || project == null) {
+            EmptyData()
+            return@FormScreen
+        }
         SectionCard("") {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Avatar(user?.name.initial(), user?.toDemoUser()?.color ?: Orange, 56)
+                Avatar(user.name.initial(), user.toDemoUser().color, 56)
                 Spacer(Modifier.width(12.dp))
                 Column {
-                    Text(user?.name.orEmpty(), fontWeight = FontWeight.Bold)
-                    Text(stringResource(R.string.project_prefix, project?.name.orEmpty()), color = Muted)
+                    Text(user.name, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.project_prefix, project.name), color = Muted)
                 }
             }
         }
         SectionCard(stringResource(R.string.performance_evaluation)) {
+            val userProjectTasks = state.userTaskAssignments
+                .filter { assignment -> assignment.userId == user.id }
+                .mapNotNull { assignment ->
+                    state.tasks.firstOrNull { task -> task.id == assignment.taskId && task.projectId == project.id }
+                }
             TwoMetrics(
                 stringResource(R.string.completed_tasks_metric),
-                state.tasks.count { it.status == TaskStatus.COMPLETED }.toString(),
+                userProjectTasks.count { it.status == TaskStatus.COMPLETED }.toString(),
                 stringResource(R.string.active_tasks_metric),
-                state.tasks.count { it.status != TaskStatus.COMPLETED && it.status != TaskStatus.CANCELLED }.toString()
+                userProjectTasks.count { it.status != TaskStatus.COMPLETED && it.status != TaskStatus.CANCELLED }.toString()
             )
             Text(stringResource(R.string.numeric_rating), fontWeight = FontWeight.SemiBold)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1867,19 +1922,67 @@ private fun ManagerTaskCard(task: Task, projects: List<Project>, onAssign: () ->
 }
 
 @Composable
-private fun TeamMemberCard(user: DemoUser, onEvaluate: () -> Unit) {
-    SectionCard("") {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Avatar(user.initial, user.color, 48)
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(user.name, fontWeight = FontWeight.Bold)
-                Text(user.role, color = Muted, style = MaterialTheme.typography.bodySmall)
+private fun TeamMemberCard(
+    user: User,
+    rating: Double?,
+    completedTasks: Int,
+    activeTasks: Int,
+    onViewTasks: () -> Unit,
+    onEvaluate: () -> Unit
+) {
+    val demoUser = user.toDemoUser()
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(Color.White),
+        border = BorderStroke(1.dp, Border),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(verticalAlignment = Alignment.Top) {
+                Avatar(demoUser.initial, demoUser.color, 44)
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(user.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Icon(Icons.Default.Star, null, tint = Yellow, modifier = Modifier.size(16.dp))
+                        Text(
+                            rating?.let { "%.1f".format(it) } ?: "0.0",
+                            color = Color.Black,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    Text(
+                        stringResource(R.string.active_tasks_count, activeTasks),
+                        color = Muted,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            OutlinedButton(onClick = {}, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.view_tasks)) }
-            Button(onClick = onEvaluate, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(Blue)) { Text(stringResource(R.string.evaluate_action)) }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFF7F8FB), RoundedCornerShape(10.dp))
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.completed_tasks_metric), color = Muted, style = MaterialTheme.typography.bodySmall)
+                    Text(completedTasks.toString(), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.active_tasks_metric), color = Muted, style = MaterialTheme.typography.bodySmall)
+                    Text(activeTasks.toString(), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = onViewTasks, modifier = Modifier.weight(1f).height(44.dp), shape = RoundedCornerShape(10.dp)) {
+                    Text(stringResource(R.string.view_tasks), color = Color.Black)
+                }
+                Button(onClick = onEvaluate, modifier = Modifier.weight(1f).height(44.dp), colors = ButtonDefaults.buttonColors(Blue), shape = RoundedCornerShape(10.dp)) {
+                    Text(stringResource(R.string.evaluate_action))
+                }
+            }
         }
     }
 }
