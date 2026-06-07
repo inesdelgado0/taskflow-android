@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.taskflow.app.data.local.dao.UserProjectDao
 import com.taskflow.app.data.local.dao.UserTaskDao
+import com.taskflow.app.data.local.entity.UserProjectEntity
+import com.taskflow.app.data.local.entity.UserTaskEntity
 import com.taskflow.app.domain.model.Evaluation
 import com.taskflow.app.domain.model.Observation
 import com.taskflow.app.domain.model.Project
@@ -42,6 +44,9 @@ data class TaskFlowDataUiState(
     val currentUser: User? = null,
     val observations: List<Observation> = emptyList(),
     val evaluations: List<Evaluation> = emptyList(),
+    val allEvaluations: List<Evaluation> = emptyList(),
+    val userProjectAssignments: List<UserProjectEntity> = emptyList(),
+    val userTaskAssignments: List<UserTaskEntity> = emptyList(),
     val selectedProjectUserIds: List<Long> = emptyList(),
     val selectedTaskUserIds: List<Long> = emptyList(),
     val selectedProjectId: Long? = null,
@@ -57,6 +62,9 @@ private data class TaskFlowDataCore(
     val users: List<User>,
     val observations: List<Observation>,
     val evaluations: List<Evaluation>,
+    val allEvaluations: List<Evaluation>,
+    val userProjectAssignments: List<UserProjectEntity>,
+    val userTaskAssignments: List<UserTaskEntity>,
     val selectedProjectUserIds: List<Long>,
     val selectedTaskUserIds: List<Long>
 )
@@ -97,6 +105,7 @@ class TaskFlowDataViewModel @Inject constructor(
         if (projectId == null || projectId == 0L) flowOf(emptyList())
         else evaluationRepository.getEvaluationsByProjectFlow(projectId)
     }
+    private val allEvaluations = evaluationRepository.getAllEvaluationsFlow()
     private val selectedProjectUsers = selectedProjectId.flatMapLatest { projectId ->
         if (projectId == null || projectId == 0L) flowOf(emptyList())
         else userProjectDao.getUsersByProjectFlow(projectId)
@@ -105,6 +114,8 @@ class TaskFlowDataViewModel @Inject constructor(
         if (taskId == null || taskId == 0L) flowOf(emptyList())
         else userTaskDao.getUsersByTaskFlow(taskId)
     }
+    private val userProjectAssignments = userProjectDao.getAllFlow()
+    private val userTaskAssignments = userTaskDao.getAllFlow()
 
     private val core = combine(
         projects,
@@ -112,6 +123,9 @@ class TaskFlowDataViewModel @Inject constructor(
         users,
         observations,
         evaluations,
+        allEvaluations,
+        userProjectAssignments,
+        userTaskAssignments,
         selectedProjectUsers,
         selectedTaskUsers
     ) { values ->
@@ -120,8 +134,11 @@ class TaskFlowDataViewModel @Inject constructor(
         val usersValue = values[2] as List<User>
         val observationsValue = values[3] as List<Observation>
         val evaluationsValue = values[4] as List<Evaluation>
-        val selectedProjectUsersValue = values[5] as List<com.taskflow.app.data.local.entity.UserProjectEntity>
-        val selectedTaskUsersValue = values[6] as List<com.taskflow.app.data.local.entity.UserTaskEntity>
+        val allEvaluationsValue = values[5] as List<Evaluation>
+        val userProjectAssignmentsValue = values[6] as List<UserProjectEntity>
+        val userTaskAssignmentsValue = values[7] as List<UserTaskEntity>
+        val selectedProjectUsersValue = values[8] as List<UserProjectEntity>
+        val selectedTaskUsersValue = values[9] as List<UserTaskEntity>
         val projectId = selectedProjectId.value
             .takeIf { id -> id != null && projectsValue.any { it.id == id } }
 
@@ -143,6 +160,9 @@ class TaskFlowDataViewModel @Inject constructor(
             users = usersValue,
             observations = observationsValue,
             evaluations = evaluationsValue,
+            allEvaluations = allEvaluationsValue,
+            userProjectAssignments = userProjectAssignmentsValue,
+            userTaskAssignments = userTaskAssignmentsValue,
             selectedProjectUserIds = selectedProjectUsersValue.map { it.userId },
             selectedTaskUserIds = selectedTaskUsersValue.map { it.userId }
         )
@@ -156,6 +176,9 @@ class TaskFlowDataViewModel @Inject constructor(
             currentUser = coreValue.users.firstOrNull { user -> user.id == currentUserIdValue },
             observations = coreValue.observations,
             evaluations = coreValue.evaluations,
+            allEvaluations = coreValue.allEvaluations,
+            userProjectAssignments = coreValue.userProjectAssignments,
+            userTaskAssignments = coreValue.userTaskAssignments,
             selectedProjectUserIds = coreValue.selectedProjectUserIds,
             selectedTaskUserIds = coreValue.selectedTaskUserIds,
             selectedProjectId = selectedProjectId.value,
@@ -484,7 +507,8 @@ class TaskFlowDataViewModel @Inject constructor(
     fun saveEvaluation(user: User?, project: Project?, rating: Int, comment: String?, onDone: () -> Unit = {}) {
         val evaluated = user ?: return
         val targetProject = project ?: return
-        val evaluatorId = uiState.value.users.firstOrNull { candidate -> candidate.id != evaluated.id }?.id
+        val evaluatorId = uiState.value.currentUser?.id
+            ?: uiState.value.users.firstOrNull { candidate -> candidate.id != evaluated.id }?.id
             ?: uiState.value.users.firstOrNull()?.id
             ?: return
 
@@ -499,12 +523,22 @@ class TaskFlowDataViewModel @Inject constructor(
                 createdAt = System.currentTimeMillis()
             )
 
+            evaluationRepository.upsertEvaluation(evaluation)
+
             when (val result = evaluationRepository.pushEvaluation(evaluation)) {
                 is ApiResult.Success -> {
                     transient.update { it.copy(isRefreshing = false, refreshError = null) }
                     onDone()
                 }
-                is ApiResult.Error -> transient.update { it.copy(isRefreshing = false, refreshError = result.error.message) }
+                is ApiResult.Error -> {
+                    transient.update {
+                        it.copy(
+                            isRefreshing = false,
+                            refreshError = "Guardado localmente. Sera sincronizado quando houver ligacao."
+                        )
+                    }
+                    onDone()
+                }
             }
         }
     }

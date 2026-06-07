@@ -27,6 +27,9 @@ interface UserTaskDao {
     @Query("SELECT * FROM user_task WHERE user_id = :userId")
     fun getTasksByUserFlow(userId: Long): Flow<List<UserTaskEntity>>
 
+    @Query("SELECT * FROM user_task")
+    fun getAllFlow(): Flow<List<UserTaskEntity>>
+
     @Query("""
         UPDATE user_task SET
             completion_percentage = :percentage,

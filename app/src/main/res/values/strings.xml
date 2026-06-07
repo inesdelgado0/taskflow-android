@@ -236,9 +236,10 @@
     <string name="updated_project_activity">Projeto atualizado: %1$s</string>
     <string name="all_statuses">Todos os estados</string>
     <string name="all_managers">Todos os gestores</string>
+    <string name="all_priorities">Todas as prioridades</string>
     <string name="search_projects_hint">Pesquisar projetos...</string>
     <string name="search_users_hint">Pesquisar utilizadores...</string>
-    <string name="search_tasks_hint">Pesquisar tarefas... (RF14)</string>
+    <string name="search_tasks_hint">Pesquisar tarefas...</string>
     <string name="new_action">Novo</string>
     <string name="details">Detalhes</string>
     <string name="active_status">Ativo</string>
@@ -339,6 +340,7 @@
     <string name="progress_saved_success">Progresso guardado com sucesso.</string>
     <string name="no_description">Sem descrição.</string>
     <string name="members_count">%1$d membros</string>
+    <string name="active_tasks_count">%1$d tarefas ativas</string>
     <string name="location_placeholder">Ex: Escritório, casa, etc.</string>
     <string name="time_spent_placeholder">Ex: 2h 30min ou 150</string>
     <string name="observations_placeholder">Observações e fotografias ficam para o módulo de observações.</string>

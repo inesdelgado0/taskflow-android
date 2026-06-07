@@ -236,9 +236,10 @@
     <string name="updated_project_activity">Project updated: %1$s</string>
     <string name="all_statuses">All statuses</string>
     <string name="all_managers">All managers</string>
+    <string name="all_priorities">All priorities</string>
     <string name="search_projects_hint">Search projects...</string>
     <string name="search_users_hint">Search users...</string>
-    <string name="search_tasks_hint">Search tasks... (RF14)</string>
+    <string name="search_tasks_hint">Search tasks...</string>
     <string name="new_action">New</string>
     <string name="details">Details</string>
     <string name="active_status">Active</string>
@@ -339,6 +340,7 @@
     <string name="progress_saved_success">Progress saved successfully.</string>
     <string name="no_description">No description.</string>
     <string name="members_count">%1$d members</string>
+    <string name="active_tasks_count">%1$d active tasks</string>
     <string name="location_placeholder">Ex: Office, home, etc.</string>
     <string name="time_spent_placeholder">Ex: 2h 30min or 150</string>
     <string name="observations_placeholder">Observations and photos belong to the observations module.</string>
