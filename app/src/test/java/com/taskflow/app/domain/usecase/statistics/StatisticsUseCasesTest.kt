@@ -164,4 +164,6 @@ private class FakeUserRepository(
     override fun searchUsersFlow(query: String): Flow<List<User>> = flowOf(listOf(user))
     override suspend fun setUserActive(id: Long, isActive: Boolean) = Unit
     override suspend fun refreshUsers(): ApiResult<List<User>> = ApiResult.Success(listOf(user))
+    override suspend fun updateProfileRemote(user: User, newPassword: String?): ApiResult<User> =
+        ApiResult.Success(user)
 }

@@ -1,5 +1,6 @@
 package com.taskflow.app.ui.common
 
+import android.content.Intent
 import android.net.Uri
 import android.widget.ImageView
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -75,6 +76,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -84,7 +86,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.taskflow.app.R
+import com.taskflow.app.data.export.StatisticsCsvFormatter
+import com.taskflow.app.data.export.StatisticsFileExporter
 import com.taskflow.app.domain.model.Project
+import com.taskflow.app.domain.model.StatisticRow
+import com.taskflow.app.domain.model.StatisticsExportFormat
+import com.taskflow.app.domain.model.StatisticsSnapshot
 import com.taskflow.app.domain.model.Task
 import com.taskflow.app.domain.model.User
 import com.taskflow.app.domain.util.ProjectStatus
@@ -167,6 +174,7 @@ fun AdminDashboardScreen(nav: NavController, onLogout: () -> Unit) {
         content = {
             Welcome(stringResource(R.string.dashboard_admin))
             SyncStatus(state)
+            NotificationStateComponent(state)
             val activeProjects = state.projects.count { it.status == ProjectStatus.ACTIVE }
             val completedProjects = state.projects.count { it.status == ProjectStatus.COMPLETED }
             val managers = state.users.count { user -> user.roles.any { it.name == "MANAGER" } }
@@ -282,18 +290,20 @@ fun AdminUsersListScreen(nav: NavController) {
 @Composable
 fun AdminStatsScreen(nav: NavController) {
     val state by taskFlowState()
+    val context = LocalContext.current
+    val snapshot = state.toStatisticsSnapshot(stringResource(R.string.stats_title))
     FormScreen(stringResource(R.string.stats_title), onBack = { nav.popBackStack() }) {
         SyncStatus(state)
         SectionCard(stringResource(R.string.export_data)) {
             Label(stringResource(R.string.report_type))
             MiniSelect(stringResource(R.string.stats_by_user))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                Button(onClick = {}, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(Red), shape = RoundedCornerShape(8.dp)) {
+                Button(onClick = { exportStatistics(context, snapshot, StatisticsExportFormat.PDF) }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(Red), shape = RoundedCornerShape(8.dp)) {
                     Icon(Icons.Default.Download, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
                     Text("PDF")
                 }
-                Button(onClick = {}, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(Green), shape = RoundedCornerShape(8.dp)) {
+                Button(onClick = { exportStatistics(context, snapshot, StatisticsExportFormat.CSV) }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(Green), shape = RoundedCornerShape(8.dp)) {
                     Icon(Icons.Default.Download, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
                     Text("CSV")
@@ -311,6 +321,36 @@ fun AdminStatsScreen(nav: NavController) {
                 Ranking((index + 1).toString(), user.name)
             }
             if (state.users.isEmpty()) EmptyData()
+        }
+    }
+}
+
+@Composable
+fun ManagerStatsScreen(nav: NavController) {
+    val state by taskFlowState()
+    val context = LocalContext.current
+    val snapshot = state.toStatisticsSnapshot("Estatísticas do gestor")
+    FormScreen(stringResource(R.string.stats_title), onBack = { nav.popBackStack() }) {
+        SyncStatus(state)
+        SectionCard(stringResource(R.string.general_summary)) {
+            Metric(stringResource(R.string.dashboard_completion_rate), "${state.tasks.completionRate()}%")
+            Metric(stringResource(R.string.completed_tasks_metric), state.tasks.count { it.status == TaskStatus.COMPLETED }.toString())
+            Metric(stringResource(R.string.pending_tasks_metric), state.tasks.count { it.status != TaskStatus.COMPLETED && it.status != TaskStatus.CANCELLED }.toString())
+            Metric(stringResource(R.string.total_projects_metric), state.projects.size.toString())
+        }
+        SectionCard(stringResource(R.string.export_data)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                Button(onClick = { exportStatistics(context, snapshot, StatisticsExportFormat.PDF) }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(Red), shape = RoundedCornerShape(8.dp)) {
+                    Icon(Icons.Default.Download, null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("PDF")
+                }
+                Button(onClick = { exportStatistics(context, snapshot, StatisticsExportFormat.CSV) }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(Green), shape = RoundedCornerShape(8.dp)) {
+                    Icon(Icons.Default.Download, null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("CSV")
+                }
+            }
         }
     }
 }
@@ -653,11 +693,13 @@ fun ManagerDashboardScreen(nav: NavController, onLogout: () -> Unit) {
     ) {
         Welcome(stringResource(R.string.dashboard_manager))
         SyncStatus(state)
+        NotificationStateComponent(state)
         val pending = state.tasks.count { it.status != TaskStatus.COMPLETED && it.status != TaskStatus.CANCELLED }
         val completed = state.tasks.count { it.status == TaskStatus.COMPLETED }
         StatNavCard(Icons.Default.CheckBox, stringResource(R.string.tasks_title), state.tasks.size.toString(), stringResource(R.string.dashboard_tasks_detail, pending, completed), Blue) { nav.navigate(Routes.MANAGER_TASKS_LIST) }
         StatNavCard(Icons.Default.Group, stringResource(R.string.team_title), state.users.size.toString(), stringResource(R.string.dashboard_active_members), Green) { nav.navigate(Routes.MANAGER_TEAM) }
         StatNavCard(Icons.Default.Work, stringResource(R.string.dashboard_my_projects), state.projects.size.toString(), stringResource(R.string.dashboard_active_projects, state.projects.count { it.status == ProjectStatus.ACTIVE }), Purple) { nav.navigate(Routes.MANAGER_PROJECTS) }
+        StatNavCard(Icons.Default.CalendarToday, stringResource(R.string.stats_title), "${state.tasks.completionRate()}%", stringResource(R.string.dashboard_completion_rate), Orange) { nav.navigate(Routes.MANAGER_STATS) }
         SectionCard(stringResource(R.string.dashboard_priority_tasks)) {
             state.tasks.take(3).forEach { task ->
                 TaskPriorityLine(task.priority.name, task.title, task.priority.color())
@@ -966,7 +1008,7 @@ fun UserTaskDetailsScreen(nav: NavController, managerMode: Boolean = false) {
                 OutlinedButton(
                     onClick = {
                         if (managerMode) nav.navigate(Routes.MANAGER_ASSIGN_USERS)
-                        else viewModel.createObservation(task, observationText) { observationText = "" }
+                        else nav.navigate(Routes.USER_OBSERVATIONS)
                     },
                     modifier = Modifier.weight(1f)
                 ) {
@@ -1740,6 +1782,42 @@ private fun UserTaskLine(task: Task, projects: List<Project>, onClick: () -> Uni
 }
 
 @Composable
+fun ObservationsScreen(nav: NavController) {
+    val viewModel: TaskFlowDataViewModel = hiltViewModel()
+    val state by viewModel.uiState.collectAsState()
+    val task = state.tasks.firstOrNull { it.id == state.selectedTaskId } ?: state.tasks.firstOrNull()
+    var observationText by rememberSaveable(task?.id) { androidx.compose.runtime.mutableStateOf("") }
+    FormScreen(stringResource(R.string.observations_title), { nav.popBackStack() }) {
+        SyncStatus(state)
+        SectionCard(task?.title ?: stringResource(R.string.task_title)) {
+            Text(task?.description.orEmpty().ifBlank { stringResource(R.string.no_description) }, color = Muted)
+        }
+        SectionCard(stringResource(R.string.new_observation_short)) {
+            Field(stringResource(R.string.comment_optional), observationText, onValueChange = { observationText = it }, minLines = 4)
+            Button(
+                onClick = {
+                    if (task != null) {
+                        viewModel.createObservation(task, observationText) { observationText = "" }
+                    }
+                },
+                enabled = task != null && observationText.isNotBlank(),
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(Blue)
+            ) {
+                Text(stringResource(R.string.save_progress))
+            }
+        }
+        SectionCard(stringResource(R.string.observations_count, state.observations.size)) {
+            state.observations.forEach { observation ->
+                val user = state.users.firstOrNull { it.id == observation.userId }
+                Observation(user?.name.orEmpty(), observation.text.orEmpty(), observation.createdAt.relativeTime())
+            }
+            if (state.observations.isEmpty()) EmptyData()
+        }
+    }
+}
+
+@Composable
 private fun Observation(name: String, text: String, time: String) {
     Column(Modifier.fillMaxWidth().background(Soft, RoundedCornerShape(8.dp)).padding(10.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -1772,9 +1850,46 @@ private fun taskFlowState(): androidx.compose.runtime.State<TaskFlowDataUiState>
 
 @Composable
 private fun SyncStatus(state: TaskFlowDataUiState) {
-    when {
-        state.isRefreshing -> Text(stringResource(R.string.syncing_data), color = Muted, style = MaterialTheme.typography.bodySmall)
-        state.refreshError != null -> Text(state.refreshError, color = Red, style = MaterialTheme.typography.bodySmall)
+    val (label, color) = when {
+        state.isRefreshing -> stringResource(R.string.sync_status_syncing) to Orange
+        state.refreshError != null -> stringResource(R.string.sync_status_offline) to Red
+        else -> stringResource(R.string.sync_status_synced) to Green
+    }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(label, color = color, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
+        state.refreshError?.let {
+            Text(it, color = Red, style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+@Composable
+fun NotificationStateComponent(state: TaskFlowDataUiState) {
+    val nearDeadline = state.tasks.count { it.deadline.isNearDeadline() && it.status != TaskStatus.COMPLETED }
+    val pendingSync = state.isRefreshing
+    SectionCard("Notificações") {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.Notifications, null, tint = if (nearDeadline > 0 || pendingSync) Orange else Green, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.width(8.dp))
+            Column {
+                Text(
+                    if (nearDeadline > 0) "$nearDeadline tarefa(s) com prazo próximo"
+                    else if (pendingSync) stringResource(R.string.sync_status_syncing)
+                    else stringResource(R.string.sync_status_synced),
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    if (state.refreshError != null) stringResource(R.string.sync_status_offline)
+                    else "Notificações de tarefas, prazos e sincronização ativas",
+                    color = Muted,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
     }
 }
 
@@ -1818,6 +1933,47 @@ private fun List<User>.projectManagers(): List<User> =
 private fun List<User>.managerName(managerId: Long?): String =
     firstOrNull { it.id == managerId }?.name
         ?: if (java.util.Locale.getDefault().language == "pt") "Sem gestor" else "No manager"
+private fun TaskFlowDataUiState.toStatisticsSnapshot(title: String): StatisticsSnapshot {
+    val now = System.currentTimeMillis()
+    val rows = if (projects.isEmpty()) {
+        listOf(tasks.toStatisticRow(title, now))
+    } else {
+        projects.map { project ->
+            tasks.filter { it.projectId == project.id }.toStatisticRow(project.name, now)
+        }
+    }
+
+    return StatisticsSnapshot(
+        title = title,
+        generatedAt = now,
+        rows = rows
+    )
+}
+
+private fun List<Task>.toStatisticRow(label: String, now: Long): StatisticRow =
+    StatisticRow(
+        label = label,
+        totalTasks = size,
+        completedTasks = count { it.status == TaskStatus.COMPLETED },
+        pendingTasks = count { it.status != TaskStatus.COMPLETED && it.status != TaskStatus.CANCELLED },
+        overdueTasks = count { task ->
+            task.deadline != null &&
+                task.deadline < now &&
+                task.status != TaskStatus.COMPLETED &&
+                task.status != TaskStatus.CANCELLED
+        }
+    )
+
+private fun exportStatistics(
+    context: android.content.Context,
+    snapshot: StatisticsSnapshot,
+    format: StatisticsExportFormat
+) {
+    val exporter = StatisticsFileExporter(context, StatisticsCsvFormatter())
+    val file = exporter.export(snapshot, format)
+    val intent = Intent.createChooser(exporter.shareIntent(file), snapshot.title)
+    context.startActivity(intent)
+}
 
 private fun List<com.taskflow.app.domain.model.Evaluation>.averageRating(): String {
     if (isEmpty()) return ""
