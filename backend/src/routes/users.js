@@ -4,25 +4,10 @@ const { supabase } = require("../config/supabase");
 const { asyncRoute, handleSupabase } = require("../utils/http");
 const { requireAuth } = require("../middleware/auth");
 const { unixTimestampMs } = require("../utils/time");
+const { USER_SELECT, toUserResponse } = require("../utils/users");
 
 const router = express.Router();
 const BCRYPT_SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
-const USER_SELECT = `
-  id,
-  name,
-  username,
-  email,
-  role,
-  photo_url,
-  is_active,
-  created_at,
-  updated_at,
-  user_roles (
-    roles (
-      code
-    )
-  )
-`;
 
 async function replaceRoles(userId, roleCodes) {
   const codes = Array.from(new Set(roleCodes && roleCodes.length ? roleCodes : ["USER"]));
@@ -51,25 +36,6 @@ async function replaceRoles(userId, roleCodes) {
     })));
 
   if (insertResult.error) throw insertResult.error;
-}
-
-function toUserResponse(user) {
-  const roles = (user.user_roles || [])
-    .map((entry) => entry.roles && entry.roles.code)
-    .filter(Boolean);
-
-  return {
-    id: user.id,
-    name: user.name,
-    username: user.username,
-    email: user.email,
-    role: user.role || "USER",
-    roles,
-    photo_url: user.photo_url,
-    is_active: user.is_active,
-    created_at: user.created_at,
-    updated_at: user.updated_at
-  };
 }
 
 async function getUserResponseById(userId) {
@@ -118,7 +84,6 @@ router.get("/:id(\\d+)", asyncRoute(async (req, res) => {
 router.post("/", asyncRoute(async (req, res) => {
   const { name, username, email, password, photo_url: photoUrl } = req.body;
   const requestedRoles = Array.isArray(req.body.roles) ? req.body.roles : [req.body.role || "USER"];
-  const primaryRole = requestedRoles[0] || "USER";
 
   if (!name || !username || !email || !password) {
     return res.status(400).json({ message: "Name, username, email and password are required." });
@@ -134,7 +99,6 @@ router.post("/", asyncRoute(async (req, res) => {
       email: email.trim(),
       password_hash: passwordHash,
       photo_url: photoUrl || null,
-      role: primaryRole,
       is_active: req.body.is_active !== false,
       created_at: now,
       updated_at: now
@@ -162,7 +126,6 @@ router.put("/:id(\\d+)", asyncRoute(async (req, res) => {
     username: req.body.username,
     email: req.body.email,
     photo_url: req.body.photo_url || null,
-    role: req.body.role || (Array.isArray(req.body.roles) ? req.body.roles[0] : undefined),
     is_active: req.body.is_active !== undefined ? req.body.is_active : undefined,
     updated_at: unixTimestampMs()
   };
@@ -251,22 +214,7 @@ router.put("/me", requireAuth, asyncRoute(async (req, res) => {
     .from("users")
     .update(update)
     .eq("id", userId)
-    .select(`
-      id,
-      name,
-      username,
-      email,
-      role,
-      photo_url,
-      is_active,
-      created_at,
-      updated_at,
-      user_roles (
-        roles (
-          code
-        )
-      )
-    `)
+    .select(USER_SELECT)
     .single();
 
   if (result.error) {

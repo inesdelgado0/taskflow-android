@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const { supabase } = require("../config/supabase");
 const { asyncRoute, sendData, sendNoContent } = require("../utils/http");
 const { unixTimestampMs } = require("../utils/time");
+const { extractRoleCodes } = require("../utils/users");
 
 const router = express.Router();
 const BCRYPT_SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
@@ -41,8 +42,10 @@ async function attachRoles(user) {
   const roles = (data || [])
     .map((row) => row.roles && row.roles.code)
     .filter(Boolean);
-
-  const normalizedRoles = roles.length > 0 ? roles : [user.role || "USER"];
+  const fallbackRoles = extractRoleCodes(user);
+  const normalizedRoles = roles.length > 0
+    ? roles
+    : (fallbackRoles.length > 0 ? fallbackRoles : ["USER"]);
 
   return {
     ...user,
@@ -126,7 +129,6 @@ router.post("/register", asyncRoute(async (req, res) => {
   const requestedRoles = Array.isArray(req.body.roles)
     ? req.body.roles
     : [req.body.role || "USER"];
-  const primaryRole = requestedRoles[0] || "USER";
 
   if (!name || !username || !email || !password) {
     return res.status(400).json({ message: "Name, username, email and password are required." });
@@ -141,7 +143,6 @@ router.post("/register", asyncRoute(async (req, res) => {
       username: username.trim(),
       email: email.trim(),
       password_hash: passwordHash,
-      role: primaryRole,
       is_active: true,
       created_at: now,
       updated_at: now
