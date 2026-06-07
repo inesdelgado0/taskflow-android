@@ -471,21 +471,42 @@ TaskFlow/
 │       │   │   │   ├── theme/                 # Theme.kt, Color.kt, Type.kt (Material3)
 │       │   │   │   ├── navigation/            # NavGraph.kt, Routes.kt (Compose Navigation)
 │       │   │   │   ├── auth/                  # LoginScreen.kt, RegisterScreen.kt
-│       │   │   │   ├── onboarding/            # OnboardingScreen.kt (HorizontalPager)
-│       │   │   │   ├── admin/                 # Screens e ViewModels do Administrador
-│       │   │   │   │   ├── projects/          # ProjectsScreen.kt, ProjectDetailScreen.kt
-│       │   │   │   │   ├── users/             # UsersScreen.kt, UserFormScreen.kt
-│       │   │   │   │   └── statistics/        # StatisticsScreen.kt
-│       │   │   │   ├── manager/               # Screens e ViewModels do Gestor de Projeto
-│       │   │   │   │   ├── tasks/             # TasksScreen.kt, TaskFormScreen.kt
-│       │   │   │   │   ├── team/              # TeamScreen.kt
-│       │   │   │   │   └── statistics/        # ManagerStatisticsScreen.kt
-│       │   │   │   ├── user/                  # Screens e ViewModels do Utilizador
-│       │   │   │   │   ├── tasks/             # MyTasksScreen.kt, TaskDetailScreen.kt
-│       │   │   │   │   ├── history/           # HistoryScreen.kt
-│       │   │   │   │   └── observations/      # ObservationsScreen.kt
+│       │   │   │   ├── onboarding/            # OnboardingScreen.kt
+│       │   │   │   ├── admin/                 # Screens do Administrador
+│       │   │   │   │   ├── AdminDashboardScreen.kt
+│       │   │   │   │   ├── AdminProjectsScreen.kt
+│       │   │   │   │   ├── AdminProjectDetailsScreen.kt
+│       │   │   │   │   ├── AdminUsersListScreen.kt
+│       │   │   │   │   ├── UserFormScreen.kt
+│       │   │   │   │   └── AdminStatsScreen.kt
+│       │   │   │   ├── manager/               # Screens do Gestor de Projeto
+│       │   │   │   │   ├── ManagerDashboardScreen.kt
+│       │   │   │   │   ├── ManagerTasksListScreen.kt
+│       │   │   │   │   ├── ManagerTaskDetailsScreen.kt
+│       │   │   │   │   ├── ManagerTeamScreen.kt
+│       │   │   │   │   ├── ManagerProjectsScreen.kt
+│       │   │   │   │   ├── ManagerProjectDetailsScreen.kt
+│       │   │   │   │   ├── ManagerStatsScreen.kt
+│       │   │   │   │   ├── AssignUsersScreen.kt
+│       │   │   │   │   ├── AddTeamScreen.kt
+│       │   │   │   │   └── EvaluateUserScreen.kt
+│       │   │   │   ├── user/                  # Screens do Utilizador
+│       │   │   │   │   ├── UserDashboardScreen.kt
+│       │   │   │   │   ├── UserTaskDetailsScreen.kt
+│       │   │   │   │   ├── UserHistoryScreen.kt
+│       │   │   │   │   └── ObservationsScreen.kt
 │       │   │   │   ├── profile/               # ProfileScreen.kt (todos os roles)
-│       │   │   │   └── common/                # Composables reutilizáveis (botões, cards, dialogs…)
+│       │   │   │   ├── project/               # ProjectFormScreen.kt (criar/editar projeto)
+│       │   │   │   └── common/                # Composables reutilizáveis
+│       │   │   │       ├── theme/             # Colors.kt (cores partilhadas)
+│       │   │   │       ├── components/        # Componentes reutilizáveis
+│       │   │   │       │   ├── Avatars.kt
+│       │   │   │       │   ├── Buttons.kt
+│       │   │   │       │   ├── Cards.kt
+│       │   │   │       │   ├── Fields.kt
+│       │   │   │       │   ├── Layout.kt
+│       │   │   │       │   └── StatusIndicators.kt
+│       │   │   │       └── util/              # Extensions.kt (helpers, funções de extensão)
 │       │   │   ├── di/                        # Módulos Hilt (NetworkModule, DatabaseModule…)
 │       │   │   ├── sync/                      # Workers para sincronização offline (SyncWorker.kt)
 │       │   │   ├── notification/              # Gestão de notificações locais
