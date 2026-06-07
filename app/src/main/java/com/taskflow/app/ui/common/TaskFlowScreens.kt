@@ -542,6 +542,7 @@ fun UserFormScreen(nav: NavController, edit: Boolean) {
     val viewModel: TaskFlowDataViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsState()
     val user = state.users.firstOrNull { it.id == state.selectedUserId } ?: state.users.firstOrNull()
+    var pendingPhoto by rememberSaveable(user?.id, edit) { androidx.compose.runtime.mutableStateOf(if (edit) user?.photoUrl else null) }
     val photoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri -> pendingPhoto = uri?.toString() }
@@ -552,7 +553,6 @@ fun UserFormScreen(nav: NavController, edit: Boolean) {
     var role by rememberSaveable(user?.id, edit) { androidx.compose.runtime.mutableStateOf(if (edit) user?.role ?: UserRole.USER else UserRole.USER) }
     var password by rememberSaveable(user?.id, edit) { androidx.compose.runtime.mutableStateOf("") }
     var confirmPassword by rememberSaveable(user?.id, edit) { androidx.compose.runtime.mutableStateOf("") }
-    var pendingPhoto by rememberSaveable(user?.id, edit) { androidx.compose.runtime.mutableStateOf(if (edit) user?.photoUrl else null) }
     FormScreen(if (edit) stringResource(R.string.edit_user) else stringResource(R.string.create_user), onBack = { nav.popBackStack() }) {
         Avatar(if (edit) user?.name.initial() else "", if (edit) user?.toDemoUser()?.color ?: Green else Color(0xFFE5E7EB), size = 82, camera = !edit)
         TextButton(onClick = { photoPicker.launch("image/*") }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
