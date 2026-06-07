@@ -35,21 +35,21 @@ class AuditLogger @Inject constructor(
     }
 
     // ── Auth ──────────────────────────────────────────────────
-    fun logLogin(userId: Long) =
-        log(AuditAction.LOGIN, userId = userId)
+    fun logLogin(userId: Long?, details: String? = null) =
+        log(AuditAction.LOGIN, userId = userId, details = details)
 
-    fun logLogout(userId: Long) =
-        log(AuditAction.LOGOUT, userId = userId)
+    fun logLogout(userId: Long?, details: String? = null) =
+        log(AuditAction.LOGOUT, userId = userId, details = details)
 
     // ── CRUD ──────────────────────────────────────────────────
-    fun logCreate(userId: Long, entityType: String, entityId: Long? = null, details: String? = null) =
+    fun logCreate(userId: Long?, entityType: String, entityId: Long? = null, details: String? = null) =
         log(AuditAction.CREATE, userId, entityType, entityId, details)
 
-    fun logUpdate(userId: Long, entityType: String, entityId: Long, details: String? = null) =
+    fun logUpdate(userId: Long?, entityType: String, entityId: Long, details: String? = null) =
         log(AuditAction.UPDATE, userId, entityType, entityId, details)
 
-    fun logDelete(userId: Long, entityType: String, entityId: Long) =
-        log(AuditAction.DELETE, userId, entityType, entityId)
+    fun logDelete(userId: Long?, entityType: String, entityId: Long, details: String? = null) =
+        log(AuditAction.DELETE, userId, entityType, entityId, details)
 
     // ── Sync ──────────────────────────────────────────────────
     fun logSync(userId: Long? = null, details: String? = null) =

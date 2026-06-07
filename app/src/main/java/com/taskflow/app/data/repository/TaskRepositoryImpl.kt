@@ -1,12 +1,14 @@
 package com.taskflow.app.data.repository
 
 import android.database.sqlite.SQLiteConstraintException
+import com.taskflow.app.audit.AuditLogger
 import com.taskflow.app.data.local.dao.TaskDao
 import com.taskflow.app.data.local.dao.UserDao
 import com.taskflow.app.data.local.dao.UserTaskDao
 import com.taskflow.app.data.local.entity.TaskEntity
 import com.taskflow.app.data.local.entity.UserTaskEntity
 import com.taskflow.app.data.remote.api.TaskApi
+import com.taskflow.app.data.remote.TokenManager
 import com.taskflow.app.data.remote.dto.AssignUserRequest
 import com.taskflow.app.data.remote.dto.TaskDto
 import com.taskflow.app.data.remote.dto.TaskProgressRequest
@@ -30,7 +32,9 @@ class TaskRepositoryImpl @Inject constructor(
     private val userDao: UserDao,
     private val userTaskDao: UserTaskDao,
     private val taskApi: TaskApi,
-    private val notificationScheduler: TaskNotificationScheduler
+    private val notificationScheduler: TaskNotificationScheduler,
+    private val tokenManager: TokenManager,
+    private val auditLogger: AuditLogger
 ) : TaskRepository {
 
     override suspend fun createTask(task: Task): Long {
@@ -103,6 +107,7 @@ class TaskRepositoryImpl @Inject constructor(
             }
 
     override suspend fun pushTask(task: Task): ApiResult<Task> {
+        val isCreate = task.id == 0L
         val result = if (task.id == 0L) {
             safeApiCall { taskApi.createTask(task.projectId, task.toRequest()) }
         } else {
@@ -114,6 +119,12 @@ class TaskRepositoryImpl @Inject constructor(
             .onSuccess { synced ->
                 taskDao.upsert(synced.toEntity())
                 notificationScheduler.scheduleDeadlineReminder(synced)
+                val details = "title=${synced.title},status=${synced.status.name},priority=${synced.priority.name}"
+                if (isCreate) {
+                    auditLogger.logCreate(currentActorId(), "TASK", synced.id, details)
+                } else {
+                    auditLogger.logUpdate(currentActorId(), "TASK", synced.id, details)
+                }
             }
     }
 
@@ -137,6 +148,14 @@ class TaskRepositoryImpl @Inject constructor(
                 )
             )
         }.map { Unit }
+            .onSuccess {
+                auditLogger.logUpdate(
+                    currentActorId(),
+                    "TASK",
+                    taskId,
+                    details = "progress=$completionPercentage,timeSpentMinutes=$timeSpentMinutes,userId=$userId"
+                )
+            }
 
     override suspend fun refreshTaskUsers(taskId: Long): ApiResult<List<Long>> =
         safeApiCall { taskApi.getTaskUsers(taskId) }
@@ -169,11 +188,15 @@ class TaskRepositoryImpl @Inject constructor(
                         )
                     )
                 }
+                auditLogger.logUpdate(currentActorId(), "TASK", taskId, details = "assignUser:$userId")
             }
 
     override suspend fun removeUserFromTaskRemote(taskId: Long, userId: Long): ApiResult<Unit> =
         safeApiCall { taskApi.removeUser(taskId, userId) }
-            .onSuccess { userTaskDao.delete(taskId, userId) }
+            .onSuccess {
+                userTaskDao.delete(taskId, userId)
+                auditLogger.logUpdate(currentActorId(), "TASK", taskId, details = "removeUser:$userId")
+            }
 
     override suspend fun updateTaskStatusRemote(id: Long, status: TaskStatus): ApiResult<Task> =
         safeApiCall { taskApi.updateStatus(id, TaskStatusRequest(status)) }
@@ -185,6 +208,7 @@ class TaskRepositoryImpl @Inject constructor(
                 } else {
                     notificationScheduler.scheduleDeadlineReminder(synced)
                 }
+                auditLogger.logUpdate(currentActorId(), "TASK", synced.id, details = "status=${synced.status.name}")
             }
 
     override suspend fun deleteTaskRemote(id: Long): ApiResult<Unit> =
@@ -192,7 +216,10 @@ class TaskRepositoryImpl @Inject constructor(
             .onSuccess {
                 deleteTask(id)
                 notificationScheduler.cancelDeadlineReminder(id)
+                auditLogger.logDelete(currentActorId(), "TASK", id)
             }
+
+    private suspend fun currentActorId(): Long? = tokenManager.getUserId()
 
     private fun Task.toEntity() = TaskEntity(
         id = id,
