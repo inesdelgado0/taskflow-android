@@ -1,0 +1,7 @@
+fix: disable foreign keys during bulk sync to prevent SQLITE_CONSTRAINT_TRIGGER (code 1811)
+
+- Added withForeignKeysDisabled() to AppDatabase using PRAGMA foreign_keys = OFF/ON
+- Wrapped PopulateLocalDatabaseUseCase sync in withForeignKeysDisabled block
+- Added UserDao FK pre-checks in TaskRepositoryImpl, ProjectRepositoryImpl,
+  ObservationRepositoryImpl and EvaluationRepositoryImpl
+- Added fallback to individual inserts when batch upsertAll fails with FK

@@ -1,6 +1,8 @@
 package com.taskflow.app.data.repository
 
+import android.database.sqlite.SQLiteConstraintException
 import com.taskflow.app.data.local.dao.EvaluationDao
+import com.taskflow.app.data.local.dao.UserDao
 import com.taskflow.app.data.local.entity.EvaluationEntity
 import com.taskflow.app.data.remote.api.EvaluationApi
 import com.taskflow.app.data.remote.dto.EvaluationDto
@@ -17,6 +19,7 @@ import javax.inject.Inject
 
 class EvaluationRepositoryImpl @Inject constructor(
     private val evaluationDao: EvaluationDao,
+    private val userDao: UserDao,
     private val evaluationApi: EvaluationApi
 ) : EvaluationRepository {
 
@@ -41,7 +44,19 @@ class EvaluationRepositoryImpl @Inject constructor(
     override suspend fun refreshEvaluations(projectId: Long): ApiResult<List<Evaluation>> =
         safeApiCall { evaluationApi.getProjectEvaluations(projectId) }
             .map { evaluations -> evaluations.map { it.toDomain() } }
-            .onSuccess { evaluations -> evaluationDao.upsertAll(evaluations.map { it.toEntity() }) }
+            .onSuccess { evaluations ->
+                runCatching {
+                    evaluationDao.upsertAll(evaluations.map { it.toEntity() })
+                }.onFailure { e ->
+                    if (e is SQLiteConstraintException) {
+                        evaluations.forEach { eval ->
+                            if (userDao.getById(eval.evaluatorId) != null && userDao.getById(eval.evaluatedUserId) != null) {
+                                runCatching { evaluationDao.upsert(eval.toEntity()) }
+                            }
+                        }
+                    }
+                }
+            }
 
     override suspend fun pushEvaluation(evaluation: Evaluation): ApiResult<Evaluation> =
         safeApiCall { evaluationApi.evaluateUser(evaluation.evaluatedUserId, evaluation.toRequest()) }
