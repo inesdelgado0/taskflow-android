@@ -1,6 +1,8 @@
 package com.taskflow.app.data.repository
 
+import android.database.sqlite.SQLiteConstraintException
 import com.taskflow.app.data.local.dao.ProjectDao
+import com.taskflow.app.data.local.dao.UserDao
 import com.taskflow.app.data.local.dao.UserProjectDao
 import com.taskflow.app.data.local.entity.ProjectEntity
 import com.taskflow.app.data.local.entity.UserProjectEntity
@@ -23,6 +25,7 @@ import javax.inject.Inject
 
 class ProjectRepositoryImpl @Inject constructor(
     private val projectDao: ProjectDao,
+    private val userDao: UserDao,
     private val userProjectDao: UserProjectDao,
     private val projectApi: ProjectApi
 ) : ProjectRepository {
@@ -64,7 +67,18 @@ class ProjectRepositoryImpl @Inject constructor(
     override suspend fun refreshProjects(): ApiResult<List<Project>> =
         safeApiCall { projectApi.getProjects() }
             .map { projects -> projects.map { it.toDomain() } }
-            .onSuccess { projects -> projectDao.upsertAll(projects.map { it.toEntity() }) }
+            .onSuccess { projects ->
+                runCatching {
+                    projectDao.upsertAll(projects.map { it.toEntity() })
+                }.onFailure { e ->
+                    if (e is SQLiteConstraintException) {
+                        projects.forEach { project ->
+                            runCatching { projectDao.upsert(project.toEntity()) }
+                                .onFailure { /* FK fail — manager/createdBy user may not exist locally */ }
+                        }
+                    }
+                }
+            }
 
     override suspend fun pushProject(project: Project): ApiResult<Project> {
         val result = if (project.id == 0L) {
@@ -88,6 +102,23 @@ class ProjectRepositoryImpl @Inject constructor(
             .map { users -> users.map { it.id } }
             .onSuccess { userIds ->
                 userIds.forEach { userId ->
+                    if (userDao.getById(userId) != null) {
+                        userProjectDao.upsert(
+                            UserProjectEntity(
+                                userId = userId,
+                                projectId = projectId,
+                                joinedAt = System.currentTimeMillis()
+                            )
+                        )
+                    }
+                }
+            }
+
+    override suspend fun assignUserToProjectRemote(projectId: Long, userId: Long): ApiResult<Unit> =
+        safeApiCall { projectApi.assignUser(projectId, AssignUserRequest(userId)) }
+            .map { Unit }
+            .onSuccess {
+                if (userDao.getById(userId) != null) {
                     userProjectDao.upsert(
                         UserProjectEntity(
                             userId = userId,
@@ -96,19 +127,6 @@ class ProjectRepositoryImpl @Inject constructor(
                         )
                     )
                 }
-            }
-
-    override suspend fun assignUserToProjectRemote(projectId: Long, userId: Long): ApiResult<Unit> =
-        safeApiCall { projectApi.assignUser(projectId, AssignUserRequest(userId)) }
-            .map { Unit }
-            .onSuccess {
-                userProjectDao.upsert(
-                    UserProjectEntity(
-                        userId = userId,
-                        projectId = projectId,
-                        joinedAt = System.currentTimeMillis()
-                    )
-                )
             }
 
     override suspend fun removeUserFromProjectRemote(projectId: Long, userId: Long): ApiResult<Unit> =

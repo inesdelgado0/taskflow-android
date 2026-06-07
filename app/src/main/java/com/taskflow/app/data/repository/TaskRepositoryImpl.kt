@@ -1,6 +1,8 @@
 package com.taskflow.app.data.repository
 
+import android.database.sqlite.SQLiteConstraintException
 import com.taskflow.app.data.local.dao.TaskDao
+import com.taskflow.app.data.local.dao.UserDao
 import com.taskflow.app.data.local.dao.UserTaskDao
 import com.taskflow.app.data.local.entity.TaskEntity
 import com.taskflow.app.data.local.entity.UserTaskEntity
@@ -25,6 +27,7 @@ import javax.inject.Inject
 
 class TaskRepositoryImpl @Inject constructor(
     private val taskDao: TaskDao,
+    private val userDao: UserDao,
     private val userTaskDao: UserTaskDao,
     private val taskApi: TaskApi,
     private val notificationScheduler: TaskNotificationScheduler
@@ -85,7 +88,17 @@ class TaskRepositoryImpl @Inject constructor(
         safeApiCall { taskApi.getProjectTasks(projectId) }
             .map { tasks -> tasks.map { it.toDomain() } }
             .onSuccess { tasks ->
-                taskDao.upsertAll(tasks.map { it.toEntity() })
+                runCatching {
+                    taskDao.upsertAll(tasks.map { it.toEntity() })
+                }.onFailure { e ->
+                    if (e is SQLiteConstraintException) {
+                        // Tentar inserir uma a uma, ignorando as que falham por FK
+                        tasks.forEach { task ->
+                            runCatching { taskDao.upsert(task.toEntity()) }
+                                .onFailure { /* ignora falhas de FK — user remoto pode não existir localmente */ }
+                        }
+                    }
+                }
                 tasks.forEach { notificationScheduler.scheduleDeadlineReminder(it) }
             }
 
@@ -130,6 +143,24 @@ class TaskRepositoryImpl @Inject constructor(
             .map { users -> users.map { it.id } }
             .onSuccess { userIds ->
                 userIds.forEach { userId ->
+                    // Só inserir na junction se o user existir localmente (evita FK constraint)
+                    if (userDao.getById(userId) != null) {
+                        userTaskDao.upsert(
+                            UserTaskEntity(
+                                userId = userId,
+                                taskId = taskId,
+                                updatedAt = System.currentTimeMillis()
+                            )
+                        )
+                    }
+                }
+            }
+
+    override suspend fun assignUserToTaskRemote(taskId: Long, userId: Long): ApiResult<Unit> =
+        safeApiCall { taskApi.assignUser(taskId, AssignUserRequest(userId)) }
+            .map { Unit }
+            .onSuccess {
+                if (userDao.getById(userId) != null) {
                     userTaskDao.upsert(
                         UserTaskEntity(
                             userId = userId,
@@ -138,19 +169,6 @@ class TaskRepositoryImpl @Inject constructor(
                         )
                     )
                 }
-            }
-
-    override suspend fun assignUserToTaskRemote(taskId: Long, userId: Long): ApiResult<Unit> =
-        safeApiCall { taskApi.assignUser(taskId, AssignUserRequest(userId)) }
-            .map { Unit }
-            .onSuccess {
-                userTaskDao.upsert(
-                    UserTaskEntity(
-                        userId = userId,
-                        taskId = taskId,
-                        updatedAt = System.currentTimeMillis()
-                    )
-                )
             }
 
     override suspend fun removeUserFromTaskRemote(taskId: Long, userId: Long): ApiResult<Unit> =
