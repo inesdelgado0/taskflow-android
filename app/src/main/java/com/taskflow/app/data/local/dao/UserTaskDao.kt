@@ -51,4 +51,7 @@ interface UserTaskDao {
 
     @Query("DELETE FROM user_task WHERE task_id = :taskId")
     suspend fun deleteAllForTask(taskId: Long)
+
+    @Query("DELETE FROM user_task WHERE task_id = :taskId AND user_id = :userId")
+    suspend fun delete(taskId: Long, userId: Long)
 }

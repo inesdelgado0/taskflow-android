@@ -44,6 +44,21 @@ data class UpdateProfileRequest(
     @SerializedName("password")  val password: String? = null
 )
 
+data class UserRequest(
+    @SerializedName("name")      val name: String,
+    @SerializedName("username")  val username: String,
+    @SerializedName("email")     val email: String,
+    @SerializedName("password")  val password: String? = null,
+    @SerializedName("role")      val role: String = "USER",
+    @SerializedName("roles")     val roles: List<String> = listOf(role),
+    @SerializedName("photo_url") val photoUrl: String? = null,
+    @SerializedName("is_active") val isActive: Boolean = true
+)
+
+data class UserRolesRequest(
+    @SerializedName("roles") val roles: List<String>
+)
+
 data class RefreshTokenRequest(
     @SerializedName("refresh_token") val refreshToken: String
 )

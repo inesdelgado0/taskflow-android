@@ -24,6 +24,8 @@ class PopulateLocalDatabaseUseCase @Inject constructor(
         }
 
         projects.forEach { project ->
+            projectRepository.refreshProjectUsers(project.id)
+
             val tasks = when (val result = taskRepository.refreshTasks(project.id)) {
                 is ApiResult.Success -> result.data
                 else -> emptyList()
@@ -31,6 +33,7 @@ class PopulateLocalDatabaseUseCase @Inject constructor(
 
             evaluationRepository.refreshEvaluations(project.id)
             tasks.forEach { task ->
+                taskRepository.refreshTaskUsers(task.id)
                 observationRepository.refreshObservations(task.id)
             }
         }

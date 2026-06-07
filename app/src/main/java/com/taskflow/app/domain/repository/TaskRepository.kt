@@ -24,6 +24,17 @@ interface TaskRepository {
     suspend fun updateTaskStatus(id: Long, status: TaskStatus)
     suspend fun refreshTasks(projectId: Long): ApiResult<List<Task>>
     suspend fun pushTask(task: Task): ApiResult<Task>
+    suspend fun pushTaskProgress(
+        taskId: Long,
+        userId: Long,
+        workDate: Long?,
+        location: String?,
+        completionPercentage: Int,
+        timeSpentMinutes: Int
+    ): ApiResult<Unit>
+    suspend fun refreshTaskUsers(taskId: Long): ApiResult<List<Long>>
+    suspend fun assignUserToTaskRemote(taskId: Long, userId: Long): ApiResult<Unit>
+    suspend fun removeUserFromTaskRemote(taskId: Long, userId: Long): ApiResult<Unit>
     suspend fun updateTaskStatusRemote(id: Long, status: TaskStatus): ApiResult<Task>
     suspend fun deleteTaskRemote(id: Long): ApiResult<Unit>
 }

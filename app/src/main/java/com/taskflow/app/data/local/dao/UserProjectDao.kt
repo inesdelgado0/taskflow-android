@@ -15,6 +15,9 @@ interface UserProjectDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(userProject: UserProjectEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(userProject: UserProjectEntity)
+
     @Delete
     suspend fun delete(userProject: UserProjectEntity)
 
@@ -29,5 +32,8 @@ interface UserProjectDao {
 
     @Query("DELETE FROM user_project WHERE project_id = :projectId")
     suspend fun deleteAllForProject(projectId: Long)
+
+    @Query("DELETE FROM user_project WHERE project_id = :projectId AND user_id = :userId")
+    suspend fun delete(projectId: Long, userId: Long)
 }
 

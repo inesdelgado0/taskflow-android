@@ -1,9 +1,13 @@
 package com.taskflow.app.data.repository
 
 import com.taskflow.app.data.local.dao.TaskDao
+import com.taskflow.app.data.local.dao.UserTaskDao
 import com.taskflow.app.data.local.entity.TaskEntity
+import com.taskflow.app.data.local.entity.UserTaskEntity
 import com.taskflow.app.data.remote.api.TaskApi
+import com.taskflow.app.data.remote.dto.AssignUserRequest
 import com.taskflow.app.data.remote.dto.TaskDto
+import com.taskflow.app.data.remote.dto.TaskProgressRequest
 import com.taskflow.app.data.remote.dto.TaskRequest
 import com.taskflow.app.data.remote.dto.TaskStatusRequest
 import com.taskflow.app.domain.model.Task
@@ -21,6 +25,7 @@ import javax.inject.Inject
 
 class TaskRepositoryImpl @Inject constructor(
     private val taskDao: TaskDao,
+    private val userTaskDao: UserTaskDao,
     private val taskApi: TaskApi,
     private val notificationScheduler: TaskNotificationScheduler
 ) : TaskRepository {
@@ -98,6 +103,59 @@ class TaskRepositoryImpl @Inject constructor(
                 notificationScheduler.scheduleDeadlineReminder(synced)
             }
     }
+
+    override suspend fun pushTaskProgress(
+        taskId: Long,
+        userId: Long,
+        workDate: Long?,
+        location: String?,
+        completionPercentage: Int,
+        timeSpentMinutes: Int
+    ): ApiResult<Unit> =
+        safeApiCall {
+            taskApi.updateProgress(
+                taskId,
+                TaskProgressRequest(
+                    userId = userId,
+                    workDate = workDate,
+                    location = location,
+                    completionPercentage = completionPercentage,
+                    timeSpentMinutes = timeSpentMinutes
+                )
+            )
+        }.map { Unit }
+
+    override suspend fun refreshTaskUsers(taskId: Long): ApiResult<List<Long>> =
+        safeApiCall { taskApi.getTaskUsers(taskId) }
+            .map { users -> users.map { it.id } }
+            .onSuccess { userIds ->
+                userIds.forEach { userId ->
+                    userTaskDao.upsert(
+                        UserTaskEntity(
+                            userId = userId,
+                            taskId = taskId,
+                            updatedAt = System.currentTimeMillis()
+                        )
+                    )
+                }
+            }
+
+    override suspend fun assignUserToTaskRemote(taskId: Long, userId: Long): ApiResult<Unit> =
+        safeApiCall { taskApi.assignUser(taskId, AssignUserRequest(userId)) }
+            .map { Unit }
+            .onSuccess {
+                userTaskDao.upsert(
+                    UserTaskEntity(
+                        userId = userId,
+                        taskId = taskId,
+                        updatedAt = System.currentTimeMillis()
+                    )
+                )
+            }
+
+    override suspend fun removeUserFromTaskRemote(taskId: Long, userId: Long): ApiResult<Unit> =
+        safeApiCall { taskApi.removeUser(taskId, userId) }
+            .onSuccess { userTaskDao.delete(taskId, userId) }
 
     override suspend fun updateTaskStatusRemote(id: Long, status: TaskStatus): ApiResult<Task> =
         safeApiCall { taskApi.updateStatus(id, TaskStatusRequest(status)) }

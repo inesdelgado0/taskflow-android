@@ -2,6 +2,8 @@ package com.taskflow.app.ui.common
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.taskflow.app.data.local.dao.UserProjectDao
+import com.taskflow.app.data.local.dao.UserTaskDao
 import com.taskflow.app.domain.model.Evaluation
 import com.taskflow.app.domain.model.Observation
 import com.taskflow.app.domain.model.Project
@@ -16,6 +18,7 @@ import com.taskflow.app.domain.usecase.sync.PopulateLocalDatabaseUseCase
 import com.taskflow.app.domain.util.ProjectStatus
 import com.taskflow.app.domain.util.TaskPriority
 import com.taskflow.app.domain.util.TaskStatus
+import com.taskflow.app.domain.util.UserRole
 import com.taskflow.app.data.remote.TokenManager
 import com.taskflow.app.util.ApiResult
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -39,8 +42,11 @@ data class TaskFlowDataUiState(
     val currentUser: User? = null,
     val observations: List<Observation> = emptyList(),
     val evaluations: List<Evaluation> = emptyList(),
+    val selectedProjectUserIds: List<Long> = emptyList(),
+    val selectedTaskUserIds: List<Long> = emptyList(),
     val selectedProjectId: Long? = null,
     val selectedTaskId: Long? = null,
+    val selectedUserId: Long? = null,
     val isRefreshing: Boolean = false,
     val refreshError: String? = null
 )
@@ -50,7 +56,9 @@ private data class TaskFlowDataCore(
     val tasks: List<Task>,
     val users: List<User>,
     val observations: List<Observation>,
-    val evaluations: List<Evaluation>
+    val evaluations: List<Evaluation>,
+    val selectedProjectUserIds: List<Long>,
+    val selectedTaskUserIds: List<Long>
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -62,10 +70,13 @@ class TaskFlowDataViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val observationRepository: ObservationRepository,
     private val evaluationRepository: EvaluationRepository,
+    private val userProjectDao: UserProjectDao,
+    private val userTaskDao: UserTaskDao,
     private val tokenManager: TokenManager
 ) : ViewModel() {
     private val selectedProjectId = MutableStateFlow<Long?>(null)
     private val selectedTaskId = MutableStateFlow<Long?>(null)
+    private val selectedUserId = MutableStateFlow<Long?>(null)
     private val currentUserId = MutableStateFlow<Long?>(null)
     private val transient = MutableStateFlow(TaskFlowDataUiState())
 
@@ -86,14 +97,31 @@ class TaskFlowDataViewModel @Inject constructor(
         if (projectId == null || projectId == 0L) flowOf(emptyList())
         else evaluationRepository.getEvaluationsByProjectFlow(projectId)
     }
+    private val selectedProjectUsers = selectedProjectId.flatMapLatest { projectId ->
+        if (projectId == null || projectId == 0L) flowOf(emptyList())
+        else userProjectDao.getUsersByProjectFlow(projectId)
+    }
+    private val selectedTaskUsers = selectedTaskId.flatMapLatest { taskId ->
+        if (taskId == null || taskId == 0L) flowOf(emptyList())
+        else userTaskDao.getUsersByTaskFlow(taskId)
+    }
 
     private val core = combine(
         projects,
         tasks,
         users,
         observations,
-        evaluations
-    ) { projectsValue, tasksValue, usersValue, observationsValue, evaluationsValue ->
+        evaluations,
+        selectedProjectUsers,
+        selectedTaskUsers
+    ) { values ->
+        val projectsValue = values[0] as List<Project>
+        val tasksValue = values[1] as List<Task>
+        val usersValue = values[2] as List<User>
+        val observationsValue = values[3] as List<Observation>
+        val evaluationsValue = values[4] as List<Evaluation>
+        val selectedProjectUsersValue = values[5] as List<com.taskflow.app.data.local.entity.UserProjectEntity>
+        val selectedTaskUsersValue = values[6] as List<com.taskflow.app.data.local.entity.UserTaskEntity>
         val projectId = selectedProjectId.value
             .takeIf { id -> id != null && projectsValue.any { it.id == id } }
 
@@ -114,7 +142,9 @@ class TaskFlowDataViewModel @Inject constructor(
             tasks = tasksValue,
             users = usersValue,
             observations = observationsValue,
-            evaluations = evaluationsValue
+            evaluations = evaluationsValue,
+            selectedProjectUserIds = selectedProjectUsersValue.map { it.userId },
+            selectedTaskUserIds = selectedTaskUsersValue.map { it.userId }
         )
     }
 
@@ -126,8 +156,11 @@ class TaskFlowDataViewModel @Inject constructor(
             currentUser = coreValue.users.firstOrNull { user -> user.id == currentUserIdValue },
             observations = coreValue.observations,
             evaluations = coreValue.evaluations,
+            selectedProjectUserIds = coreValue.selectedProjectUserIds,
+            selectedTaskUserIds = coreValue.selectedTaskUserIds,
             selectedProjectId = selectedProjectId.value,
-            selectedTaskId = selectedTaskId.value
+            selectedTaskId = selectedTaskId.value,
+            selectedUserId = selectedUserId.value
         )
     }.stateIn(
         scope = viewModelScope,
@@ -168,6 +201,10 @@ class TaskFlowDataViewModel @Inject constructor(
         selectedTaskId.value = taskId
     }
 
+    fun selectUser(userId: Long) {
+        selectedUserId.value = userId
+    }
+
     fun saveProject(
         existing: Project?,
         name: String,
@@ -184,7 +221,7 @@ class TaskFlowDataViewModel @Inject constructor(
         viewModelScope.launch {
             transient.update { it.copy(isRefreshing = true, refreshError = null) }
             val now = System.currentTimeMillis()
-            val creatorId = existing?.createdBy ?: uiState.value.users.firstOrNull()?.id ?: 1L
+            val creatorId = existing?.createdBy ?: uiState.value.currentUser?.id ?: uiState.value.users.firstOrNull()?.id ?: 1L
             val project = Project(
                 id = existing?.id ?: 0L,
                 name = cleanedName,
@@ -253,6 +290,7 @@ class TaskFlowDataViewModel @Inject constructor(
         description: String?,
         priority: TaskPriority = TaskPriority.MEDIUM,
         status: TaskStatus = TaskStatus.PENDING,
+        deadline: Long? = existing?.deadline,
         onDone: () -> Unit = {}
     ) {
         val cleanedTitle = title.trim()
@@ -262,15 +300,15 @@ class TaskFlowDataViewModel @Inject constructor(
         viewModelScope.launch {
             transient.update { it.copy(isRefreshing = true, refreshError = null) }
             val now = System.currentTimeMillis()
-            val creatorId = existing?.createdBy ?: uiState.value.users.firstOrNull()?.id ?: 1L
+            val creatorId = existing?.createdBy ?: uiState.value.currentUser?.id ?: uiState.value.users.firstOrNull()?.id ?: 1L
             val task = Task(
                 id = existing?.id ?: 0L,
                 projectId = projectId,
                 title = cleanedTitle,
                 description = description?.trim()?.ifBlank { null },
-                priority = existing?.priority ?: priority,
-                deadline = existing?.deadline,
-                status = existing?.status ?: status,
+                priority = priority,
+                deadline = deadline,
+                status = status,
                 createdBy = creatorId,
                 createdAt = existing?.createdAt ?: now,
                 updatedAt = now
@@ -281,6 +319,112 @@ class TaskFlowDataViewModel @Inject constructor(
                     transient.update { it.copy(isRefreshing = false, refreshError = null) }
                     onDone()
                 }
+                is ApiResult.Error -> transient.update { it.copy(isRefreshing = false, refreshError = result.error.message) }
+            }
+        }
+    }
+
+    fun saveUser(
+        existing: User?,
+        name: String,
+        username: String,
+        email: String,
+        role: UserRole,
+        password: String?,
+        photoUrl: String?,
+        isActive: Boolean = existing?.isActive ?: true,
+        onDone: () -> Unit = {}
+    ) {
+        val cleanedName = name.trim()
+        val cleanedUsername = username.trim()
+        val cleanedEmail = email.trim()
+        if (cleanedName.isBlank() || cleanedUsername.isBlank() || cleanedEmail.isBlank()) return
+        if (existing == null && password.isNullOrBlank()) return
+
+        viewModelScope.launch {
+            transient.update { it.copy(isRefreshing = true, refreshError = null) }
+            val now = System.currentTimeMillis()
+            val user = User(
+                id = existing?.id ?: 0L,
+                name = cleanedName,
+                username = cleanedUsername,
+                email = cleanedEmail,
+                passwordHash = existing?.passwordHash ?: "",
+                photoUrl = photoUrl,
+                role = role,
+                roles = listOf(role),
+                isActive = isActive,
+                createdAt = existing?.createdAt ?: now,
+                updatedAt = now
+            )
+
+            when (val result = userRepository.pushUser(user, password)) {
+                is ApiResult.Success -> {
+                    transient.update { it.copy(isRefreshing = false, refreshError = null) }
+                    onDone()
+                }
+                is ApiResult.Error -> transient.update { it.copy(isRefreshing = false, refreshError = result.error.message) }
+            }
+        }
+    }
+
+    fun deleteUser(user: User?, onDone: () -> Unit = {}) {
+        val id = user?.id?.takeIf { it != 0L } ?: return
+        viewModelScope.launch {
+            transient.update { it.copy(isRefreshing = true, refreshError = null) }
+            when (val result = userRepository.deleteUserRemote(id)) {
+                is ApiResult.Success -> {
+                    transient.update { it.copy(isRefreshing = false, refreshError = null) }
+                    onDone()
+                }
+                is ApiResult.Error -> transient.update { it.copy(isRefreshing = false, refreshError = result.error.message) }
+            }
+        }
+    }
+
+    fun assignUserToProject(project: Project?, user: User?) {
+        val projectId = project?.id?.takeIf { it != 0L } ?: return
+        val userId = user?.id?.takeIf { it != 0L } ?: return
+        viewModelScope.launch {
+            transient.update { it.copy(isRefreshing = true, refreshError = null) }
+            when (val result = projectRepository.assignUserToProjectRemote(projectId, userId)) {
+                is ApiResult.Success -> transient.update { it.copy(isRefreshing = false, refreshError = null) }
+                is ApiResult.Error -> transient.update { it.copy(isRefreshing = false, refreshError = result.error.message) }
+            }
+        }
+    }
+
+    fun removeUserFromProject(project: Project?, user: User?) {
+        val projectId = project?.id?.takeIf { it != 0L } ?: return
+        val userId = user?.id?.takeIf { it != 0L } ?: return
+        viewModelScope.launch {
+            transient.update { it.copy(isRefreshing = true, refreshError = null) }
+            when (val result = projectRepository.removeUserFromProjectRemote(projectId, userId)) {
+                is ApiResult.Success -> transient.update { it.copy(isRefreshing = false, refreshError = null) }
+                is ApiResult.Error -> transient.update { it.copy(isRefreshing = false, refreshError = result.error.message) }
+            }
+        }
+    }
+
+    fun assignUserToTask(task: Task?, user: User?) {
+        val taskId = task?.id?.takeIf { it != 0L } ?: return
+        val userId = user?.id?.takeIf { it != 0L } ?: return
+        viewModelScope.launch {
+            transient.update { it.copy(isRefreshing = true, refreshError = null) }
+            when (val result = taskRepository.assignUserToTaskRemote(taskId, userId)) {
+                is ApiResult.Success -> transient.update { it.copy(isRefreshing = false, refreshError = null) }
+                is ApiResult.Error -> transient.update { it.copy(isRefreshing = false, refreshError = result.error.message) }
+            }
+        }
+    }
+
+    fun removeUserFromTask(task: Task?, user: User?) {
+        val taskId = task?.id?.takeIf { it != 0L } ?: return
+        val userId = user?.id?.takeIf { it != 0L } ?: return
+        viewModelScope.launch {
+            transient.update { it.copy(isRefreshing = true, refreshError = null) }
+            when (val result = taskRepository.removeUserFromTaskRemote(taskId, userId)) {
+                is ApiResult.Success -> transient.update { it.copy(isRefreshing = false, refreshError = null) }
                 is ApiResult.Error -> transient.update { it.copy(isRefreshing = false, refreshError = result.error.message) }
             }
         }
@@ -313,7 +457,7 @@ class TaskFlowDataViewModel @Inject constructor(
 
     fun createObservation(task: Task?, text: String, onDone: () -> Unit = {}) {
         val targetTask = task ?: return
-        val userId = uiState.value.users.firstOrNull()?.id ?: return
+        val userId = uiState.value.currentUser?.id ?: uiState.value.users.firstOrNull()?.id ?: return
         val cleanedText = text.trim()
         if (cleanedText.isBlank()) return
 
