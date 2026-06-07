@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,6 +39,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
@@ -47,7 +49,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -58,6 +66,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -188,25 +197,75 @@ fun AdminDashboardScreen(nav: NavController, onLogout: () -> Unit) {
 fun AdminProjectsScreen(nav: NavController) {
     val viewModel: TaskFlowDataViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsState()
-    ListScreen(
-        title = stringResource(R.string.projects_title),
-        actionText = stringResource(R.string.new_action),
-        onBack = { nav.popBackStack() },
-        onAction = { nav.navigate(Routes.ADMIN_PROJECT_CREATE) }
-    ) {
-        SyncStatus(state)
-        SearchField(stringResource(R.string.search_projects_hint))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            MiniSelect(stringResource(R.string.all_statuses), Modifier.weight(1f))
-            MiniSelect(stringResource(R.string.all_managers), Modifier.weight(1f))
-        }
-        state.projects.forEach { project ->
-            ProjectListItem(project, state.tasks) {
-                viewModel.selectProject(project.id)
-                nav.navigate(Routes.ADMIN_PROJECT_DETAILS)
+    var query by rememberSaveable { androidx.compose.runtime.mutableStateOf("") }
+    var selectedStatus by rememberSaveable { androidx.compose.runtime.mutableStateOf<ProjectStatus?>(null) }
+    var selectedManagerId by rememberSaveable { androidx.compose.runtime.mutableStateOf<Long?>(null) }
+    val managers = state.users.projectManagers()
+    val filteredProjects = state.projects
+        .filter { project -> query.isBlank() || project.name.contains(query, ignoreCase = true) }
+        .filter { project -> selectedStatus == null || project.status == selectedStatus }
+        .filter { project -> selectedManagerId == null || project.managerId == selectedManagerId }
+
+    Column(Modifier.fillMaxSize().background(Page)) {
+        TopBar(
+            title = stringResource(R.string.projects_title),
+            onBack = { nav.popBackStack() },
+            actionText = stringResource(R.string.new_action),
+            onAction = { nav.navigate(Routes.ADMIN_PROJECT_CREATE) }
+        )
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    SyncStatus(state)
+                    SearchField(
+                        placeholder = stringResource(R.string.search_projects_hint),
+                        value = query,
+                        onValueChange = { query = it }
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                        ProjectFilterDropdown(
+                            selectedText = selectedStatus?.label() ?: stringResource(R.string.all_statuses),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            DropdownMenuItem(text = { Text(stringResource(R.string.all_statuses)) }, onClick = { selectedStatus = null })
+                            ProjectStatus.entries.forEach { status ->
+                                DropdownMenuItem(text = { Text(status.label()) }, onClick = { selectedStatus = status })
+                            }
+                        }
+                        ProjectFilterDropdown(
+                            selectedText = managers.firstOrNull { it.id == selectedManagerId }?.name ?: stringResource(R.string.all_managers),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            DropdownMenuItem(text = { Text(stringResource(R.string.all_managers)) }, onClick = { selectedManagerId = null })
+                            managers.forEach { manager ->
+                                DropdownMenuItem(text = { Text(manager.name) }, onClick = { selectedManagerId = manager.id })
+                            }
+                        }
+                    }
+                }
+            }
+            items(filteredProjects, key = { it.id }) { project ->
+                ProjectListItem(
+                    project = project,
+                    allTasks = state.tasks,
+                    managerName = state.users.managerName(project.managerId),
+                    onEdit = {
+                        viewModel.selectProject(project.id)
+                        nav.navigate(Routes.ADMIN_PROJECT_EDIT)
+                    },
+                    onDetails = {
+                        viewModel.selectProject(project.id)
+                        nav.navigate(Routes.ADMIN_PROJECT_DETAILS)
+                    }
+                )
+            }
+            if (filteredProjects.isEmpty()) {
+                item { EmptyData() }
             }
         }
-        if (state.projects.isEmpty()) EmptyData()
     }
 }
 
@@ -464,37 +523,85 @@ fun ProjectFormScreen(nav: NavController, edit: Boolean) {
     val viewModel: TaskFlowDataViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsState()
     val project = state.projects.firstOrNull { it.id == state.selectedProjectId } ?: state.projects.firstOrNull()
+    val managers = state.users.projectManagers()
     var name by rememberSaveable(project?.id, edit) { androidx.compose.runtime.mutableStateOf(if (edit) project?.name.orEmpty() else "") }
     var description by rememberSaveable(project?.id, edit) { androidx.compose.runtime.mutableStateOf(if (edit) project?.description.orEmpty() else "") }
+    var startDate by rememberSaveable(project?.id, edit) { androidx.compose.runtime.mutableStateOf(if (edit) project?.startDate else null) }
+    var endDate by rememberSaveable(project?.id, edit) { androidx.compose.runtime.mutableStateOf(if (edit) project?.endDate else null) }
+    var selectedManagerId by rememberSaveable(project?.id, edit) { androidx.compose.runtime.mutableStateOf(if (edit) project?.managerId else null) }
+    var selectedStatus by rememberSaveable(project?.id, edit) { androidx.compose.runtime.mutableStateOf(if (edit) project?.status ?: ProjectStatus.ACTIVE else ProjectStatus.ACTIVE) }
     FormScreen(if (edit) stringResource(R.string.edit_project) else stringResource(R.string.create_project), onBack = { nav.popBackStack() }) {
         SyncStatus(state)
-        Field(stringResource(R.string.project_label_name), name, onValueChange = { name = it })
-        Field(stringResource(R.string.project_label_description), description, onValueChange = { description = it }, minLines = 3)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            Field(stringResource(R.string.start_date), "", Modifier.weight(1f))
-            Field(stringResource(R.string.end_date), "", Modifier.weight(1f))
-        }
-        Field(stringResource(R.string.project_label_manager), if (edit) "" else stringResource(R.string.assign_manager_hint))
-        Field(stringResource(R.string.project_label_status), "")
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            Button(
-                onClick = {
-                    viewModel.saveProject(
-                        existing = if (edit) project else null,
-                        name = name,
-                        description = description,
-                        managerId = project?.managerId,
-                        onDone = { nav.popBackStack() }
-                    )
-                },
-                modifier = Modifier.weight(1f).height(52.dp),
-                colors = ButtonDefaults.buttonColors(Blue),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text(if (edit) stringResource(R.string.save_changes) else stringResource(R.string.create_project))
+        SectionCard("") {
+            Field(
+                stringResource(R.string.project_label_name),
+                name,
+                placeholder = if (edit) "" else "Ex: Website Redesign",
+                onValueChange = { name = it }
+            )
+            Field(
+                stringResource(R.string.project_label_description),
+                description,
+                placeholder = if (edit) "" else "Descricao detalhada do projeto",
+                onValueChange = { description = it },
+                minLines = 4
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                DatePickerField(
+                    label = stringResource(R.string.start_date),
+                    value = startDate,
+                    onDateSelected = { startDate = it },
+                    modifier = Modifier.weight(1f)
+                )
+                DatePickerField(
+                    label = stringResource(R.string.end_date),
+                    value = endDate,
+                    onDateSelected = { endDate = it },
+                    modifier = Modifier.weight(1f)
+                )
             }
-            OutlinedButton(onClick = { nav.popBackStack() }, modifier = Modifier.weight(1f).height(52.dp), shape = RoundedCornerShape(8.dp)) {
-                Text(stringResource(R.string.btn_cancel))
+            DropdownSelector(
+                label = if (edit) "Gestor de Projeto (RF04)" else stringResource(R.string.project_label_manager),
+                selectedText = managers.firstOrNull { it.id == selectedManagerId }?.name.orEmpty(),
+                helperText = if (edit) "" else stringResource(R.string.assign_manager_hint)
+            ) {
+                DropdownMenuItem(text = { Text(stringResource(R.string.assign_manager_hint)) }, onClick = { selectedManagerId = null })
+                managers.forEach { manager ->
+                    DropdownMenuItem(text = { Text(manager.name) }, onClick = { selectedManagerId = manager.id })
+                }
+            }
+            DropdownSelector(
+                label = stringResource(R.string.project_label_status),
+                selectedText = selectedStatus.label()
+            ) {
+                ProjectStatus.entries.forEach { status ->
+                    DropdownMenuItem(text = { Text(status.label()) }, onClick = { selectedStatus = status })
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                Button(
+                    onClick = {
+                        viewModel.saveProject(
+                            existing = if (edit) project else null,
+                            name = name,
+                            description = description,
+                            startDate = startDate,
+                            endDate = endDate,
+                            managerId = selectedManagerId,
+                            status = selectedStatus,
+                            onDone = { nav.popBackStack() }
+                        )
+                    },
+                    modifier = Modifier.weight(1f).height(52.dp),
+                    colors = ButtonDefaults.buttonColors(Blue),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(if (edit) stringResource(R.string.save_changes) else stringResource(R.string.create_project), textAlign = TextAlign.Center)
+                }
+                OutlinedButton(onClick = { nav.popBackStack() }, modifier = Modifier.weight(1f).height(52.dp), shape = RoundedCornerShape(8.dp)) {
+                    Text(stringResource(R.string.btn_cancel))
+                }
             }
         }
     }
@@ -506,33 +613,53 @@ fun AdminProjectDetailsScreen(nav: NavController) {
     val state by viewModel.uiState.collectAsState()
     val project = state.projects.firstOrNull { it.id == state.selectedProjectId } ?: state.projects.firstOrNull()
     val projectTasks = state.tasks.filter { it.projectId == project?.id }
+    val managerName = state.users.managerName(project?.managerId)
+    var showDeleteDialog by rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+
+    if (showDeleteDialog && project != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text(stringResource(R.string.dialog_delete_title)) },
+            text = { Text(stringResource(R.string.dialog_delete_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        viewModel.deleteProject(project) { nav.popBackStack() }
+                    }
+                ) {
+                    Text(stringResource(R.string.btn_delete), color = Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text(stringResource(R.string.btn_cancel))
+                }
+            }
+        )
+    }
+
     FormScreen(stringResource(R.string.project_details), onBack = { nav.popBackStack() }) {
         if (project == null) {
             EmptyData()
             return@FormScreen
         }
-        SectionCard(project.name) {
-            StatusPill(project.status.name, project.status.color())
-            Text(project.description.orEmpty(), color = Muted)
-            TwoMetrics(stringResource(R.string.start_date), project.startDate.displayDate(), stringResource(R.string.end_date), project.endDate.displayDate())
-            TwoMetrics(stringResource(R.string.tasks_title), projectTasks.size.toString(), stringResource(R.string.dashboard_completed), projectTasks.count { it.status == TaskStatus.COMPLETED }.toString())
-            val rate = projectTasks.completionRate()
-            ProgressLine(stringResource(R.string.progress_label), "$rate%", rate / 100f)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                Button(onClick = { nav.navigate(Routes.ADMIN_PROJECT_EDIT) }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(Blue)) { Text(stringResource(R.string.edit_project)) }
-                OutlinedButton(
-                    onClick = { viewModel.deleteProject(project) { nav.popBackStack() } },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Red)
-                ) { Text(stringResource(R.string.btn_delete)) }
-            }
-        }
-        SectionCard(stringResource(R.string.project_team_count, state.users.take(3).size)) {
-            state.users.take(3).forEach { user ->
+        ProjectDetailsCard(
+            project = project,
+            managerName = managerName,
+            tasks = projectTasks,
+            onEdit = { nav.navigate(Routes.ADMIN_PROJECT_EDIT) },
+            onDelete = { showDeleteDialog = true }
+        )
+        val teamPreview = state.users
+            .filter { it.id == project.managerId || it.role == UserRole.USER }
+            .take(3)
+        SectionCard(stringResource(R.string.project_team_count, teamPreview.size)) {
+            teamPreview.forEach { user ->
                 val demo = user.toDemoUser()
                 CompactUser(demo.name, demo.initial, demo.color)
             }
-            if (state.users.isEmpty()) EmptyData()
+            if (teamPreview.isEmpty()) EmptyData()
         }
     }
 }
@@ -1127,11 +1254,15 @@ private fun SmallStat(icon: ImageVector, title: String, value: String, detail: S
 }
 
 @Composable
-private fun SearchField(placeholder: String) {
+private fun SearchField(
+    placeholder: String,
+    value: String = "",
+    onValueChange: (String) -> Unit = {}
+) {
     OutlinedTextField(
-        value = "",
-        onValueChange = {},
-        modifier = Modifier.fillMaxWidth(),
+        value = value,
+        onValueChange = onValueChange,
+        modifier = Modifier.fillMaxWidth().height(56.dp),
         placeholder = { Text(placeholder) },
         leadingIcon = { Icon(Icons.Default.Search, null) },
         singleLine = true,
@@ -1147,6 +1278,7 @@ private fun Field(
     modifier: Modifier = Modifier.fillMaxWidth(),
     minLines: Int = 1,
     enabled: Boolean = true,
+    placeholder: String = "",
     onValueChange: (String) -> Unit = {}
 ) {
     Column(modifier) {
@@ -1157,9 +1289,68 @@ private fun Field(
             modifier = Modifier.fillMaxWidth(),
             minLines = minLines,
             enabled = enabled,
+            placeholder = {
+                if (placeholder.isNotBlank()) Text(placeholder, color = Muted, style = MaterialTheme.typography.bodySmall)
+            },
             shape = RoundedCornerShape(8.dp),
             colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Border, unfocusedBorderColor = Border)
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DatePickerField(
+    label: String,
+    value: Long?,
+    onDateSelected: (Long?) -> Unit,
+    modifier: Modifier = Modifier.fillMaxWidth()
+) {
+    var showPicker by rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    val pickerState = rememberDatePickerState(initialSelectedDateMillis = value)
+
+    Column(modifier) {
+        Label(label)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .border(1.dp, Border, RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.White)
+                .clickable { showPicker = true }
+                .padding(horizontal = 12.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Text(
+                text = value.toDateInput(),
+                color = if (value == null) Muted else Color.Black,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+    }
+
+    if (showPicker) {
+        DatePickerDialog(
+            onDismissRequest = { showPicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDateSelected(pickerState.selectedDateMillis)
+                        showPicker = false
+                    }
+                ) {
+                    Text(stringResource(R.string.btn_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPicker = false }) {
+                    Text(stringResource(R.string.btn_cancel))
+                }
+            }
+        ) {
+            DatePicker(state = pickerState)
+        }
     }
 }
 
@@ -1205,6 +1396,73 @@ private fun Label(text: String) {
 private fun MiniSelect(text: String, modifier: Modifier = Modifier.fillMaxWidth()) {
     Box(modifier.height(38.dp).clip(RoundedCornerShape(8.dp)).background(Color.White).padding(horizontal = 12.dp), contentAlignment = Alignment.CenterStart) {
         Text(text, color = Muted, style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+@Composable
+private fun DropdownSelector(
+    label: String,
+    selectedText: String,
+    modifier: Modifier = Modifier.fillMaxWidth(),
+    helperText: String = "",
+    menuContent: @Composable ColumnScope.() -> Unit
+) {
+    var expanded by rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    Column(modifier) {
+        Label(label)
+        Box {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(42.dp)
+                    .border(1.dp, Border, RoundedCornerShape(8.dp))
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color.White)
+                    .clickable { expanded = true }
+                    .padding(horizontal = 12.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Text(selectedText, color = Color.Black, style = MaterialTheme.typography.bodySmall)
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                Column {
+                    menuContent()
+                }
+            }
+        }
+        if (helperText.isNotBlank()) {
+            Spacer(Modifier.height(4.dp))
+            Text(helperText, color = Muted, style = MaterialTheme.typography.labelSmall)
+        }
+    }
+}
+
+@Composable
+private fun ProjectFilterDropdown(
+    selectedText: String,
+    modifier: Modifier = Modifier.fillMaxWidth(),
+    menuContent: @Composable ColumnScope.() -> Unit
+) {
+    var expanded by rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    Box(modifier) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(36.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.White)
+                .clickable { expanded = true }
+                .padding(horizontal = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(selectedText, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = Color.Black, maxLines = 1)
+            Icon(Icons.Default.KeyboardArrowDown, null, modifier = Modifier.size(18.dp), tint = Muted)
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            Column {
+                menuContent()
+            }
+        }
     }
 }
 
@@ -1265,26 +1523,101 @@ private fun Dots(index: Int) {
 }
 
 @Composable
-private fun ProjectListItem(project: Project, allTasks: List<Task>, onDetails: () -> Unit) {
+private fun ProjectListItem(
+    project: Project,
+    allTasks: List<Task>,
+    managerName: String,
+    onEdit: () -> Unit,
+    onDetails: () -> Unit
+) {
     val tasks = allTasks.filter { it.projectId == project.id }
     val percent = tasks.completionRate()
     SectionCard("") {
-        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
             Column {
-                Text(project.name, fontWeight = FontWeight.Bold)
-                Text(stringResource(R.string.manager_prefix, project.managerId?.toString().orEmpty()), color = Muted, style = MaterialTheme.typography.bodySmall)
+                Text(project.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.manager_prefix, managerName), color = Muted, style = MaterialTheme.typography.labelSmall)
             }
-            StatusPill(project.status.name, project.status.color())
+            StatusPill(project.status.label(), project.status.color())
         }
         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.tasks_count, tasks.size), color = Muted, style = MaterialTheme.typography.bodySmall)
-            Text("$percent%", color = Muted, style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.tasks_count, tasks.size), color = Color.Black, style = MaterialTheme.typography.labelSmall)
+            Text("$percent%", color = Color.Black, style = MaterialTheme.typography.labelSmall)
         }
         LinearProgressIndicator(progress = { percent / 100f }, modifier = Modifier.fillMaxWidth().height(6.dp), color = Blue, trackColor = Border)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            OutlinedButton(onClick = {}, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.btn_edit)) }
-            OutlinedButton(onClick = onDetails, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.details)) }
+            OutlinedButton(onClick = onEdit, modifier = Modifier.weight(1f).height(38.dp), shape = RoundedCornerShape(8.dp)) {
+                Text(stringResource(R.string.btn_edit), color = Color.Black)
+            }
+            OutlinedButton(onClick = onDetails, modifier = Modifier.weight(1f).height(38.dp), shape = RoundedCornerShape(8.dp)) {
+                Text(stringResource(R.string.details), color = Color.Black)
+            }
         }
+    }
+}
+
+@Composable
+private fun ProjectDetailsCard(
+    project: Project,
+    managerName: String,
+    tasks: List<Task>,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val completedTasks = tasks.count { it.status == TaskStatus.COMPLETED }
+    val percent = tasks.completionRate()
+    SectionCard("") {
+        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+            Column(Modifier.weight(1f)) {
+                Text(project.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.manager_prefix, managerName), color = Muted, style = MaterialTheme.typography.bodySmall)
+            }
+            StatusPill(project.status.label(), project.status.color())
+        }
+        Text(project.description.orEmpty(), color = Muted, style = MaterialTheme.typography.bodySmall)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(Soft)
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                DetailMetric(stringResource(R.string.start_date), project.startDate.displayDate(), Modifier.weight(1f))
+                DetailMetric(stringResource(R.string.end_date), project.endDate.displayDate(), Modifier.weight(1f))
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                DetailMetric("Total Tarefas", tasks.size.toString(), Modifier.weight(1f))
+                DetailMetric(stringResource(R.string.dashboard_completed), completedTasks.toString(), Modifier.weight(1f))
+            }
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(stringResource(R.string.progress_label), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
+            Text("$percent%", color = Color.Black, style = MaterialTheme.typography.bodySmall)
+        }
+        LinearProgressIndicator(progress = { percent / 100f }, modifier = Modifier.fillMaxWidth().height(6.dp), color = Blue, trackColor = Border)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            Button(onClick = onEdit, modifier = Modifier.weight(1f).height(52.dp), colors = ButtonDefaults.buttonColors(Blue), shape = RoundedCornerShape(8.dp)) {
+                Text(stringResource(R.string.edit_project))
+            }
+            OutlinedButton(
+                onClick = onDelete,
+                modifier = Modifier.weight(1f).height(52.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Red)
+            ) {
+                Text(stringResource(R.string.btn_delete))
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailMetric(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier) {
+        Text(label, color = Muted, style = MaterialTheme.typography.labelSmall)
+        Text(value.ifBlank { "-" }, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
     }
 }
 
@@ -1640,6 +1973,12 @@ private fun List<Task>.completionRate(): Int {
     return count { it.status == TaskStatus.COMPLETED } * 100 / size
 }
 
+private fun List<User>.projectManagers(): List<User> =
+    filter { user -> user.isActive && user.roles.any { it == UserRole.MANAGER } }
+
+private fun List<User>.managerName(managerId: Long?): String =
+    firstOrNull { it.id == managerId }?.name
+        ?: if (java.util.Locale.getDefault().language == "pt") "Sem gestor" else "No manager"
 private fun TaskFlowDataUiState.toStatisticsSnapshot(title: String): StatisticsSnapshot {
     val now = System.currentTimeMillis()
     val rows = if (projects.isEmpty()) {
@@ -1693,6 +2032,22 @@ private fun Long?.displayDate(): String {
     return formatter.format(java.util.Date(this))
 }
 
+private fun Long?.toDateInput(): String {
+    if (this == null || this == 0L) return ""
+    val formatter = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+    return formatter.format(java.util.Date(this))
+}
+
+private fun String.toEpochMillisOrNull(): Long? {
+    val value = trim()
+    if (value.isBlank()) return null
+    return runCatching {
+        java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).apply {
+            isLenient = false
+        }.parse(value)?.time
+    }.getOrNull()
+}
+
 private fun Long?.isNearDeadline(): Boolean {
     if (this == null) return false
     val now = System.currentTimeMillis()
@@ -1719,6 +2074,15 @@ private fun ProjectStatus.color(): Color =
         ProjectStatus.COMPLETED -> Color(0xFF9CA3AF)
         ProjectStatus.CANCELLED -> Red
     }
+
+private fun ProjectStatus.label(): String {
+    val isPortuguese = java.util.Locale.getDefault().language == "pt"
+    return when (this) {
+        ProjectStatus.ACTIVE -> if (isPortuguese) "Ativo" else "Active"
+        ProjectStatus.COMPLETED -> if (isPortuguese) "Concluido" else "Completed"
+        ProjectStatus.CANCELLED -> if (isPortuguese) "Cancelado" else "Cancelled"
+    }
+}
 
 private fun TaskPriority.color(): Color =
     when (this) {
