@@ -2,6 +2,7 @@ const express = require("express");
 const { supabase } = require("../config/supabase");
 const { asyncRoute, handleSupabase, sendNoContent } = require("../utils/http");
 const { unixTimestampMs } = require("../utils/time");
+const { USER_SELECT, toUserResponse } = require("../utils/users");
 
 const router = express.Router();
 
@@ -173,15 +174,7 @@ router.get("/tasks/:id/users", asyncRoute(async (req, res) => {
       is_completed,
       updated_at,
       users (
-        id,
-        name,
-        username,
-        email,
-        role,
-        photo_url,
-        is_active,
-        created_at,
-        updated_at
+        ${USER_SELECT}
       )
     `)
     .eq("task_id", Number(req.params.id))
@@ -192,7 +185,7 @@ router.get("/tasks/:id/users", asyncRoute(async (req, res) => {
   }
 
   return res.json((result.data || []).map((row) => ({
-    ...row.users,
+    ...toUserResponse(row.users),
     work_date: row.work_date,
     location: row.location,
     completion_percentage: row.completion_percentage,

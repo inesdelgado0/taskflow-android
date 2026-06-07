@@ -2,6 +2,7 @@ const express = require("express");
 const { supabase } = require("../config/supabase");
 const { asyncRoute, handleSupabase, sendNoContent } = require("../utils/http");
 const { unixTimestampMs } = require("../utils/time");
+const { USER_SELECT, toUserResponse } = require("../utils/users");
 
 const router = express.Router();
 
@@ -116,15 +117,7 @@ router.get("/:id/users", asyncRoute(async (req, res) => {
     .select(`
       joined_at,
       users (
-        id,
-        name,
-        username,
-        email,
-        role,
-        photo_url,
-        is_active,
-        created_at,
-        updated_at
+        ${USER_SELECT}
       )
     `)
     .eq("project_id", Number(req.params.id))
@@ -135,7 +128,7 @@ router.get("/:id/users", asyncRoute(async (req, res) => {
   }
 
   return res.json((result.data || []).map((row) => ({
-    ...row.users,
+    ...toUserResponse(row.users),
     joined_at: row.joined_at
   })));
 }));
