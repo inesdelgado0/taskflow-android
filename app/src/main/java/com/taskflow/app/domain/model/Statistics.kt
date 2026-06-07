@@ -37,3 +37,9 @@ enum class StatisticsExportFormat {
     CSV,
     PDF
 }
+
+enum class StatisticsGrouping {
+    BY_USER,
+    BY_PROJECT,
+    BY_TASK
+}

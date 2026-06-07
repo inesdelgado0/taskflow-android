@@ -91,6 +91,7 @@ import com.taskflow.app.data.export.StatisticsFileExporter
 import com.taskflow.app.domain.model.Project
 import com.taskflow.app.domain.model.StatisticRow
 import com.taskflow.app.domain.model.StatisticsExportFormat
+import com.taskflow.app.domain.model.StatisticsGrouping
 import com.taskflow.app.domain.model.StatisticsSnapshot
 import com.taskflow.app.domain.model.Task
 import com.taskflow.app.domain.model.User
@@ -300,12 +301,25 @@ fun AdminUsersListScreen(nav: NavController) {
 fun AdminStatsScreen(nav: NavController) {
     val state by taskFlowState()
     val context = LocalContext.current
-    val snapshot = state.toStatisticsSnapshot(stringResource(R.string.stats_title))
+    var grouping by rememberSaveable { androidx.compose.runtime.mutableStateOf(StatisticsGrouping.BY_USER) }
+    val groupingLabel = when (grouping) {
+        StatisticsGrouping.BY_USER -> stringResource(R.string.stats_by_user)
+        StatisticsGrouping.BY_PROJECT -> stringResource(R.string.stats_by_project)
+        StatisticsGrouping.BY_TASK -> stringResource(R.string.stats_by_task)
+    }
+    val snapshot = state.toStatisticsSnapshot(stringResource(R.string.stats_title), grouping)
     FormScreen(stringResource(R.string.stats_title), onBack = { nav.popBackStack() }) {
         SyncStatus(state)
         SectionCard(stringResource(R.string.export_data)) {
             Label(stringResource(R.string.report_type))
-            MiniSelect(stringResource(R.string.stats_by_user))
+            DropdownSelector(
+                label = stringResource(R.string.report_type),
+                selectedText = groupingLabel
+            ) {
+                DropdownMenuItem(text = { Text(stringResource(R.string.stats_by_user)) }, onClick = { grouping = StatisticsGrouping.BY_USER })
+                DropdownMenuItem(text = { Text(stringResource(R.string.stats_by_project)) }, onClick = { grouping = StatisticsGrouping.BY_PROJECT })
+                DropdownMenuItem(text = { Text(stringResource(R.string.stats_by_task)) }, onClick = { grouping = StatisticsGrouping.BY_TASK })
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 Button(onClick = { exportStatistics(context, snapshot, StatisticsExportFormat.PDF) }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(Red), shape = RoundedCornerShape(8.dp)) {
                     Icon(Icons.Default.Download, null, modifier = Modifier.size(16.dp))
@@ -338,7 +352,13 @@ fun AdminStatsScreen(nav: NavController) {
 fun ManagerStatsScreen(nav: NavController) {
     val state by taskFlowState()
     val context = LocalContext.current
-    val snapshot = state.toStatisticsSnapshot("Estatísticas do gestor")
+    var grouping by rememberSaveable { androidx.compose.runtime.mutableStateOf(StatisticsGrouping.BY_USER) }
+    val groupingLabel = when (grouping) {
+        StatisticsGrouping.BY_USER -> stringResource(R.string.stats_by_user)
+        StatisticsGrouping.BY_PROJECT -> stringResource(R.string.stats_by_project)
+        StatisticsGrouping.BY_TASK -> stringResource(R.string.stats_by_task)
+    }
+    val snapshot = state.toStatisticsSnapshot("Estatísticas do gestor", grouping)
     FormScreen(stringResource(R.string.stats_title), onBack = { nav.popBackStack() }) {
         SyncStatus(state)
         SectionCard(stringResource(R.string.general_summary)) {
@@ -348,6 +368,15 @@ fun ManagerStatsScreen(nav: NavController) {
             Metric(stringResource(R.string.total_projects_metric), state.projects.size.toString())
         }
         SectionCard(stringResource(R.string.export_data)) {
+            Label(stringResource(R.string.report_type))
+            DropdownSelector(
+                label = stringResource(R.string.report_type),
+                selectedText = groupingLabel
+            ) {
+                DropdownMenuItem(text = { Text(stringResource(R.string.stats_by_user)) }, onClick = { grouping = StatisticsGrouping.BY_USER })
+                DropdownMenuItem(text = { Text(stringResource(R.string.stats_by_project)) }, onClick = { grouping = StatisticsGrouping.BY_PROJECT })
+                DropdownMenuItem(text = { Text(stringResource(R.string.stats_by_task)) }, onClick = { grouping = StatisticsGrouping.BY_TASK })
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 Button(onClick = { exportStatistics(context, snapshot, StatisticsExportFormat.PDF) }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(Red), shape = RoundedCornerShape(8.dp)) {
                     Icon(Icons.Default.Download, null, modifier = Modifier.size(16.dp))
@@ -1979,13 +2008,49 @@ private fun List<User>.projectManagers(): List<User> =
 private fun List<User>.managerName(managerId: Long?): String =
     firstOrNull { it.id == managerId }?.name
         ?: if (java.util.Locale.getDefault().language == "pt") "Sem gestor" else "No manager"
-private fun TaskFlowDataUiState.toStatisticsSnapshot(title: String): StatisticsSnapshot {
+private fun TaskFlowDataUiState.toStatisticsSnapshot(
+    title: String,
+    grouping: StatisticsGrouping
+): StatisticsSnapshot {
     val now = System.currentTimeMillis()
-    val rows = if (projects.isEmpty()) {
-        listOf(tasks.toStatisticRow(title, now))
-    } else {
-        projects.map { project ->
-            tasks.filter { it.projectId == project.id }.toStatisticRow(project.name, now)
+    val rows: List<StatisticRow> = when (grouping) {
+        StatisticsGrouping.BY_USER -> {
+            if (users.isEmpty()) {
+                listOf(tasks.toStatisticRow(title, now))
+            } else {
+                users.map { user ->
+                    tasks.filter { it.createdBy == user.id }.toStatisticRow(user.name, now)
+                }
+            }
+        }
+        StatisticsGrouping.BY_PROJECT -> {
+            if (projects.isEmpty()) {
+                listOf(tasks.toStatisticRow(title, now))
+            } else {
+                projects.map { project ->
+                    tasks.filter { it.projectId == project.id }.toStatisticRow(project.name, now)
+                }
+            }
+        }
+        StatisticsGrouping.BY_TASK -> {
+            if (tasks.isEmpty()) {
+                emptyList()
+            } else {
+                tasks.map { task ->
+                    StatisticRow(
+                        label = task.title,
+                        totalTasks = 1,
+                        completedTasks = if (task.status == TaskStatus.COMPLETED) 1 else 0,
+                        pendingTasks = if (task.status != TaskStatus.COMPLETED && task.status != TaskStatus.CANCELLED) 1 else 0,
+                        overdueTasks = if (
+                            task.deadline != null &&
+                            task.deadline < now &&
+                            task.status != TaskStatus.COMPLETED &&
+                            task.status != TaskStatus.CANCELLED
+                        ) 1 else 0
+                    )
+                }
+            }
         }
     }
 
