@@ -71,7 +71,9 @@ fun ManagerProjectDetailsScreen(nav: NavController) {
             }
         }
         SectionCard(stringResource(R.string.project_team_count, state.users.take(3).size)) {
-            state.users.take(3).forEach { EvalLine(it.toDemoUser()) { nav.navigate(Routes.MANAGER_EVALUATE_USER) } }
+            state.users.take(3).forEach { user ->
+                EvalLine(user.toDemoUser()) { nav.navigate(Routes.managerEvaluateUser(user.id)) }
+            }
             if (state.users.isEmpty()) EmptyData()
             OutlinedButton(onClick = { nav.navigate(Routes.MANAGER_TEAM) }, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.view_full_team))

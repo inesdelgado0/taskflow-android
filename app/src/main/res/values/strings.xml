@@ -319,6 +319,7 @@
     <string name="evaluate_user">Avaliar Utilizador</string>
     <string name="available_users">Utilizadores Disponíveis</string>
     <string name="active_tasks_metric">Tarefas Ativas</string>
+    <string name="active_tasks_count">%1$d tarefas ativas</string>
     <string name="comment_optional">Comentário (opcional)</string>
     <string name="comment_placeholder">Adicione observações sobre o desempenho...</string>
 
@@ -330,6 +331,7 @@
     <string name="view_completed_history">Ver Histórico de Tarefas Concluídas</string>
     <string name="all_filter">Todas</string>
     <string name="completed_filter">Concluídas</string>
+    <string name="pending_filter">Pendentes</string>
     <string name="cancelled_filter">Canceladas</string>
     <string name="monthly_summary">Resumo do Mês</string>
     <string name="total_time">Tempo Total</string>
@@ -340,7 +342,6 @@
     <string name="progress_saved_success">Progresso guardado com sucesso.</string>
     <string name="no_description">Sem descrição.</string>
     <string name="members_count">%1$d membros</string>
-    <string name="active_tasks_count">%1$d tarefas ativas</string>
     <string name="location_placeholder">Ex: Escritório, casa, etc.</string>
     <string name="time_spent_placeholder">Ex: 2h 30min ou 150</string>
     <string name="observations_placeholder">Observações e fotografias ficam para o módulo de observações.</string>

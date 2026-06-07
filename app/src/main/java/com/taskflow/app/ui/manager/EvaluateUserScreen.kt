@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
@@ -18,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,7 +25,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,7 +36,6 @@ import com.taskflow.app.ui.common.components.Avatar
 import com.taskflow.app.ui.common.components.Field
 import com.taskflow.app.ui.common.components.FormScreen
 import com.taskflow.app.ui.common.components.SectionCard
-import com.taskflow.app.ui.common.components.SyncStatus
 import com.taskflow.app.ui.common.TaskFlowDataViewModel
 import com.taskflow.app.ui.common.components.TwoMetrics
 import com.taskflow.app.ui.common.theme.Blue
@@ -48,15 +46,34 @@ import com.taskflow.app.ui.common.util.initial
 import com.taskflow.app.ui.common.util.toDemoUser
 
 @Composable
-fun EvaluateUserScreen(nav: NavController) {
+fun EvaluateUserScreen(nav: NavController, userId: Long? = null) {
     val viewModel: TaskFlowDataViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsState()
-    val user = state.users.firstOrNull()
-    val project = state.projects.firstOrNull { it.id == state.selectedProjectId } ?: state.projects.firstOrNull()
+    val selectedUserId = userId ?: state.selectedUserId
+    val user = state.users.firstOrNull { it.id == selectedUserId }
+        ?: state.users.firstOrNull { candidate -> candidate.isActive && candidate.roles.any { role -> role.name == "USER" } }
+    val assignedTaskIds = state.userTaskAssignments
+        .filter { assignment -> assignment.userId == user?.id }
+        .map { it.taskId }
+        .distinct()
+    val userTasks = state.tasks.filter { task -> assignedTaskIds.contains(task.id) }
+    val project = state.projects.firstOrNull { it.id == state.selectedProjectId }
+        ?: userTasks.firstOrNull()?.let { task -> state.projects.firstOrNull { it.id == task.projectId } }
+        ?: state.projects.firstOrNull()
+    val existingEvaluation = state.allEvaluations.firstOrNull { evaluation ->
+        evaluation.evaluatedUserId == user?.id && evaluation.projectId == project?.id
+    }
     var rating by rememberSaveable { mutableStateOf(5) }
     var comment by rememberSaveable { mutableStateOf("") }
+
+    LaunchedEffect(existingEvaluation?.id) {
+        if (existingEvaluation != null) {
+            rating = existingEvaluation.rating
+            comment = existingEvaluation.comment.orEmpty()
+        }
+    }
+
     FormScreen(stringResource(R.string.evaluate_user), { nav.popBackStack() }) {
-        SyncStatus(state)
         SectionCard("") {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Avatar(user?.name.initial(), user?.toDemoUser()?.color ?: Orange, 56)
@@ -70,9 +87,9 @@ fun EvaluateUserScreen(nav: NavController) {
         SectionCard(stringResource(R.string.performance_evaluation)) {
             TwoMetrics(
                 stringResource(R.string.completed_tasks_metric),
-                state.tasks.count { it.status == TaskStatus.COMPLETED }.toString(),
+                userTasks.count { it.status == TaskStatus.COMPLETED }.toString(),
                 stringResource(R.string.active_tasks_metric),
-                state.tasks.count { it.status != TaskStatus.COMPLETED && it.status != TaskStatus.CANCELLED }.toString()
+                userTasks.count { it.status != TaskStatus.COMPLETED && it.status != TaskStatus.CANCELLED }.toString()
             )
             Text(stringResource(R.string.numeric_rating), fontWeight = FontWeight.SemiBold)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

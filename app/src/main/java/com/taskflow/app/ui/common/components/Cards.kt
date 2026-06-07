@@ -299,9 +299,8 @@ internal fun ManagerTaskCard(task: Task, projects: List<Project>, onAssign: () -
                 Text(task.title, fontWeight = FontWeight.Bold)
                 Text(projects.firstOrNull { it.id == task.projectId }?.name.orEmpty(), color = Muted, style = MaterialTheme.typography.bodySmall)
             }
-            StatusPill(task.priority.name, task.priority.color())
+            StatusPill(task.priority.label(), task.priority.color())
         }
-        Text(task.status.name, color = Muted, style = MaterialTheme.typography.bodySmall)
         ProgressLine(stringResource(R.string.progress_label), "${(progress * 100).toInt()}%", progress)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             OutlinedButton(onClick = onAssign, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.associate_action)) }
@@ -311,18 +310,39 @@ internal fun ManagerTaskCard(task: Task, projects: List<Project>, onAssign: () -
 }
 
 @Composable
-internal fun TeamMemberCard(user: DemoUser, onEvaluate: () -> Unit) {
+internal fun TeamMemberCard(
+    user: DemoUser,
+    rating: String,
+    activeTasksText: String,
+    completedTasks: String,
+    activeTasks: String,
+    onViewTasks: () -> Unit = {},
+    onEvaluate: () -> Unit
+) {
     SectionCard("") {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Avatar(user.initial, user.color, 48)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(user.name, fontWeight = FontWeight.Bold)
-                Text(user.role, color = Muted, style = MaterialTheme.typography.bodySmall)
+                if (rating.isNotBlank()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Star, null, tint = Yellow, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(rating, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                Text(activeTasksText, color = Muted, style = MaterialTheme.typography.bodySmall)
             }
         }
+        TwoMetrics(
+            stringResource(R.string.dashboard_completed),
+            completedTasks,
+            stringResource(R.string.active_tasks_metric),
+            activeTasks
+        )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            OutlinedButton(onClick = {}, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.view_tasks)) }
+            OutlinedButton(onClick = onViewTasks, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.view_tasks)) }
             Button(onClick = onEvaluate, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(Blue)) { Text(stringResource(R.string.evaluate_action)) }
         }
     }

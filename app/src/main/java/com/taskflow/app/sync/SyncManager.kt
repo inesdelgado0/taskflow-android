@@ -21,7 +21,6 @@ class SyncManager @Inject constructor(
     private val connectivityObserver: ConnectivityObserver
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val workManager = WorkManager.getInstance(context)
 
     fun startObserving() {
         connectivityObserver.connectionFlow
@@ -36,7 +35,7 @@ class SyncManager @Inject constructor(
     }
 
     fun triggerSync() {
-        workManager.enqueueUniqueWork(
+        WorkManager.getInstance(context).enqueueUniqueWork(
             SyncWorker.WORK_NAME,
             ExistingWorkPolicy.KEEP,
             SyncWorker.buildOneTimeRequest()

@@ -319,6 +319,7 @@
     <string name="evaluate_user">Evaluate User</string>
     <string name="available_users">Available Users</string>
     <string name="active_tasks_metric">Active Tasks</string>
+    <string name="active_tasks_count">%1$d active tasks</string>
     <string name="comment_optional">Comment (optional)</string>
     <string name="comment_placeholder">Add observations about performance...</string>
 
@@ -330,6 +331,7 @@
     <string name="view_completed_history">View Completed Task History</string>
     <string name="all_filter">All</string>
     <string name="completed_filter">Completed</string>
+    <string name="pending_filter">Pending</string>
     <string name="cancelled_filter">Cancelled</string>
     <string name="monthly_summary">Monthly Summary</string>
     <string name="total_time">Total Time</string>
@@ -340,7 +342,6 @@
     <string name="progress_saved_success">Progress saved successfully.</string>
     <string name="no_description">No description.</string>
     <string name="members_count">%1$d members</string>
-    <string name="active_tasks_count">%1$d active tasks</string>
     <string name="location_placeholder">Ex: Office, home, etc.</string>
     <string name="time_spent_placeholder">Ex: 2h 30min or 150</string>
     <string name="observations_placeholder">Observations and photos belong to the observations module.</string>
