@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.taskflow.app.domain.model.User
 import com.taskflow.app.domain.usecase.auth.LoginUseCase
+import com.taskflow.app.domain.usecase.auth.LogoutUseCase
 import com.taskflow.app.domain.usecase.auth.RegisterUseCase
 import com.taskflow.app.domain.util.UserRole
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,7 +34,8 @@ data class AuthFormState(
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
-    private val registerUseCase: RegisterUseCase
+    private val registerUseCase: RegisterUseCase,
+    private val logoutUseCase: LogoutUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
@@ -83,6 +85,14 @@ class AuthViewModel @Inject constructor(
     fun clearState() {
         _uiState.value = AuthUiState.Idle
         _formState.update { AuthFormState() }
+    }
+
+    fun logout(onDone: () -> Unit = {}) {
+        viewModelScope.launch {
+            runCatching { logoutUseCase() }
+            _uiState.value = AuthUiState.Idle
+            onDone()
+        }
     }
 
     private fun validateLogin(email: String, password: String): AuthFormState =

@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
+import com.taskflow.app.audit.AuditLogger
 import com.taskflow.app.data.remote.TokenManager
 import com.taskflow.app.domain.repository.SyncQueueRepository
 import com.taskflow.app.domain.util.HttpMethod
@@ -30,7 +31,8 @@ class SyncWorker @AssistedInject constructor(
     private val syncQueueRepository: SyncQueueRepository,
     private val tokenManager: TokenManager,
     private val okHttpClient: OkHttpClient,
-    private val notifier: TaskFlowNotifier
+    private val notifier: TaskFlowNotifier,
+    private val auditLogger: AuditLogger
 ) : CoroutineWorker(context, workerParams) {
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
@@ -87,10 +89,18 @@ class SyncWorker @AssistedInject constructor(
         if (hasFailures) {
             Log.d(TAG, "Sync concluído com falhas — reagendar")
             notifier.showSyncFailed()
+            auditLogger.logSync(
+                userId = tokenManager.getUserId(),
+                details = "partial: synced=$syncedCount,total=${items.size}"
+            )
             Result.retry()
         } else {
             Log.d(TAG, "Sync concluído com sucesso")
             notifier.showSyncCompleted(syncedCount)
+            auditLogger.logSync(
+                userId = tokenManager.getUserId(),
+                details = "success: synced=$syncedCount,total=${items.size}"
+            )
             Result.success()
         }
     }

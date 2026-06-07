@@ -1,12 +1,14 @@
 package com.taskflow.app.data.repository
 
 import android.database.sqlite.SQLiteConstraintException
+import com.taskflow.app.audit.AuditLogger
 import com.taskflow.app.data.local.dao.ProjectDao
 import com.taskflow.app.data.local.dao.UserDao
 import com.taskflow.app.data.local.dao.UserProjectDao
 import com.taskflow.app.data.local.entity.ProjectEntity
 import com.taskflow.app.data.local.entity.UserProjectEntity
 import com.taskflow.app.data.remote.api.ProjectApi
+import com.taskflow.app.data.remote.TokenManager
 import com.taskflow.app.data.remote.dto.AssignUserRequest
 import com.taskflow.app.data.remote.dto.ProjectDto
 import com.taskflow.app.data.remote.dto.ProjectRequest
@@ -27,7 +29,9 @@ class ProjectRepositoryImpl @Inject constructor(
     private val projectDao: ProjectDao,
     private val userDao: UserDao,
     private val userProjectDao: UserProjectDao,
-    private val projectApi: ProjectApi
+    private val projectApi: ProjectApi,
+    private val tokenManager: TokenManager,
+    private val auditLogger: AuditLogger
 ) : ProjectRepository {
 
     override suspend fun createProject(project: Project): Long =
@@ -81,6 +85,7 @@ class ProjectRepositoryImpl @Inject constructor(
             }
 
     override suspend fun pushProject(project: Project): ApiResult<Project> {
+        val isCreate = project.id == 0L
         val result = if (project.id == 0L) {
             safeApiCall { projectApi.createProject(project.toRequest()) }
         } else {
@@ -89,13 +94,24 @@ class ProjectRepositoryImpl @Inject constructor(
 
         return result
             .map { it.toDomain() }
-            .onSuccess { synced -> projectDao.upsert(synced.toEntity()) }
+            .onSuccess { synced ->
+                projectDao.upsert(synced.toEntity())
+                val details = "name=${synced.name},status=${synced.status.name}"
+                if (isCreate) {
+                    auditLogger.logCreate(currentActorId(), "PROJECT", synced.id, details)
+                } else {
+                    auditLogger.logUpdate(currentActorId(), "PROJECT", synced.id, details)
+                }
+            }
     }
 
     override suspend fun assignManagerRemote(projectId: Long, managerId: Long?): ApiResult<Project> =
         safeApiCall { projectApi.assignManager(projectId, AssignManagerRequest(managerId)) }
             .map { it.toDomain() }
-            .onSuccess { synced -> projectDao.upsert(synced.toEntity()) }
+            .onSuccess { synced ->
+                projectDao.upsert(synced.toEntity())
+                auditLogger.logUpdate(currentActorId(), "PROJECT", synced.id, details = "managerId=$managerId")
+            }
 
     override suspend fun refreshProjectUsers(projectId: Long): ApiResult<List<Long>> =
         safeApiCall { projectApi.getProjectUsers(projectId) }
@@ -127,25 +143,40 @@ class ProjectRepositoryImpl @Inject constructor(
                         )
                     )
                 }
+                auditLogger.logUpdate(currentActorId(), "PROJECT", projectId, details = "assignUser:$userId")
             }
 
     override suspend fun removeUserFromProjectRemote(projectId: Long, userId: Long): ApiResult<Unit> =
         safeApiCall { projectApi.removeUser(projectId, userId) }
-            .onSuccess { userProjectDao.delete(projectId, userId) }
+            .onSuccess {
+                userProjectDao.delete(projectId, userId)
+                auditLogger.logUpdate(currentActorId(), "PROJECT", projectId, details = "removeUser:$userId")
+            }
 
     override suspend fun completeProjectRemote(id: Long): ApiResult<Project> =
         safeApiCall { projectApi.completeProject(id) }
             .map { it.toDomain() }
-            .onSuccess { synced -> projectDao.upsert(synced.toEntity()) }
+            .onSuccess { synced ->
+                projectDao.upsert(synced.toEntity())
+                auditLogger.logUpdate(currentActorId(), "PROJECT", synced.id, details = "status=${synced.status.name}")
+            }
 
     override suspend fun updateProjectStatusRemote(id: Long, status: ProjectStatus): ApiResult<Project> =
         safeApiCall { projectApi.updateStatus(id, ProjectStatusRequest(status)) }
             .map { it.toDomain() }
-            .onSuccess { synced -> projectDao.upsert(synced.toEntity()) }
+            .onSuccess { synced ->
+                projectDao.upsert(synced.toEntity())
+                auditLogger.logUpdate(currentActorId(), "PROJECT", synced.id, details = "status=${status.name}")
+            }
 
     override suspend fun deleteProjectRemote(id: Long): ApiResult<Unit> =
         safeApiCall { projectApi.deleteProject(id) }
-            .onSuccess { deleteProject(id) }
+            .onSuccess {
+                deleteProject(id)
+                auditLogger.logDelete(currentActorId(), "PROJECT", id)
+            }
+
+    private suspend fun currentActorId(): Long? = tokenManager.getUserId()
 
     private fun Project.toEntity() = ProjectEntity(
         id = id,

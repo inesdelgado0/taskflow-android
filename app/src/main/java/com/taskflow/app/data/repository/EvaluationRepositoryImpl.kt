@@ -1,10 +1,12 @@
 package com.taskflow.app.data.repository
 
 import android.database.sqlite.SQLiteConstraintException
+import com.taskflow.app.audit.AuditLogger
 import com.taskflow.app.data.local.dao.EvaluationDao
 import com.taskflow.app.data.local.dao.UserDao
 import com.taskflow.app.data.local.entity.EvaluationEntity
 import com.taskflow.app.data.remote.api.EvaluationApi
+import com.taskflow.app.data.remote.TokenManager
 import com.taskflow.app.data.remote.dto.EvaluationDto
 import com.taskflow.app.data.remote.dto.EvaluationRequest
 import com.taskflow.app.domain.model.Evaluation
@@ -20,7 +22,9 @@ import javax.inject.Inject
 class EvaluationRepositoryImpl @Inject constructor(
     private val evaluationDao: EvaluationDao,
     private val userDao: UserDao,
-    private val evaluationApi: EvaluationApi
+    private val evaluationApi: EvaluationApi,
+    private val tokenManager: TokenManager,
+    private val auditLogger: AuditLogger
 ) : EvaluationRepository {
 
     override suspend fun upsertEvaluation(evaluation: Evaluation): Long =
@@ -64,7 +68,17 @@ class EvaluationRepositoryImpl @Inject constructor(
     override suspend fun pushEvaluation(evaluation: Evaluation): ApiResult<Evaluation> =
         safeApiCall { evaluationApi.evaluateUser(evaluation.evaluatedUserId, evaluation.toRequest()) }
             .map { it.toDomain() }
-            .onSuccess { synced -> evaluationDao.upsert(synced.toEntity()) }
+            .onSuccess { synced ->
+                evaluationDao.upsert(synced.toEntity())
+                val details = "projectId=${synced.projectId},evaluatedUserId=${synced.evaluatedUserId},rating=${synced.rating}"
+                if (evaluation.id == 0L) {
+                    auditLogger.logCreate(currentActorId(), "EVALUATION", synced.id, details)
+                } else {
+                    auditLogger.logUpdate(currentActorId(), "EVALUATION", synced.id, details)
+                }
+            }
+
+    private suspend fun currentActorId(): Long? = tokenManager.getUserId()
 
     private fun Evaluation.toEntity() = EvaluationEntity(
         id = id,

@@ -1,5 +1,6 @@
 package com.taskflow.app.data.repository
 
+import com.taskflow.app.audit.AuditLogger
 import com.taskflow.app.data.remote.TokenManager
 import com.taskflow.app.data.remote.api.AuthApi
 import com.taskflow.app.data.remote.dto.LoginRequest
@@ -15,7 +16,8 @@ import javax.inject.Inject
 class AuthRepositoryImpl @Inject constructor(
     private val userRepository: UserRepositoryImpl,
     private val authApi: AuthApi,
-    private val tokenManager: TokenManager
+    private val tokenManager: TokenManager,
+    private val auditLogger: AuditLogger
 ) : AuthRepository {
 
     override suspend fun login(email: String, password: String, role: UserRole): Result<User> {
@@ -35,6 +37,7 @@ class AuthRepositoryImpl @Inject constructor(
                 )
 
                 cacheUser(apiUser)
+                auditLogger.logLogin(apiUser.id, details = "role=${role.name}")
                 Result.success(apiUser.copy(role = role))
             }
         }
@@ -64,13 +67,17 @@ class AuthRepositoryImpl @Inject constructor(
                     userId = user.id
                 )
                 cacheUser(user)
+                auditLogger.logCreate(user.id, "USER", user.id, details = "self-register:${user.email}")
+                auditLogger.logLogin(user.id, details = "role=${user.role.name}")
                 Result.success(user)
             }
         }
     }
 
     override suspend fun logout() {
+        val userId = tokenManager.getUserId()
         tokenManager.clearTokens()
+        auditLogger.logLogout(userId)
     }
 
     private suspend fun cacheUser(user: User) {

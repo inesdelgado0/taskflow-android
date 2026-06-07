@@ -146,24 +146,30 @@ fun TaskFlowNavGraph() {
         }
 
         composable(Routes.ADMIN_DASHBOARD) {
+            val viewModel: AuthViewModel = hiltViewModel()
             AdminDashboardScreen(
                 nav = navController,
                 onLogout = {
-                    navController.navigate(Routes.LOGIN) {
-                        popUpTo(Routes.LOGIN) { inclusive = true }
-                        launchSingleTop = true
+                    viewModel.logout {
+                        navController.navigate(Routes.LOGIN) {
+                            popUpTo(Routes.LOGIN) { inclusive = true }
+                            launchSingleTop = true
+                        }
                     }
                 }
             )
         }
 
         composable(Routes.MANAGER_DASHBOARD) {
+            val viewModel: AuthViewModel = hiltViewModel()
             ManagerDashboardScreen(
                 nav = navController,
                 onLogout = {
-                    navController.navigate(Routes.LOGIN) {
-                        popUpTo(Routes.LOGIN) { inclusive = true }
-                        launchSingleTop = true
+                    viewModel.logout {
+                        navController.navigate(Routes.LOGIN) {
+                            popUpTo(Routes.LOGIN) { inclusive = true }
+                            launchSingleTop = true
+                        }
                     }
                 }
             )
@@ -178,27 +184,33 @@ fun TaskFlowNavGraph() {
                 }
             )
         ) { backStackEntry ->
+            val viewModel: AuthViewModel = hiltViewModel()
             backStackEntry.arguments?.getLong(Routes.MANAGER_ID_ARG) ?: 0L
             ManagerDashboardScreen(
                 nav = navController,
                 onLogout = {
-                    navController.navigate(Routes.LOGIN) {
-                        popUpTo(Routes.LOGIN) { inclusive = true }
-                        launchSingleTop = true
+                    viewModel.logout {
+                        navController.navigate(Routes.LOGIN) {
+                            popUpTo(Routes.LOGIN) { inclusive = true }
+                            launchSingleTop = true
+                        }
                     }
                 }
             )
         }
 
         composable(Routes.USER_DASHBOARD) {
+            val viewModel: AuthViewModel = hiltViewModel()
             UserDashboardScreen(
                 nav = navController,
                 onLogout = {
-                    navController.navigate(Routes.LOGIN) {
-                        popUpTo(Routes.LOGIN) {
-                            inclusive = true
+                    viewModel.logout {
+                        navController.navigate(Routes.LOGIN) {
+                            popUpTo(Routes.LOGIN) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
                         }
-                        launchSingleTop = true
                     }
                 }
             )
