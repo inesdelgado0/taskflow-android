@@ -119,7 +119,7 @@ fun LoginScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     LoginHeader(modifier = Modifier.weight(0.8f))
-                    LoginForm(
+                    LoginFormContent(
                         modifier = Modifier.weight(1.2f),
                         email = email,
                         password = password,
@@ -139,7 +139,7 @@ fun LoginScreen(
                 Column(modifier = contentModifier) {
                     LoginHeader(modifier = Modifier.fillMaxWidth())
                     Spacer(modifier = Modifier.height(20.dp))
-                    LoginForm(
+                    LoginFormContent(
                         modifier = Modifier.fillMaxWidth(),
                         email = email,
                         password = password,
@@ -183,7 +183,7 @@ private fun LoginHeader(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun LoginForm(
+internal fun LoginFormContent(
     modifier: Modifier,
     email: String,
     password: String,

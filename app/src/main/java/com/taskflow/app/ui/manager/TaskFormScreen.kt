@@ -34,37 +34,57 @@ fun TaskFormScreen(nav: NavController, edit: Boolean) {
     val state by viewModel.uiState.collectAsState()
     val task = state.tasks.firstOrNull { it.id == state.selectedTaskId } ?: state.tasks.firstOrNull()
     val project = state.projects.firstOrNull { it.id == task?.projectId } ?: state.projects.firstOrNull()
-    var title by rememberSaveable(task?.id, edit) { mutableStateOf(if (edit) task?.title.orEmpty() else "") }
-    var description by rememberSaveable(task?.id, edit) { mutableStateOf(if (edit) task?.description.orEmpty() else "") }
     FormScreen(if (edit) stringResource(R.string.edit_task_title) else stringResource(R.string.create_task_title), { nav.popBackStack() }) {
         SyncStatus(state)
-        SectionCard("") {
-            Field(stringResource(R.string.task_title_label), title, onValueChange = { title = it })
-            Field(stringResource(R.string.description_label), description, onValueChange = { description = it }, minLines = 3)
-            Field(stringResource(R.string.project_label_name), project?.name.orEmpty(), enabled = false)
-            Field(stringResource(R.string.priority_label), "")
-            Field(stringResource(R.string.deadline_label), "")
-            Field(stringResource(R.string.status_label), "")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                Button(
-                    onClick = {
-                        viewModel.saveTask(
-                            existing = if (edit) task else null,
-                            project = project,
-                            title = title,
-                            description = description,
-                            onDone = { nav.popBackStack() }
-                        )
-                    },
-                    modifier = Modifier.weight(1f).height(52.dp),
-                    colors = ButtonDefaults.buttonColors(Blue),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(if (edit) stringResource(R.string.save_changes) else stringResource(R.string.create_task_title))
-                }
-                OutlinedButton(onClick = { nav.popBackStack() }, modifier = Modifier.weight(1f).height(52.dp), shape = RoundedCornerShape(8.dp)) {
-                    Text(stringResource(R.string.btn_cancel))
-                }
+        TaskFormContent(
+            edit = edit,
+            initialTitle = if (edit) task?.title.orEmpty() else "",
+            initialDescription = if (edit) task?.description.orEmpty() else "",
+            projectName = project?.name.orEmpty(),
+            onSave = { title, description ->
+                viewModel.saveTask(
+                    existing = if (edit) task else null,
+                    project = project,
+                    title = title,
+                    description = description,
+                    onDone = { nav.popBackStack() }
+                )
+            },
+            onCancel = { nav.popBackStack() }
+        )
+    }
+}
+
+@Composable
+internal fun TaskFormContent(
+    edit: Boolean,
+    initialTitle: String,
+    initialDescription: String,
+    projectName: String,
+    onSave: (String, String) -> Unit,
+    onCancel: () -> Unit
+) {
+    var title by rememberSaveable(edit, initialTitle) { mutableStateOf(initialTitle) }
+    var description by rememberSaveable(edit, initialDescription) { mutableStateOf(initialDescription) }
+
+    SectionCard("") {
+        Field(stringResource(R.string.task_title_label), title, onValueChange = { title = it })
+        Field(stringResource(R.string.description_label), description, onValueChange = { description = it }, minLines = 3)
+        Field(stringResource(R.string.project_label_name), projectName, enabled = false)
+        Field(stringResource(R.string.priority_label), "")
+        Field(stringResource(R.string.deadline_label), "")
+        Field(stringResource(R.string.status_label), "")
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            Button(
+                onClick = { onSave(title, description) },
+                modifier = Modifier.weight(1f).height(52.dp),
+                colors = ButtonDefaults.buttonColors(Blue),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(if (edit) stringResource(R.string.save_changes) else stringResource(R.string.create_task_title))
+            }
+            OutlinedButton(onClick = onCancel, modifier = Modifier.weight(1f).height(52.dp), shape = RoundedCornerShape(8.dp)) {
+                Text(stringResource(R.string.btn_cancel))
             }
         }
     }
