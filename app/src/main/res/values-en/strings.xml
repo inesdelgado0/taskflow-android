@@ -337,6 +337,7 @@
     <string name="total_time">Total Time</string>
     <string name="average_rating">Average Rating</string>
     <string name="completed_status">Completed</string>
+    <string name="cancelled_status">Cancelled</string>
     <string name="now_time">now</string>
     <string name="this_week">This week</string>
     <string name="progress_saved_success">Progress saved successfully.</string>
