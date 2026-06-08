@@ -61,3 +61,14 @@ data class TaskRequest(
 data class TaskStatusRequest(
     @SerializedName("status") val status: TaskStatus
 )
+
+data class UserTaskDto(
+    @SerializedName("user_id") val userId: Long,
+    @SerializedName("task_id") val taskId: Long,
+    @SerializedName("work_date") val workDate: Long? = null,
+    @SerializedName("location") val location: String? = null,
+    @SerializedName("completion_percentage") val completionPercentage: Int = 0,
+    @SerializedName("time_spent_minutes") val timeSpentMinutes: Int = 0,
+    @SerializedName("is_completed") val isCompleted: Boolean = false,
+    @SerializedName("updated_at") val updatedAt: Long
+)

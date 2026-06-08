@@ -18,6 +18,9 @@ interface UserTaskDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(userTask: UserTaskEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(userTasks: List<UserTaskEntity>)
+
     @Query("SELECT * FROM user_task WHERE user_id = :userId AND task_id = :taskId")
     suspend fun get(userId: Long, taskId: Long): UserTaskEntity?
 

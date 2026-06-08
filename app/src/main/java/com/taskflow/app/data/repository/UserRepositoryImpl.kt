@@ -19,6 +19,8 @@ import com.taskflow.app.util.safeApiCall
 import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(
@@ -81,6 +83,43 @@ class UserRepositoryImpl @Inject constructor(
                     users.forEach { user ->
                         userDao.replaceRolesForUser(user.id, user.effectiveRoles())
                     }
+                }
+            }
+
+    override suspend fun refreshCurrentUser(): ApiResult<User> =
+        safeApiCall { userApi.getMe() }
+            .map { it.toDomain() }
+            .onSuccess { user ->
+                database.withTransaction {
+                    seedRoles()
+                    val existing = userDao.getById(user.id)
+                    if (existing == null) {
+                        userDao.insert(user.toEntity())
+                    } else {
+                        userDao.update(user.toEntity())
+                    }
+                    userDao.replaceRolesForUser(user.id, user.effectiveRoles())
+                }
+            }
+
+    override suspend fun uploadCurrentUserPhoto(bytes: ByteArray, contentType: String): ApiResult<User> =
+        safeApiCall {
+            userApi.uploadProfilePhoto(
+                contentType = contentType,
+                body = bytes.toRequestBody(contentType.toMediaType())
+            )
+        }
+            .map { it.toDomain() }
+            .onSuccess { user ->
+                database.withTransaction {
+                    seedRoles()
+                    val existing = userDao.getById(user.id)
+                    if (existing == null) {
+                        userDao.insert(user.toEntity())
+                    } else {
+                        userDao.update(user.toEntity())
+                    }
+                    userDao.replaceRolesForUser(user.id, user.effectiveRoles())
                 }
             }
 

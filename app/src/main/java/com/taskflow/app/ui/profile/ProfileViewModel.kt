@@ -39,6 +39,9 @@ class ProfileViewModel @Inject constructor(
     private val tokenManager: TokenManager
 ) : ViewModel() {
 
+    private var pendingPhotoBytes: ByteArray? = null
+    private var pendingPhotoContentType: String? = null
+
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
@@ -52,7 +55,10 @@ class ProfileViewModel @Inject constructor(
 
             val userId = tokenManager.getUserId()
             val storedRole = tokenManager.getUserRole()?.toUserRoleOrNull() ?: UserRole.USER
-            val user = userId?.let { userRepository.getUserById(it) }
+            val user = when (val result = userRepository.refreshCurrentUser()) {
+                is ApiResult.Success -> result.data
+                is ApiResult.Error -> userId?.let { userRepository.getUserById(it) }
+            }
 
             if (user == null) {
                 _uiState.update {
@@ -102,7 +108,9 @@ class ProfileViewModel @Inject constructor(
         _uiState.update { it.copy(newPassword = value, passwordError = null, successMessage = null) }
     }
 
-    fun onPhotoSelected(value: String?) {
+    fun onPhotoSelected(value: String?, bytes: ByteArray? = null, contentType: String? = null) {
+        pendingPhotoBytes = bytes
+        pendingPhotoContentType = contentType
         _uiState.update { it.copy(photoUrl = value, successMessage = null) }
     }
 
@@ -126,22 +134,45 @@ class ProfileViewModel @Inject constructor(
                 username = current.username.trim(),
                 email = current.email.trim(),
                 passwordHash = current.newPassword.takeIf { it.isNotBlank() } ?: user.passwordHash,
-                photoUrl = current.photoUrl,
+                photoUrl = if (pendingPhotoBytes == null) current.photoUrl else user.photoUrl,
                 role = current.role,
                 updatedAt = updatedAt
             )
 
             when (val result = userRepository.updateProfileRemote(updatedUser, current.newPassword)) {
                 is ApiResult.Success -> {
+                    val photoBytes = pendingPhotoBytes
+                    val photoContentType = pendingPhotoContentType ?: "image/jpeg"
+                    val finalUser = if (photoBytes != null) {
+                        when (val upload = userRepository.uploadCurrentUserPhoto(photoBytes, photoContentType)) {
+                            is ApiResult.Success -> {
+                                pendingPhotoBytes = null
+                                pendingPhotoContentType = null
+                                upload.data
+                            }
+                            is ApiResult.Error -> {
+                                _uiState.update {
+                                    it.copy(
+                                        isLoading = false,
+                                        errorMessage = upload.error.message ?: "Perfil guardado, mas a fotografia nao foi enviada."
+                                    )
+                                }
+                                return@launch
+                            }
+                        }
+                    } else {
+                        result.data
+                    }
+
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            user = result.data,
-                            name = result.data.name,
-                            username = result.data.username,
-                            email = result.data.email,
-                            photoUrl = result.data.photoUrl,
-                            role = result.data.role,
+                            user = finalUser,
+                            name = finalUser.name,
+                            username = finalUser.username,
+                            email = finalUser.email,
+                            photoUrl = finalUser.photoUrl,
+                            role = finalUser.role,
                             newPassword = "",
                             successMessage = "Perfil guardado com sucesso."
                         )

@@ -23,6 +23,7 @@ interface TaskRepository {
     ): Flow<List<Task>>
     suspend fun updateTaskStatus(id: Long, status: TaskStatus)
     suspend fun refreshTasks(projectId: Long): ApiResult<List<Task>>
+    suspend fun refreshUserTaskAssignments(userId: Long): ApiResult<Unit>
     suspend fun pushTask(task: Task): ApiResult<Task>
     suspend fun updateTaskStatusRemote(id: Long, status: TaskStatus): ApiResult<Task>
     suspend fun deleteTaskRemote(id: Long): ApiResult<Unit>

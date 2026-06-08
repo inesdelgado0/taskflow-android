@@ -3,4 +3,10 @@
     <cache-path
         name="exports"
         path="exports/" />
+    <cache-path
+        name="observations"
+        path="observations/" />
+    <cache-path
+        name="profile_photos"
+        path="profile-photos/" />
 </paths>

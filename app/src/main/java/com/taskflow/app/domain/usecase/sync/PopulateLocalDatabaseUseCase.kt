@@ -35,4 +35,9 @@ class PopulateLocalDatabaseUseCase @Inject constructor(
             }
         }
     }
+
+    suspend operator fun invoke(userId: Long): Result<Unit> =
+        invoke().onSuccess {
+            taskRepository.refreshUserTaskAssignments(userId)
+        }
 }

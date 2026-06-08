@@ -1,9 +1,11 @@
 package com.taskflow.app.ui.common
 
+import android.content.Context
 import android.net.Uri
-import android.widget.ImageView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.FileProvider
+import coil.compose.AsyncImage
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -66,10 +68,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.res.stringResource
@@ -84,6 +87,7 @@ import com.taskflow.app.domain.util.TaskStatus
 import com.taskflow.app.ui.navigation.Routes
 import com.taskflow.app.ui.profile.ProfileUiState
 import com.taskflow.app.ui.profile.ProfileViewModel
+import java.io.File
 
 private val Blue = Color(0xFF2F7DF6)
 private val Green = Color(0xFF06C167)
@@ -259,9 +263,28 @@ fun AdminStatsScreen(nav: NavController) {
 fun ProfileScreen(nav: NavController, role: String, accent: Color) {
     val viewModel: ProfileViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    var pendingCameraUri by rememberSaveable { androidx.compose.runtime.mutableStateOf<String?>(null) }
     val photoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
-        onResult = { uri -> viewModel.onPhotoSelected(uri?.toString()) }
+        onResult = { uri ->
+            if (uri == null) {
+                viewModel.onPhotoSelected(null)
+            } else {
+                val upload = context.readProfilePhotoUpload(uri)
+                viewModel.onPhotoSelected(uri.toString(), upload?.bytes, upload?.contentType)
+            }
+        }
+    )
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(),
+        onResult = { success ->
+            val uri = pendingCameraUri?.let(Uri::parse)
+            if (success && uri != null) {
+                val upload = context.readProfilePhotoUpload(uri)
+                viewModel.onPhotoSelected(uri.toString(), upload?.bytes, upload?.contentType)
+            }
+        }
     )
 
     ProfileFormScreen(title = stringResource(R.string.profile_title), onBack = { nav.popBackStack() }) {
@@ -279,7 +302,12 @@ fun ProfileScreen(nav: NavController, role: String, accent: Color) {
                     onUsernameChange = viewModel::onUsernameChange,
                     onEmailChange = viewModel::onEmailChange,
                     onPasswordChange = viewModel::onPasswordChange,
-                    onPhotoClick = { photoPicker.launch("image/*") },
+                    onGalleryClick = { photoPicker.launch("image/*") },
+                    onCameraClick = {
+                        val uri = context.createProfilePhotoUri()
+                        pendingCameraUri = uri.toString()
+                        cameraLauncher.launch(uri)
+                    },
                     onSave = viewModel::saveProfile,
                     onCancel = { nav.popBackStack() }
                 )
@@ -328,7 +356,8 @@ private fun ColumnScope.EditableProfileContent(
     onUsernameChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
-    onPhotoClick: () -> Unit,
+    onGalleryClick: () -> Unit,
+    onCameraClick: () -> Unit,
     onSave: () -> Unit,
     onCancel: () -> Unit
 ) {
@@ -339,16 +368,32 @@ private fun ColumnScope.EditableProfileContent(
         size = 80,
         modifier = Modifier.align(Alignment.CenterHorizontally)
     )
-    OutlinedButton(
-        onClick = onPhotoClick,
-        modifier = Modifier.align(Alignment.CenterHorizontally).height(38.dp),
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, Border),
-        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
+    Row(
+        modifier = Modifier.align(Alignment.CenterHorizontally),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Icon(Icons.Default.CameraAlt, null, modifier = Modifier.size(16.dp), tint = Blue)
-        Spacer(Modifier.width(6.dp))
-        Text(stringResource(R.string.change_photo), style = MaterialTheme.typography.bodySmall)
+        OutlinedButton(
+            onClick = onGalleryClick,
+            modifier = Modifier.height(38.dp),
+            shape = RoundedCornerShape(8.dp),
+            border = BorderStroke(1.dp, Border),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
+        ) {
+            Icon(Icons.Default.Person, null, modifier = Modifier.size(16.dp), tint = Blue)
+            Spacer(Modifier.width(6.dp))
+            Text(stringResource(R.string.observation_btn_gallery), style = MaterialTheme.typography.bodySmall)
+        }
+        OutlinedButton(
+            onClick = onCameraClick,
+            modifier = Modifier.height(38.dp),
+            shape = RoundedCornerShape(8.dp),
+            border = BorderStroke(1.dp, Border),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
+        ) {
+            Icon(Icons.Default.CameraAlt, null, modifier = Modifier.size(16.dp), tint = Blue)
+            Spacer(Modifier.width(6.dp))
+            Text(stringResource(R.string.observation_btn_camera), style = MaterialTheme.typography.bodySmall)
+        }
     }
     Spacer(Modifier.height(2.dp))
     ProfileField(
@@ -1142,23 +1187,33 @@ private fun ProfileAvatar(
         contentAlignment = Alignment.Center
     ) {
         if (photoUrl != null) {
-            AndroidView(
+            AsyncImage(
+                model = photoUrl,
+                contentDescription = stringResource(R.string.profile_label_photo),
                 modifier = Modifier.fillMaxSize(),
-                factory = { context ->
-                    ImageView(context).apply {
-                        scaleType = ImageView.ScaleType.CENTER_CROP
-                        setImageURI(Uri.parse(photoUrl))
-                    }
-                },
-                update = { image ->
-                    image.scaleType = ImageView.ScaleType.CENTER_CROP
-                    image.setImageURI(Uri.parse(photoUrl))
-                }
+                contentScale = ContentScale.Crop
             )
         } else {
             Text(initial, color = Color.White, fontWeight = FontWeight.Bold)
         }
     }
+}
+
+private data class ProfilePhotoUpload(
+    val bytes: ByteArray,
+    val contentType: String
+)
+
+private fun Context.readProfilePhotoUpload(uri: Uri): ProfilePhotoUpload? {
+    val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return null
+    val contentType = contentResolver.getType(uri) ?: "image/jpeg"
+    return ProfilePhotoUpload(bytes = bytes, contentType = contentType)
+}
+
+private fun Context.createProfilePhotoUri(): Uri {
+    val dir = File(cacheDir, "profile-photos").apply { mkdirs() }
+    val file = File(dir, "profile_${System.currentTimeMillis()}.jpg")
+    return FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
 }
 
 @Composable

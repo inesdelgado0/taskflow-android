@@ -3,6 +3,7 @@ package com.taskflow.app.data.remote.api
 import com.taskflow.app.data.remote.dto.TaskDto
 import com.taskflow.app.data.remote.dto.TaskRequest
 import com.taskflow.app.data.remote.dto.TaskStatusRequest
+import com.taskflow.app.data.remote.dto.UserTaskDto
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -17,6 +18,9 @@ interface TaskApi {
 
     @GET("tasks/{id}")
     suspend fun getTask(@Path("id") id: Long): Response<TaskDto>
+
+    @GET("users/{userId}/task-assignments")
+    suspend fun getUserTaskAssignments(@Path("userId") userId: Long): Response<List<UserTaskDto>>
 
     @POST("projects/{projectId}/tasks")
     suspend fun createTask(

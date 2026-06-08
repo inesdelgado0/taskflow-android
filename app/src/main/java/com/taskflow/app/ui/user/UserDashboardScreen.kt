@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -69,7 +70,10 @@ fun UserDashboardScreen(
             .fillMaxSize()
             .background(PageBackground)
     ) {
-        UserTopBar(onLogout = onLogout)
+        UserTopBar(
+            onProfile = { nav.navigate(Routes.USER_PROFILE) },
+            onLogout = onLogout
+        )
 
         when {
             state.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -177,10 +181,14 @@ fun UserDashboardScreen(
 }
 
 @Composable
-private fun UserTopBar(onLogout: () -> Unit) {
+private fun UserTopBar(
+    onProfile: () -> Unit,
+    onLogout: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .statusBarsPadding()
             .height(72.dp)
             .background(Color.White)
             .padding(horizontal = 20.dp),
@@ -204,6 +212,7 @@ private fun UserTopBar(onLogout: () -> Unit) {
             Box(
                 modifier = Modifier
                     .size(34.dp)
+                    .clickable(onClick = onProfile)
                     .background(Orange, CircleShape),
                 contentAlignment = Alignment.Center
             ) {

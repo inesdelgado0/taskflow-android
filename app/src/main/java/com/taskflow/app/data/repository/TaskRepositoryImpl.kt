@@ -1,11 +1,14 @@
 package com.taskflow.app.data.repository
 
 import com.taskflow.app.data.local.dao.TaskDao
+import com.taskflow.app.data.local.dao.UserTaskDao
 import com.taskflow.app.data.local.entity.TaskEntity
+import com.taskflow.app.data.local.entity.UserTaskEntity
 import com.taskflow.app.data.remote.api.TaskApi
 import com.taskflow.app.data.remote.dto.TaskDto
 import com.taskflow.app.data.remote.dto.TaskRequest
 import com.taskflow.app.data.remote.dto.TaskStatusRequest
+import com.taskflow.app.data.remote.dto.UserTaskDto
 import com.taskflow.app.domain.model.Task
 import com.taskflow.app.domain.repository.TaskRepository
 import com.taskflow.app.domain.util.TaskPriority
@@ -21,6 +24,7 @@ import javax.inject.Inject
 
 class TaskRepositoryImpl @Inject constructor(
     private val taskDao: TaskDao,
+    private val userTaskDao: UserTaskDao,
     private val taskApi: TaskApi,
     private val notificationScheduler: TaskNotificationScheduler
 ) : TaskRepository {
@@ -83,6 +87,12 @@ class TaskRepositoryImpl @Inject constructor(
                 taskDao.upsertAll(tasks.map { it.toEntity() })
                 tasks.forEach { notificationScheduler.scheduleDeadlineReminder(it) }
             }
+
+    override suspend fun refreshUserTaskAssignments(userId: Long): ApiResult<Unit> =
+        safeApiCall { taskApi.getUserTaskAssignments(userId) }
+            .map { assignments -> assignments.map { it.toEntity() } }
+            .onSuccess { assignments -> userTaskDao.upsertAll(assignments) }
+            .map { Unit }
 
     override suspend fun pushTask(task: Task): ApiResult<Task> {
         val result = if (task.id == 0L) {
@@ -164,5 +174,16 @@ class TaskRepositoryImpl @Inject constructor(
         deadline = deadline,
         status = status,
         createdBy = createdBy
+    )
+
+    private fun UserTaskDto.toEntity() = UserTaskEntity(
+        userId = userId,
+        taskId = taskId,
+        workDate = workDate,
+        location = location,
+        completionPercentage = completionPercentage,
+        timeSpentMinutes = timeSpentMinutes,
+        isCompleted = isCompleted,
+        updatedAt = updatedAt
     )
 }
