@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -84,12 +85,12 @@ internal fun StatNavCard(icon: ImageVector, title: String, value: String, detail
         border = BorderStroke(1.dp, Border)
     ) {
         Row(Modifier.fillMaxSize().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, null, tint = color, modifier = Modifier.size(32.dp))
+            Icon(icon, contentDescription = title, tint = color, modifier = Modifier.size(32.dp))
             Spacer(Modifier.width(16.dp))
-            Column {
-                Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                Text(value, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
-                Text(detail, color = Muted, style = MaterialTheme.typography.bodySmall)
+            Column(Modifier.weight(1f)) {
+                Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(value, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, maxLines = 1)
+                Text(detail, color = Muted, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         }
     }
@@ -411,11 +412,12 @@ internal fun UserTaskLine(task: Task, projects: List<Project>, onClick: () -> Un
             }
             Text(
                 task.deadline.displayDate(),
-                modifier = Modifier.width(96.dp),
+                modifier = Modifier.widthIn(min = 112.dp),
                 color = Muted,
                 style = MaterialTheme.typography.bodySmall,
                 textAlign = TextAlign.End,
-                maxLines = 1
+                maxLines = 1,
+                overflow = TextOverflow.Clip
             )
         }
         Spacer(Modifier.height(8.dp))

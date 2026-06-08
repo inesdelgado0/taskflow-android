@@ -159,7 +159,7 @@ private fun TaskAssignmentUserRow(
         IconButton(onClick = onClick, modifier = Modifier.size(32.dp)) {
             Icon(
                 imageVector = if (assigned) Icons.Default.Close else Icons.Default.Add,
-                contentDescription = null,
+                contentDescription = stringResource(if (assigned) R.string.cd_remove_user else R.string.cd_add_user),
                 tint = actionColor,
                 modifier = Modifier.size(16.dp)
             )
