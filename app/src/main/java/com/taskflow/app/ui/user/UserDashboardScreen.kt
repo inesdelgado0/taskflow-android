@@ -70,7 +70,7 @@ fun UserDashboardScreen(nav: NavController, onLogout: () -> Unit) {
             activeTasks.forEach { task ->
                 UserTaskLine(task, state.projects) {
                     viewModel.selectTask(task.id)
-                    nav.navigate(Routes.USER_TASK_DETAILS)
+                    nav.navigate(Routes.userTaskExecution(task.id))
                 }
             }
             if (activeTasks.isEmpty()) EmptyData()

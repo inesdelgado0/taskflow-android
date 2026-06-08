@@ -27,8 +27,6 @@ import javax.inject.Singleton
 object NetworkModule {
 
     private const val BASE_URL = "https://taskflow-api-fvln.onrender.com/v1/"
-
-
     private const val CONNECT_TIMEOUT = 15L
     private const val READ_TIMEOUT    = 30L
     private const val WRITE_TIMEOUT   = 30L
