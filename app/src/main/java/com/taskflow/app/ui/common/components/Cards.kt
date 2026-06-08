@@ -38,6 +38,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.taskflow.app.R
 import com.taskflow.app.domain.model.Project
@@ -403,11 +405,18 @@ internal fun UserTaskLine(task: Task, projects: List<Project>, onClick: () -> Un
     val progress = if (task.status == TaskStatus.COMPLETED) 1f else if (task.status == TaskStatus.IN_PROGRESS) 0.6f else 0f
     Column(Modifier.fillMaxWidth().clickable(onClick = onClick).background(Color.White, RoundedCornerShape(8.dp)).padding(10.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Column {
-                Text(task.title, fontWeight = FontWeight.Bold)
-                Text(projects.firstOrNull { it.id == task.projectId }?.name.orEmpty(), color = Muted, style = MaterialTheme.typography.bodySmall)
+            Column(Modifier.weight(1f)) {
+                Text(task.title, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(projects.firstOrNull { it.id == task.projectId }?.name.orEmpty(), color = Muted, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            Text(task.deadline.displayDate(), color = Muted, style = MaterialTheme.typography.bodySmall)
+            Text(
+                task.deadline.displayDate(),
+                modifier = Modifier.width(96.dp),
+                color = Muted,
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.End,
+                maxLines = 1
+            )
         }
         Spacer(Modifier.height(8.dp))
         ProgressLine("", "${(progress * 100).toInt()}%", progress)
