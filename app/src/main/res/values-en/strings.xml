@@ -195,6 +195,15 @@
     <string name="sync_status_syncing">Syncing…</string>
     <string name="sync_status_synced">Synced</string>
 
+    <!-- Accessibility -->
+    <string name="cd_notifications">Notifications</string>
+    <string name="cd_open_profile">Open profile</string>
+    <string name="cd_logout">Sign out</string>
+    <string name="cd_search">Search</string>
+    <string name="cd_expand_dropdown">Open options</string>
+    <string name="cd_add_user">Add user</string>
+    <string name="cd_remove_user">Remove user</string>
+
     <!-- Authentication - JP -->
     <string name="login_subtitle">Sign in to continue</string>
     <string name="login_select_profile">Select profile:</string>

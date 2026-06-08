@@ -39,6 +39,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.taskflow.app.R
@@ -59,9 +61,12 @@ internal fun SearchField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = Modifier.fillMaxWidth().height(56.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .semantics { contentDescription = placeholder },
         placeholder = { Text(placeholder) },
-        leadingIcon = { Icon(Icons.Default.Search, null) },
+        leadingIcon = { Icon(Icons.Default.Search, stringResource(R.string.cd_search)) },
         singleLine = true,
         shape = RoundedCornerShape(8.dp),
         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Border, unfocusedBorderColor = Border)
@@ -215,6 +220,7 @@ internal fun DropdownSelector(
                     .border(1.dp, Border, RoundedCornerShape(8.dp))
                     .clip(RoundedCornerShape(8.dp))
                     .background(Color.White)
+                    .semantics { contentDescription = label }
                     .clickable { expanded = true }
                     .padding(horizontal = 12.dp),
                 contentAlignment = Alignment.CenterStart
@@ -248,12 +254,13 @@ internal fun ProjectFilterDropdown(
                 .height(36.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(Color.White)
+                .semantics { contentDescription = selectedText }
                 .clickable { expanded = true }
                 .padding(horizontal = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(selectedText, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = Color.Black, maxLines = 1)
-            Icon(Icons.Default.KeyboardArrowDown, null, modifier = Modifier.size(18.dp), tint = Muted)
+            Icon(Icons.Default.KeyboardArrowDown, stringResource(R.string.cd_expand_dropdown), modifier = Modifier.size(18.dp), tint = Muted)
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             Column {
