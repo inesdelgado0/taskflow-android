@@ -5,9 +5,6 @@ create table if not exists users (
   email text not null unique,
   password_hash text not null,
   photo_url text,
-  -- Temporary compatibility column while Android still models one role per user.
-  -- The normalized source of truth is roles + user_roles below.
-  role text not null default 'USER' check (role in ('ADMIN', 'MANAGER', 'USER')),
   is_active boolean not null default true,
   created_at bigint not null,
   updated_at bigint not null
@@ -34,11 +31,11 @@ create table if not exists user_roles (
   primary key (user_id, role_id)
 );
 
--- Backfill existing Supabase users that still only have users.role.
+-- Seed roles (one-time insert, harmless on re-run)
 insert into user_roles (user_id, role_id, assigned_at)
 select users.id, roles.id, coalesce(users.created_at, 0)
 from users
-join roles on roles.code = users.role
+join roles on roles.code = 'USER'
 on conflict (user_id, role_id) do nothing;
 
 create table if not exists projects (
@@ -127,6 +124,18 @@ create table if not exists sync_queue (
   last_error text
 );
 
+create table if not exists device_tokens (
+  id bigserial primary key,
+  user_id bigint not null references users(id) on delete cascade,
+  token text not null unique,
+  platform text not null default 'ANDROID' check (platform in ('ANDROID', 'IOS', 'WEB')),
+  device_name text,
+  is_active boolean not null default true,
+  created_at bigint not null,
+  updated_at bigint not null,
+  last_seen_at bigint not null
+);
+
 create index if not exists idx_projects_status on projects(status);
 create index if not exists idx_roles_code on roles(code);
 create index if not exists idx_user_roles_user on user_roles(user_id);
@@ -141,3 +150,5 @@ create index if not exists idx_evaluations_project on evaluations(project_id);
 create index if not exists idx_audit_user on audit_log(user_id);
 create index if not exists idx_audit_timestamp on audit_log(timestamp);
 create index if not exists idx_sync_created_at on sync_queue(created_at);
+create index if not exists idx_device_tokens_user on device_tokens(user_id);
+create index if not exists idx_device_tokens_active on device_tokens(is_active);

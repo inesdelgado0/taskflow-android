@@ -36,6 +36,10 @@ data class ProjectStatusRequest(
     @SerializedName("status") val status: ProjectStatus
 )
 
+data class AssignUserRequest(
+    @SerializedName("user_id") val userId: Long
+)
+
 data class TaskDto(
     @SerializedName("id") val id: Long,
     @SerializedName("project_id") val projectId: Long,
@@ -71,4 +75,12 @@ data class UserTaskDto(
     @SerializedName("time_spent_minutes") val timeSpentMinutes: Int = 0,
     @SerializedName("is_completed") val isCompleted: Boolean = false,
     @SerializedName("updated_at") val updatedAt: Long
+)
+
+data class TaskProgressRequest(
+    @SerializedName("user_id") val userId: Long,
+    @SerializedName("work_date") val workDate: Long?,
+    @SerializedName("location") val location: String? = null,
+    @SerializedName("completion_percentage") val completionPercentage: Int,
+    @SerializedName("time_spent_minutes") val timeSpentMinutes: Int
 )

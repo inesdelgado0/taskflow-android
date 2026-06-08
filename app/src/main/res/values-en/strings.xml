@@ -239,9 +239,10 @@
     <string name="updated_project_activity">Project updated: %1$s</string>
     <string name="all_statuses">All statuses</string>
     <string name="all_managers">All managers</string>
+    <string name="all_priorities">All priorities</string>
     <string name="search_projects_hint">Search projects...</string>
     <string name="search_users_hint">Search users...</string>
-    <string name="search_tasks_hint">Search tasks... (RF14)</string>
+    <string name="search_tasks_hint">Search tasks...</string>
     <string name="new_action">New</string>
     <string name="details">Details</string>
     <string name="active_status">Active</string>
@@ -321,6 +322,7 @@
     <string name="evaluate_user">Evaluate User</string>
     <string name="available_users">Available Users</string>
     <string name="active_tasks_metric">Active Tasks</string>
+    <string name="active_tasks_count">%1$d active tasks</string>
     <string name="comment_optional">Comment (optional)</string>
     <string name="comment_placeholder">Add observations about performance...</string>
 
@@ -332,11 +334,13 @@
     <string name="view_completed_history">View Completed Task History</string>
     <string name="all_filter">All</string>
     <string name="completed_filter">Completed</string>
+    <string name="pending_filter">Pending</string>
     <string name="cancelled_filter">Cancelled</string>
     <string name="monthly_summary">Monthly Summary</string>
     <string name="total_time">Total Time</string>
     <string name="average_rating">Average Rating</string>
     <string name="completed_status">Completed</string>
+    <string name="cancelled_status">Cancelled</string>
     <string name="now_time">now</string>
     <string name="this_week">This week</string>
     <string name="progress_saved_success">Progress saved successfully.</string>

@@ -14,8 +14,7 @@ data class RegisterRequest(
     @SerializedName("username") val username: String,
     @SerializedName("email")    val email: String,
     @SerializedName("password") val password: String,
-    @SerializedName("role")     val role: String = "USER",
-    @SerializedName("roles")    val roles: List<String> = listOf(role)
+    @SerializedName("roles")    val roles: List<String> = listOf("USER")
 )
 
 data class AuthResponse(
@@ -28,8 +27,7 @@ data class UserDto(
     @SerializedName("name")       val name: String,
     @SerializedName("username")   val username: String,
     @SerializedName("email")      val email: String,
-    @SerializedName("role")       val role: String,
-    @SerializedName("roles")      val roles: List<String>? = null,
+    @SerializedName("roles")      val roles: List<String> = listOf("USER"),
     @SerializedName("photo_url")  val photoUrl: String?  = null,
     @SerializedName("is_active")  val isActive: Boolean  = true,
     @SerializedName("created_at") val createdAt: Long?   = null,
@@ -42,6 +40,20 @@ data class UpdateProfileRequest(
     @SerializedName("email")     val email: String,
     @SerializedName("photo_url") val photoUrl: String? = null,
     @SerializedName("password")  val password: String? = null
+)
+
+data class UserRequest(
+    @SerializedName("name")      val name: String,
+    @SerializedName("username")  val username: String,
+    @SerializedName("email")     val email: String,
+    @SerializedName("password")  val password: String? = null,
+    @SerializedName("roles")     val roles: List<String> = listOf("USER"),
+    @SerializedName("photo_url") val photoUrl: String? = null,
+    @SerializedName("is_active") val isActive: Boolean = true
+)
+
+data class UserRolesRequest(
+    @SerializedName("roles") val roles: List<String>
 )
 
 data class RefreshTokenRequest(

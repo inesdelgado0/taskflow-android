@@ -3,6 +3,7 @@ package com.taskflow.app.data.local.database
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.taskflow.app.data.local.converter.Converters
 import com.taskflow.app.data.local.dao.AuditLogDao
 import com.taskflow.app.data.local.dao.EvaluationDao
@@ -55,8 +56,22 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun auditLogDao(): AuditLogDao
     abstract fun syncQueueDao(): SyncQueueDao
 
+    /**
+     * Executa [block] com as foreign keys desativadas.
+     * Útil durante sync em bulk para evitar SQLITE_CONSTRAINT_TRIGGER
+     * quando os dados remotos contêm referências a registos que ainda não foram inseridos localmente.
+     */
+    suspend fun <T> withForeignKeysDisabled(block: suspend () -> T): T {
+        val db: SupportSQLiteDatabase = openHelper.writableDatabase
+        db.execSQL("PRAGMA foreign_keys = OFF")
+        return try {
+            block()
+        } finally {
+            db.execSQL("PRAGMA foreign_keys = ON")
+        }
+    }
+
     companion object {
         const val DATABASE_NAME = "taskflow.db"
     }
 }
-

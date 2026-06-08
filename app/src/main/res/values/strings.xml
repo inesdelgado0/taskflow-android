@@ -239,9 +239,10 @@
     <string name="updated_project_activity">Projeto atualizado: %1$s</string>
     <string name="all_statuses">Todos os estados</string>
     <string name="all_managers">Todos os gestores</string>
+    <string name="all_priorities">Todas as prioridades</string>
     <string name="search_projects_hint">Pesquisar projetos...</string>
     <string name="search_users_hint">Pesquisar utilizadores...</string>
-    <string name="search_tasks_hint">Pesquisar tarefas... (RF14)</string>
+    <string name="search_tasks_hint">Pesquisar tarefas...</string>
     <string name="new_action">Novo</string>
     <string name="details">Detalhes</string>
     <string name="active_status">Ativo</string>
@@ -321,6 +322,7 @@
     <string name="evaluate_user">Avaliar Utilizador</string>
     <string name="available_users">Utilizadores Disponíveis</string>
     <string name="active_tasks_metric">Tarefas Ativas</string>
+    <string name="active_tasks_count">%1$d tarefas ativas</string>
     <string name="comment_optional">Comentário (opcional)</string>
     <string name="comment_placeholder">Adicione observações sobre o desempenho...</string>
 
@@ -332,11 +334,13 @@
     <string name="view_completed_history">Ver Histórico de Tarefas Concluídas</string>
     <string name="all_filter">Todas</string>
     <string name="completed_filter">Concluídas</string>
+    <string name="pending_filter">Pendentes</string>
     <string name="cancelled_filter">Canceladas</string>
     <string name="monthly_summary">Resumo do Mês</string>
     <string name="total_time">Tempo Total</string>
     <string name="average_rating">Avaliação Média</string>
     <string name="completed_status">Concluída</string>
+    <string name="cancelled_status">Cancelada</string>
     <string name="now_time">agora</string>
     <string name="this_week">Esta semana</string>
     <string name="progress_saved_success">Progresso guardado com sucesso.</string>

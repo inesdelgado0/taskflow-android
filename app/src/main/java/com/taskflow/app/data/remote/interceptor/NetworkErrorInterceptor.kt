@@ -3,6 +3,7 @@ package com.taskflow.app.data.remote.interceptor
 import com.taskflow.app.util.NetworkError
 import okhttp3.Interceptor
 import okhttp3.Response
+import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import javax.inject.Inject
@@ -38,6 +39,11 @@ class NetworkErrorInterceptor @Inject constructor() : Interceptor {
         } catch (e: UnknownHostException) {
             throw NetworkError.NoConnection
         } catch (e: SocketTimeoutException) {
+            throw NetworkError.NoConnection
+        } catch (e: IOException) {
+            if (e.message == "Canceled") {
+                throw e
+            }
             throw NetworkError.NoConnection
         } catch (e: Exception) {
             throw NetworkError.Unknown(e)

@@ -1,5 +1,6 @@
 package com.taskflow.app.data.repository
 
+import com.taskflow.app.audit.AuditLogger
 import com.taskflow.app.data.local.dao.UserDao
 import com.taskflow.app.data.local.database.AppDatabase
 import com.taskflow.app.data.local.entity.RoleEntity
@@ -8,6 +9,9 @@ import com.taskflow.app.data.local.entity.UserRoleEntity
 import com.taskflow.app.data.local.entity.UserWithRoles
 import com.taskflow.app.data.remote.dto.UpdateProfileRequest
 import com.taskflow.app.data.remote.api.UserApi
+import com.taskflow.app.data.remote.TokenManager
+import com.taskflow.app.data.remote.dto.UserRequest
+import com.taskflow.app.data.remote.dto.UserRolesRequest
 import com.taskflow.app.data.remote.dto.UserDto
 import com.taskflow.app.domain.model.User
 import com.taskflow.app.domain.repository.UserRepository
@@ -26,7 +30,9 @@ import javax.inject.Inject
 class UserRepositoryImpl @Inject constructor(
     private val userDao: UserDao,
     private val database: AppDatabase,
-    private val userApi: UserApi
+    private val userApi: UserApi,
+    private val tokenManager: TokenManager,
+    private val auditLogger: AuditLogger
 ) : UserRepository {
 
     override suspend fun createUser(user: User): Long {
@@ -89,18 +95,7 @@ class UserRepositoryImpl @Inject constructor(
     override suspend fun refreshCurrentUser(): ApiResult<User> =
         safeApiCall { userApi.getMe() }
             .map { it.toDomain() }
-            .onSuccess { user ->
-                database.withTransaction {
-                    seedRoles()
-                    val existing = userDao.getById(user.id)
-                    if (existing == null) {
-                        userDao.insert(user.toEntity())
-                    } else {
-                        userDao.update(user.toEntity())
-                    }
-                    userDao.replaceRolesForUser(user.id, user.effectiveRoles())
-                }
-            }
+            .onSuccess { user -> upsertUserWithRoles(user) }
 
     override suspend fun uploadCurrentUserPhoto(bytes: ByteArray, contentType: String): ApiResult<User> =
         safeApiCall {
@@ -110,17 +105,48 @@ class UserRepositoryImpl @Inject constructor(
             )
         }
             .map { it.toDomain() }
-            .onSuccess { user ->
-                database.withTransaction {
-                    seedRoles()
-                    val existing = userDao.getById(user.id)
-                    if (existing == null) {
-                        userDao.insert(user.toEntity())
-                    } else {
-                        userDao.update(user.toEntity())
-                    }
-                    userDao.replaceRolesForUser(user.id, user.effectiveRoles())
+            .onSuccess { user -> upsertUserWithRoles(user) }
+
+    override suspend fun pushUser(user: User, password: String?): ApiResult<User> {
+        val isCreate = user.id == 0L
+        val request = user.toRequest(password)
+        val result = if (user.id == 0L) {
+            safeApiCall { userApi.createUser(request) }
+        } else {
+            safeApiCall { userApi.updateUser(user.id, request) }
+        }
+
+        return result
+            .map { it.toDomain() }
+            .onSuccess { syncedUser ->
+                upsertUserWithRoles(syncedUser)
+                val details = "email=${syncedUser.email},roles=${syncedUser.roles.joinToString(",")}"
+                if (isCreate) {
+                    auditLogger.logCreate(currentActorId(), "USER", syncedUser.id, details)
+                } else {
+                    auditLogger.logUpdate(currentActorId(), "USER", syncedUser.id, details)
                 }
+            }
+    }
+
+    override suspend fun updateUserRolesRemote(id: Long, roles: List<UserRole>): ApiResult<User> =
+        safeApiCall { userApi.updateRoles(id, UserRolesRequest(roles.map { it.name })) }
+            .map { it.toDomain() }
+            .onSuccess { syncedUser ->
+                upsertUserWithRoles(syncedUser)
+                auditLogger.logUpdate(
+                    currentActorId(),
+                    "USER",
+                    syncedUser.id,
+                    details = "roles=${syncedUser.roles.joinToString(",")}"
+                )
+            }
+
+    override suspend fun deleteUserRemote(id: Long): ApiResult<Unit> =
+        safeApiCall { userApi.deleteUser(id) }
+            .onSuccess {
+                deleteUser(id)
+                auditLogger.logDelete(currentActorId(), "USER", id)
             }
 
     override suspend fun updateProfileRemote(user: User, newPassword: String?): ApiResult<User> =
@@ -137,17 +163,27 @@ class UserRepositoryImpl @Inject constructor(
         }
             .map { updatedUser -> updatedUser.toDomain() }
             .onSuccess { updatedUser ->
-                database.withTransaction {
-                    seedRoles()
-                    val existing = userDao.getById(updatedUser.id)
-                    if (existing == null) {
-                        userDao.insert(updatedUser.toEntity())
-                    } else {
-                        userDao.update(updatedUser.toEntity())
-                    }
-                    userDao.replaceRolesForUser(updatedUser.id, updatedUser.effectiveRoles())
-                }
+                upsertUserWithRoles(updatedUser)
+                auditLogger.logUpdate(
+                    currentActorId(),
+                    "USER",
+                    updatedUser.id,
+                    details = "profile:${updatedUser.email}"
+                )
             }
+
+    private suspend fun upsertUserWithRoles(user: User) {
+        database.withTransaction {
+            seedRoles()
+            val existing = userDao.getById(user.id)
+            if (existing == null) {
+                userDao.insert(user.toEntity())
+            } else {
+                userDao.update(user.toEntity())
+            }
+            userDao.replaceRolesForUser(user.id, user.effectiveRoles())
+        }
+    }
 
     private suspend fun seedRoles() {
         userDao.upsertRoles(
@@ -174,6 +210,8 @@ class UserRepositoryImpl @Inject constructor(
 
     private fun User.effectiveRoles(): List<UserRole> =
         roles.ifEmpty { listOf(role) }.distinct()
+
+    private suspend fun currentActorId(): Long? = tokenManager.getUserId()
 
     private val UserRole.roleId: Long
         get() = when (this) {
@@ -217,9 +255,8 @@ class UserRepositoryImpl @Inject constructor(
 
     private fun UserDto.toDomain(): User {
         val roleList = roles
-            ?.mapNotNull { value -> runCatching { UserRole.valueOf(value) }.getOrNull() }
-            ?.ifEmpty { null }
-            ?: listOf(runCatching { UserRole.valueOf(role) }.getOrDefault(UserRole.USER))
+            .mapNotNull { value -> runCatching { UserRole.valueOf(value) }.getOrNull() }
+            .ifEmpty { listOf(UserRole.USER) }
         val now = System.currentTimeMillis()
 
         return User(
@@ -236,4 +273,14 @@ class UserRepositoryImpl @Inject constructor(
             updatedAt = updatedAt ?: now
         )
     }
+
+    private fun User.toRequest(password: String?) = UserRequest(
+        name = name,
+        username = username,
+        email = email,
+        password = password?.takeIf { it.isNotBlank() },
+        roles = effectiveRoles().map { it.name },
+        photoUrl = photoUrl,
+        isActive = isActive
+    )
 }

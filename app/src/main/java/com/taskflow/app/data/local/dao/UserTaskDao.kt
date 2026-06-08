@@ -30,6 +30,9 @@ interface UserTaskDao {
     @Query("SELECT * FROM user_task WHERE user_id = :userId")
     fun getTasksByUserFlow(userId: Long): Flow<List<UserTaskEntity>>
 
+    @Query("SELECT * FROM user_task")
+    fun getAllFlow(): Flow<List<UserTaskEntity>>
+
     @Query("""
         UPDATE user_task SET
             completion_percentage = :percentage,
@@ -54,4 +57,7 @@ interface UserTaskDao {
 
     @Query("DELETE FROM user_task WHERE task_id = :taskId")
     suspend fun deleteAllForTask(taskId: Long)
+
+    @Query("DELETE FROM user_task WHERE task_id = :taskId AND user_id = :userId")
+    suspend fun delete(taskId: Long, userId: Long)
 }
