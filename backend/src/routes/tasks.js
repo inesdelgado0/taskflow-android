@@ -56,6 +56,15 @@ router.get("/tasks/:id", asyncRoute(async (req, res) => {
   return handleSupabase(res, result, "Task not found.");
 }));
 
+router.get("/users/:userId/task-assignments", asyncRoute(async (req, res) => {
+  const result = await supabase
+    .from("user_task")
+    .select("*")
+    .eq("user_id", Number(req.params.userId));
+
+  return handleSupabase(res, result);
+}));
+
 router.put("/tasks/:id", asyncRoute(async (req, res) => {
   const existing = await supabase
     .from("tasks")

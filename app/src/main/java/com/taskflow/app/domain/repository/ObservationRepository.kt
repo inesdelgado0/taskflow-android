@@ -12,5 +12,6 @@ interface ObservationRepository {
     fun getObservationsByTaskAndUserFlow(taskId: Long, userId: Long): Flow<List<Observation>>
     suspend fun refreshObservations(taskId: Long): ApiResult<List<Observation>>
     suspend fun pushObservation(observation: Observation): ApiResult<Observation>
+    suspend fun uploadObservationPhoto(id: Long, bytes: ByteArray, contentType: String): ApiResult<Observation>
     suspend fun deleteObservationRemote(id: Long): ApiResult<Unit>
 }

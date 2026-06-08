@@ -5,15 +5,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.taskflow.app.data.local.dao.UserTaskDao
 import com.taskflow.app.data.remote.TokenManager
+import com.taskflow.app.domain.model.Observation
 import com.taskflow.app.domain.model.Task
+import com.taskflow.app.domain.repository.ObservationRepository
 import com.taskflow.app.domain.repository.ProjectRepository
 import com.taskflow.app.domain.repository.TaskRepository
 import com.taskflow.app.domain.usecase.user.tasks.UpdateTaskProgressUseCase
 import com.taskflow.app.ui.navigation.Routes
+import com.taskflow.app.util.ApiResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
@@ -22,9 +26,13 @@ import javax.inject.Inject
 data class TaskExecutionUiState(
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
+    val isSavingObservation: Boolean = false,
     val saved: Boolean = false,
+    val observationSaved: Boolean = false,
     val error: String? = null,
-    val task: UserTaskItemUi? = null
+    val observationError: String? = null,
+    val task: UserTaskItemUi? = null,
+    val observations: List<Observation> = emptyList()
 )
 
 data class TaskProgressFormState(
@@ -43,6 +51,7 @@ class TaskExecutionViewModel @Inject constructor(
     private val tokenManager: TokenManager,
     private val taskRepository: TaskRepository,
     private val projectRepository: ProjectRepository,
+    private val observationRepository: ObservationRepository,
     private val userTaskDao: UserTaskDao,
     private val updateTaskProgressUseCase: UpdateTaskProgressUseCase
 ) : ViewModel() {
@@ -57,6 +66,8 @@ class TaskExecutionViewModel @Inject constructor(
 
     init {
         loadTask()
+        observeObservations()
+        refreshObservations()
     }
 
     fun onDateChanged(value: String) {
@@ -118,6 +129,79 @@ class TaskExecutionViewModel @Inject constructor(
         }
     }
 
+    fun saveObservation(text: String, photoBytes: ByteArray?, photoContentType: String?) {
+        viewModelScope.launch {
+            val cleanedText = text.trim().ifBlank { null }
+            if (cleanedText == null && photoBytes == null) {
+                _uiState.update {
+                    it.copy(observationError = "Adicione texto ou uma fotografia.")
+                }
+                return@launch
+            }
+
+            val userId = tokenManager.getUserId()
+            if (userId == null) {
+                _uiState.update { it.copy(observationError = "Sessao expirada.") }
+                return@launch
+            }
+
+            _uiState.update {
+                it.copy(isSavingObservation = true, observationError = null, observationSaved = false)
+            }
+            val observation = Observation(
+                taskId = taskId,
+                userId = userId,
+                text = cleanedText,
+                photoPath = if (cleanedText == null && photoBytes != null) "__pending_upload__" else null,
+                createdAt = System.currentTimeMillis()
+            )
+
+            when (val result = observationRepository.pushObservation(observation)) {
+                is ApiResult.Success -> {
+                    if (photoBytes != null) {
+                        when (val upload = observationRepository.uploadObservationPhoto(
+                            id = result.data.id,
+                            bytes = photoBytes,
+                            contentType = photoContentType ?: "image/jpeg"
+                        )) {
+                            is ApiResult.Success -> _uiState.update {
+                                it.copy(
+                                    isSavingObservation = false,
+                                    observationSaved = true,
+                                    observationError = null
+                                )
+                            }
+                            is ApiResult.Error -> _uiState.update {
+                                it.copy(
+                                    isSavingObservation = false,
+                                    observationError = upload.error.message ?: "Observacao criada, mas a fotografia nao foi enviada."
+                                )
+                            }
+                        }
+                    } else {
+                        _uiState.update {
+                            it.copy(
+                                isSavingObservation = false,
+                                observationSaved = true,
+                                observationError = null
+                            )
+                        }
+                    }
+                }
+                is ApiResult.Error -> _uiState.update {
+                    it.copy(
+                        isSavingObservation = false,
+                        observationError = result.error.message ?: "Nao foi possivel guardar a observacao."
+                    )
+                }
+            }
+        }
+    }
+
+    fun consumeObservationSaved() {
+        _uiState.update { it.copy(observationSaved = false) }
+    }
+
     private fun loadTask() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
@@ -142,6 +226,20 @@ class TaskExecutionViewModel @Inject constructor(
                 percentage = uiTask.progress.toString(),
                 timeSpent = if (uiTask.timeSpentMinutes == 0) "" else uiTask.timeSpentMinutes.toString()
             )
+        }
+    }
+
+    private fun observeObservations() {
+        viewModelScope.launch {
+            observationRepository.getObservationsByTaskFlow(taskId).collect { observations ->
+                _uiState.update { it.copy(observations = observations) }
+            }
+        }
+    }
+
+    private fun refreshObservations() {
+        viewModelScope.launch {
+            observationRepository.refreshObservations(taskId)
         }
     }
 

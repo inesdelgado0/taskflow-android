@@ -1,7 +1,6 @@
 package com.taskflow.app.ui.common.components
 
-import android.net.Uri
-import android.widget.ImageView
+import coil.compose.AsyncImage
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,9 +15,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import com.taskflow.app.ui.common.theme.Muted
 import com.taskflow.app.ui.common.theme.White
 
@@ -46,18 +45,11 @@ internal fun ProfileAvatar(
         contentAlignment = Alignment.Center
     ) {
         if (photoUrl != null) {
-            AndroidView(
+            AsyncImage(
+                model = photoUrl,
+                contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
-                factory = { context ->
-                    ImageView(context).apply {
-                        scaleType = ImageView.ScaleType.CENTER_CROP
-                        setImageURI(Uri.parse(photoUrl))
-                    }
-                },
-                update = { image ->
-                    image.scaleType = ImageView.ScaleType.CENTER_CROP
-                    image.setImageURI(Uri.parse(photoUrl))
-                }
+                contentScale = ContentScale.Crop
             )
         } else {
             Text(initial, color = White, fontWeight = FontWeight.Bold)

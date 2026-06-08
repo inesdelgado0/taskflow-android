@@ -7,6 +7,7 @@ import com.taskflow.app.data.remote.TokenManager
 import com.taskflow.app.domain.model.Task
 import com.taskflow.app.domain.repository.ProjectRepository
 import com.taskflow.app.domain.repository.UserRepository
+import com.taskflow.app.domain.usecase.sync.PopulateLocalDatabaseUseCase
 import com.taskflow.app.domain.usecase.user.tasks.GetCompletedUserTasksUseCase
 import com.taskflow.app.domain.usecase.user.tasks.GetPendingUserTasksUseCase
 import com.taskflow.app.domain.util.TaskStatus
@@ -55,6 +56,7 @@ class UserTasksViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val projectRepository: ProjectRepository,
     private val userTaskDao: UserTaskDao,
+    private val populateLocalDatabase: PopulateLocalDatabaseUseCase,
     private val getPendingUserTasksUseCase: GetPendingUserTasksUseCase,
     private val getCompletedUserTasksUseCase: GetCompletedUserTasksUseCase
 ) : ViewModel() {
@@ -76,6 +78,7 @@ class UserTasksViewModel @Inject constructor(
             }
 
             runCatching {
+                populateLocalDatabase(userId)
                 val userName = userRepository.getUserById(userId)?.name ?: "Utilizador"
                 combine(
                     getPendingUserTasksUseCase(userId),

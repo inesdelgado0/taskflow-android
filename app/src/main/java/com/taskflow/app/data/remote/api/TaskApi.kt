@@ -6,6 +6,7 @@ import com.taskflow.app.data.remote.dto.TaskDto
 import com.taskflow.app.data.remote.dto.TaskProgressRequest
 import com.taskflow.app.data.remote.dto.TaskRequest
 import com.taskflow.app.data.remote.dto.TaskStatusRequest
+import com.taskflow.app.data.remote.dto.UserTaskDto
 import com.taskflow.app.data.remote.dto.UserDto
 import retrofit2.Response
 import retrofit2.http.Body
@@ -21,6 +22,9 @@ interface TaskApi {
 
     @GET("tasks/{id}")
     suspend fun getTask(@Path("id") id: Long): Response<TaskDto>
+
+    @GET("users/{userId}/task-assignments")
+    suspend fun getUserTaskAssignments(@Path("userId") userId: Long): Response<List<UserTaskDto>>
 
     @POST("projects/{projectId}/tasks")
     suspend fun createTask(

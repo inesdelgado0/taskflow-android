@@ -17,6 +17,8 @@ import com.taskflow.app.util.onSuccess
 import com.taskflow.app.util.safeApiCall
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import javax.inject.Inject
 
 class ObservationRepositoryImpl @Inject constructor(
@@ -73,6 +75,21 @@ class ObservationRepositoryImpl @Inject constructor(
                     details = "taskId=${synced.taskId},userId=${synced.userId}"
                 )
             }
+
+    override suspend fun uploadObservationPhoto(
+        id: Long,
+        bytes: ByteArray,
+        contentType: String
+    ): ApiResult<Observation> =
+        safeApiCall {
+            observationApi.uploadObservationPhoto(
+                id = id,
+                contentType = contentType,
+                body = bytes.toRequestBody(contentType.toMediaType())
+            )
+        }
+            .map { it.toDomain() }
+            .onSuccess { synced -> observationDao.upsert(synced.toEntity()) }
 
     override suspend fun deleteObservationRemote(id: Long): ApiResult<Unit> =
         safeApiCall { observationApi.deleteObservation(id) }

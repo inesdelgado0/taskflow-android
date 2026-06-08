@@ -1,5 +1,7 @@
 package com.taskflow.app.ui.profile
 
+import android.content.Context
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -23,10 +25,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -37,12 +38,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.taskflow.app.R
@@ -54,17 +60,34 @@ import com.taskflow.app.ui.common.theme.Black
 import com.taskflow.app.ui.common.theme.Blue
 import com.taskflow.app.ui.common.theme.Border
 import com.taskflow.app.ui.common.theme.Muted
-import com.taskflow.app.ui.common.theme.Page
 import com.taskflow.app.ui.common.theme.Soft
 import com.taskflow.app.ui.common.util.initial
+import java.io.File
 
 @Composable
 fun ProfileScreen(nav: NavController, role: String, accent: Color) {
     val viewModel: ProfileViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    var cameraPhotoUri by remember { mutableStateOf<Uri?>(null) }
     val photoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
-        onResult = { uri -> viewModel.onPhotoSelected(uri?.toString()) }
+        onResult = { uri ->
+            if (uri != null) {
+                val upload = context.readProfilePhotoUpload(uri)
+                viewModel.onPhotoSelected(uri.toString(), upload?.bytes, upload?.contentType)
+            }
+        }
+    )
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(),
+        onResult = { success ->
+            val uri = cameraPhotoUri
+            if (success && uri != null) {
+                val upload = context.readProfilePhotoUpload(uri)
+                viewModel.onPhotoSelected(uri.toString(), upload?.bytes, upload?.contentType)
+            }
+        }
     )
 
     ProfileFormScreen(title = stringResource(R.string.profile_title), onBack = { nav.popBackStack() }) {
@@ -82,7 +105,12 @@ fun ProfileScreen(nav: NavController, role: String, accent: Color) {
                     onUsernameChange = viewModel::onUsernameChange,
                     onEmailChange = viewModel::onEmailChange,
                     onPasswordChange = viewModel::onPasswordChange,
-                    onPhotoClick = { photoPicker.launch("image/*") },
+                    onGalleryClick = { photoPicker.launch("image/*") },
+                    onCameraClick = {
+                        val uri = context.createProfileImageUri()
+                        cameraPhotoUri = uri
+                        cameraLauncher.launch(uri)
+                    },
                     onSave = viewModel::saveProfile,
                     onCancel = { nav.popBackStack() }
                 )
@@ -100,7 +128,8 @@ private fun ColumnScope.EditableProfileContent(
     onUsernameChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
-    onPhotoClick: () -> Unit,
+    onGalleryClick: () -> Unit,
+    onCameraClick: () -> Unit,
     onSave: () -> Unit,
     onCancel: () -> Unit
 ) {
@@ -111,16 +140,32 @@ private fun ColumnScope.EditableProfileContent(
         size = 80,
         modifier = Modifier.align(Alignment.CenterHorizontally)
     )
-    OutlinedButton(
-        onClick = onPhotoClick,
-        modifier = Modifier.align(Alignment.CenterHorizontally).height(38.dp),
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, Border),
-        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
+    Row(
+        modifier = Modifier.align(Alignment.CenterHorizontally),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Icon(Icons.Default.CameraAlt, null, modifier = Modifier.size(16.dp), tint = Blue)
-        Spacer(Modifier.width(6.dp))
-        Text(stringResource(R.string.change_photo), style = MaterialTheme.typography.bodySmall)
+        OutlinedButton(
+            onClick = onGalleryClick,
+            modifier = Modifier.height(38.dp),
+            shape = RoundedCornerShape(8.dp),
+            border = BorderStroke(1.dp, Border),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
+        ) {
+            Icon(Icons.Outlined.PhotoLibrary, null, modifier = Modifier.size(16.dp), tint = Blue)
+            Spacer(Modifier.width(6.dp))
+            Text(stringResource(R.string.observation_btn_gallery), style = MaterialTheme.typography.bodySmall)
+        }
+        OutlinedButton(
+            onClick = onCameraClick,
+            modifier = Modifier.height(38.dp),
+            shape = RoundedCornerShape(8.dp),
+            border = BorderStroke(1.dp, Border),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
+        ) {
+            Icon(Icons.Default.CameraAlt, null, modifier = Modifier.size(16.dp), tint = Blue)
+            Spacer(Modifier.width(6.dp))
+            Text(stringResource(R.string.observation_btn_camera), style = MaterialTheme.typography.bodySmall)
+        }
     }
     Spacer(Modifier.height(2.dp))
     ProfileFieldInline(
@@ -179,6 +224,23 @@ private fun ColumnScope.EditableProfileContent(
     ) {
         Text(stringResource(R.string.btn_cancel))
     }
+}
+
+private fun Context.createProfileImageUri(): Uri {
+    val dir = File(cacheDir, "profile-photos").apply { mkdirs() }
+    val file = File(dir, "profile_${System.currentTimeMillis()}.jpg")
+    return FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+}
+
+private data class ProfilePhotoUpload(
+    val bytes: ByteArray,
+    val contentType: String
+)
+
+private fun Context.readProfilePhotoUpload(uri: Uri): ProfilePhotoUpload? {
+    val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return null
+    val contentType = contentResolver.getType(uri) ?: "image/jpeg"
+    return ProfilePhotoUpload(bytes = bytes, contentType = contentType)
 }
 
 @Composable

@@ -14,6 +14,7 @@ import com.taskflow.app.data.remote.dto.TaskDto
 import com.taskflow.app.data.remote.dto.TaskProgressRequest
 import com.taskflow.app.data.remote.dto.TaskRequest
 import com.taskflow.app.data.remote.dto.TaskStatusRequest
+import com.taskflow.app.data.remote.dto.UserTaskDto
 import com.taskflow.app.domain.model.Task
 import com.taskflow.app.domain.repository.TaskRepository
 import com.taskflow.app.domain.util.TaskPriority
@@ -105,6 +106,12 @@ class TaskRepositoryImpl @Inject constructor(
                 }
                 tasks.forEach { notificationScheduler.scheduleDeadlineReminder(it) }
             }
+
+    override suspend fun refreshUserTaskAssignments(userId: Long): ApiResult<Unit> =
+        safeApiCall { taskApi.getUserTaskAssignments(userId) }
+            .map { assignments -> assignments.map { it.toEntity() } }
+            .onSuccess { assignments -> userTaskDao.upsertAll(assignments) }
+            .map { Unit }
 
     override suspend fun pushTask(task: Task): ApiResult<Task> {
         val isCreate = task.id == 0L
@@ -267,5 +274,16 @@ class TaskRepositoryImpl @Inject constructor(
         deadline = deadline,
         status = status,
         createdBy = createdBy
+    )
+
+    private fun UserTaskDto.toEntity() = UserTaskEntity(
+        userId = userId,
+        taskId = taskId,
+        workDate = workDate,
+        location = location,
+        completionPercentage = completionPercentage,
+        timeSpentMinutes = timeSpentMinutes,
+        isCompleted = isCompleted,
+        updatedAt = updatedAt
     )
 }

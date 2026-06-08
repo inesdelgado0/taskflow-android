@@ -1,5 +1,6 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
+const path = require("path");
 const { supabase } = require("../config/supabase");
 const { asyncRoute, handleSupabase } = require("../utils/http");
 const { requireAuth } = require("../middleware/auth");
@@ -8,6 +9,35 @@ const { USER_SELECT, toUserResponse } = require("../utils/users");
 
 const router = express.Router();
 const BCRYPT_SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
+const PROFILE_PHOTO_BUCKET = process.env.SUPABASE_PROFILE_PHOTOS_BUCKET || "profile-photos";
+const MAX_PROFILE_PHOTO_BYTES = Number(process.env.MAX_PROFILE_PHOTO_BYTES || 10 * 1024 * 1024);
+let profilePhotoBucketReady = false;
+
+function extensionFor(contentType) {
+  if (contentType === "image/png") return ".png";
+  if (contentType === "image/webp") return ".webp";
+  if (contentType === "image/gif") return ".gif";
+  return ".jpg";
+}
+
+async function ensureProfilePhotoBucket() {
+  if (profilePhotoBucketReady) return;
+
+  const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+  if (listError) throw listError;
+
+  const exists = (buckets || []).some((bucket) => bucket.name === PROFILE_PHOTO_BUCKET);
+  if (!exists) {
+    const { error: createError } = await supabase.storage.createBucket(PROFILE_PHOTO_BUCKET, {
+      public: true,
+      fileSizeLimit: MAX_PROFILE_PHOTO_BYTES,
+      allowedMimeTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"]
+    });
+    if (createError) throw createError;
+  }
+
+  profilePhotoBucketReady = true;
+}
 
 async function replaceRoles(userId, roleCodes) {
   const codes = Array.from(new Set(roleCodes && roleCodes.length ? roleCodes : ["USER"]));
@@ -69,6 +99,16 @@ router.get("/", asyncRoute(async (_req, res) => {
   const users = (result.data || []).map(toUserResponse);
 
   return handleSupabase(res, { data: users, error: null });
+}));
+
+router.get("/me", requireAuth, asyncRoute(async (req, res) => {
+  const user = await getUserResponseById(Number(req.user.sub));
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found." });
+  }
+
+  return handleSupabase(res, { data: user, error: null });
 }));
 
 router.get("/:id(\\d+)", asyncRoute(async (req, res) => {
@@ -223,5 +263,62 @@ router.put("/me", requireAuth, asyncRoute(async (req, res) => {
 
   return handleSupabase(res, { data: toUserResponse(result.data), error: null });
 }));
+
+router.post(
+  "/me/photo",
+  requireAuth,
+  express.raw({ type: ["image/jpeg", "image/png", "image/webp", "image/gif", "application/octet-stream"], limit: MAX_PROFILE_PHOTO_BYTES }),
+  asyncRoute(async (req, res) => {
+    const userId = Number(req.user.sub);
+    const contentType = req.headers["content-type"] || "image/jpeg";
+
+    if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+      return res.status(400).json({ message: "Photo bytes are required." });
+    }
+
+    if (!contentType.startsWith("image/") && contentType !== "application/octet-stream") {
+      return res.status(415).json({ message: "Only image uploads are supported." });
+    }
+
+    await ensureProfilePhotoBucket();
+
+    const objectPath = path.posix.join(
+      "users",
+      String(userId),
+      `profile_${Date.now()}${extensionFor(contentType)}`
+    );
+
+    const upload = await supabase.storage
+      .from(PROFILE_PHOTO_BUCKET)
+      .upload(objectPath, req.body, {
+        contentType: contentType === "application/octet-stream" ? "image/jpeg" : contentType,
+        upsert: true
+      });
+
+    if (upload.error) {
+      return res.status(400).json({ message: upload.error.message });
+    }
+
+    const publicUrl = supabase.storage
+      .from(PROFILE_PHOTO_BUCKET)
+      .getPublicUrl(objectPath).data.publicUrl;
+
+    const result = await supabase
+      .from("users")
+      .update({
+        photo_url: publicUrl,
+        updated_at: unixTimestampMs()
+      })
+      .eq("id", userId)
+      .select(USER_SELECT)
+      .single();
+
+    if (result.error) {
+      return res.status(400).json({ message: result.error.message });
+    }
+
+    return handleSupabase(res, { data: toUserResponse(result.data), error: null });
+  })
+);
 
 module.exports = router;

@@ -23,6 +23,8 @@ import com.taskflow.app.util.safeApiCall
 import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(
@@ -89,6 +91,21 @@ class UserRepositoryImpl @Inject constructor(
                     }
                 }
             }
+
+    override suspend fun refreshCurrentUser(): ApiResult<User> =
+        safeApiCall { userApi.getMe() }
+            .map { it.toDomain() }
+            .onSuccess { user -> upsertUserWithRoles(user) }
+
+    override suspend fun uploadCurrentUserPhoto(bytes: ByteArray, contentType: String): ApiResult<User> =
+        safeApiCall {
+            userApi.uploadProfilePhoto(
+                contentType = contentType,
+                body = bytes.toRequestBody(contentType.toMediaType())
+            )
+        }
+            .map { it.toDomain() }
+            .onSuccess { user -> upsertUserWithRoles(user) }
 
     override suspend fun pushUser(user: User, password: String?): ApiResult<User> {
         val isCreate = user.id == 0L

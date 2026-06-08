@@ -127,6 +127,9 @@
     <string name="observation_btn_camera">Câmara</string>
     <string name="observation_btn_gallery">Galeria</string>
     <string name="observation_btn_save">Guardar Observação</string>
+    <string name="observation_text_placeholder">Descreva a observação...</string>
+    <string name="observation_photo_attached">Fotografia anexada</string>
+    <string name="observation_saved_success">Observação guardada com sucesso.</string>
 
     <!-- Avaliação -->
     <string name="evaluation_title">Avaliar Utilizador</string>
