@@ -1,11 +1,14 @@
 package com.taskflow.app.ui.user.tasks
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.taskflow.app.R
 import com.taskflow.app.data.local.dao.UserTaskDao
 import com.taskflow.app.data.remote.TokenManager
 import com.taskflow.app.domain.model.Task
 import com.taskflow.app.domain.repository.ProjectRepository
+import com.taskflow.app.domain.repository.EvaluationRepository
 import com.taskflow.app.domain.repository.UserRepository
 import com.taskflow.app.domain.usecase.sync.PopulateLocalDatabaseUseCase
 import com.taskflow.app.domain.usecase.user.tasks.GetCompletedUserTasksUseCase
@@ -32,15 +35,17 @@ data class UserTaskItemUi(
     val priority: String,
     val deadlineText: String,
     val dateText: String,
+    val location: String,
     val progress: Int,
     val timeSpentMinutes: Int,
+    val memberCount: Int,
     val status: TaskStatus,
     val rating: Double? = null
 )
 
 data class UserTasksUiState(
     val isLoading: Boolean = true,
-    val error: String? = null,
+    @StringRes val errorRes: Int? = null,
     val userName: String = "Utilizador",
     val pendingTasks: List<UserTaskItemUi> = emptyList(),
     val completedTasks: List<UserTaskItemUi> = emptyList()
@@ -55,6 +60,7 @@ class UserTasksViewModel @Inject constructor(
     private val tokenManager: TokenManager,
     private val userRepository: UserRepository,
     private val projectRepository: ProjectRepository,
+    private val evaluationRepository: EvaluationRepository,
     private val userTaskDao: UserTaskDao,
     private val populateLocalDatabase: PopulateLocalDatabaseUseCase,
     private val getPendingUserTasksUseCase: GetPendingUserTasksUseCase,
@@ -70,10 +76,10 @@ class UserTasksViewModel @Inject constructor(
 
     fun loadUserTasks() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorRes = null)
             val userId = tokenManager.getUserId()
             if (userId == null) {
-                _uiState.value = UserTasksUiState(isLoading = false, error = "Sessao expirada.")
+                _uiState.value = UserTasksUiState(isLoading = false, errorRes = R.string.error_session_expired_short)
                 return@launch
             }
 
@@ -92,10 +98,10 @@ class UserTasksViewModel @Inject constructor(
                             completedTasks = completed.map { it.toUi(userId) }
                         )
                     }
-            }.onFailure { error ->
+            }.onFailure {
                 _uiState.value = UserTasksUiState(
                     isLoading = false,
-                    error = error.message ?: "Erro ao carregar tarefas."
+                    errorRes = R.string.error_load_tasks
                 )
             }
         }
@@ -105,6 +111,11 @@ class UserTasksViewModel @Inject constructor(
         val assignment = userTaskDao.get(userId, id)
         val projectName = projectRepository.getProjectById(projectId)?.name ?: "Projeto"
         val progress = assignment?.completionPercentage ?: if (status == TaskStatus.COMPLETED) 100 else 0
+        val memberCount = userTaskDao.countUsersByTask(id)
+        val rating = evaluationRepository
+            .getEvaluationForUserInProject(projectId, userId)
+            ?.rating
+            ?.toDouble()
 
         return UserTaskItemUi(
             id = id,
@@ -114,9 +125,12 @@ class UserTasksViewModel @Inject constructor(
             priority = priority.name.lowercase().replaceFirstChar { it.uppercase() },
             deadlineText = deadline.toDeadlineText(),
             dateText = (assignment?.workDate ?: deadline).toDateText(),
+            location = assignment?.location.orEmpty(),
             progress = progress.coerceIn(0, 100),
             timeSpentMinutes = assignment?.timeSpentMinutes ?: 0,
-            status = status
+            memberCount = memberCount,
+            status = status,
+            rating = rating
         )
     }
 

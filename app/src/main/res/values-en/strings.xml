@@ -51,6 +51,10 @@
     <string name="profile_btn_save">Save changes</string>
     <string name="profile_btn_change_photo">Change photo</string>
     <string name="profile_btn_logout">Sign out</string>
+    <string name="language_title">Language</string>
+    <string name="language_system">System</string>
+    <string name="language_portuguese">Portuguese</string>
+    <string name="language_english">English</string>
 
     <!-- Projetos -->
     <string name="projects_title">Projects</string>
@@ -189,6 +193,9 @@
     <string name="dialog_logout_message">Are you sure you want to sign out?</string>
     <string name="dialog_complete_project_title">Complete project</string>
     <string name="dialog_complete_project_message">Are you sure you want to mark this project as completed?</string>
+    <string name="dialog_discard_changes_title">Discard changes?</string>
+    <string name="dialog_discard_changes_message">There are unsaved changes. Are you sure you want to go back?</string>
+    <string name="btn_discard">Discard</string>
 
     <!-- Estado de sincronização -->
     <string name="sync_status_offline">Offline</string>
@@ -361,5 +368,30 @@
     <string name="error_invalid_date">Invalid date. Use YYYY-MM-DD.</string>
     <string name="error_invalid_percentage">Use a percentage between 0 and 100.</string>
     <string name="error_invalid_time_spent">Enter a valid time.</string>
+    <string name="error_select_project">Select a project.</string>
+    <string name="error_deadline_required">Enter a deadline.</string>
+    <string name="error_session_expired_short">Session expired.</string>
+    <string name="error_load_tasks">Error loading tasks.</string>
+    <string name="error_save_progress">Error saving progress.</string>
+    <string name="error_task_not_found">Task not found.</string>
+    <string name="error_observation_empty">Add text or a photo.</string>
+    <string name="error_observation_photo_upload">Observation created, but the photo was not uploaded.</string>
+    <string name="error_observation_save">Unable to save the observation.</string>
+    <string name="error_profile_load">Unable to load profile data.</string>
+    <string name="error_profile_save">Unable to save profile.</string>
+    <string name="error_profile_photo_upload">Profile saved, but the photo was not uploaded.</string>
+    <string name="profile_saved_success">Profile saved successfully.</string>
+    <string name="user_saved_success">User saved.</string>
+    <string name="user_deleted_success">User deleted.</string>
+    <string name="error_user_save">Unable to save the user.</string>
+    <string name="error_user_delete">Unable to delete the user.</string>
+    <string name="task_saved_success">Task saved.</string>
+    <string name="task_deleted_success">Task deleted.</string>
+    <string name="error_task_save">Unable to save the task.</string>
+    <string name="error_task_delete">Unable to delete the task.</string>
+    <string name="error_project_delete">Unable to delete the project.</string>
+    <string name="error_project_delete_has_tasks">This project cannot be deleted because it has associated tasks.</string>
+    <string name="error_rating_required">Select a score between 1 and 5.</string>
+    <string name="sync_saved_local">Saved locally. It will sync when there is a connection.</string>
 
 </resources>

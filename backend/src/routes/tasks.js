@@ -1,12 +1,15 @@
 const express = require("express");
 const { supabase } = require("../config/supabase");
 const { asyncRoute, handleSupabase, sendNoContent } = require("../utils/http");
+const { optionalAuth } = require("../middleware/auth");
 const { unixTimestampMs } = require("../utils/time");
 const { USER_SELECT, toUserResponse } = require("../utils/users");
 
 const router = express.Router();
 
-function toTaskPayload(body, projectId) {
+router.use(optionalAuth);
+
+function toTaskPayload(body, projectId, createdBy) {
   return {
     project_id: projectId,
     title: body.title,
@@ -14,7 +17,7 @@ function toTaskPayload(body, projectId) {
     priority: body.priority || "MEDIUM",
     deadline: body.deadline || null,
     status: body.status || "PENDING",
-    created_by: body.created_by,
+    created_by: createdBy,
     updated_at: unixTimestampMs()
   };
 }
@@ -30,14 +33,15 @@ router.get("/projects/:projectId/tasks", asyncRoute(async (req, res) => {
 }));
 
 router.post("/projects/:projectId/tasks", asyncRoute(async (req, res) => {
-  if (!req.body.title || !req.body.created_by) {
+  const createdBy = Number(req.user?.sub || req.body.created_by);
+  if (!req.body.title || !createdBy) {
     return res.status(400).json({ message: "Title and created_by are required." });
   }
 
   const result = await supabase
     .from("tasks")
     .insert({
-      ...toTaskPayload(req.body, Number(req.params.projectId)),
+      ...toTaskPayload(req.body, Number(req.params.projectId), createdBy),
       created_at: unixTimestampMs()
     })
     .select()
@@ -68,7 +72,7 @@ router.get("/users/:userId/task-assignments", asyncRoute(async (req, res) => {
 router.put("/tasks/:id", asyncRoute(async (req, res) => {
   const existing = await supabase
     .from("tasks")
-    .select("project_id")
+    .select("project_id, created_by")
     .eq("id", Number(req.params.id))
     .maybeSingle();
 
@@ -82,7 +86,7 @@ router.put("/tasks/:id", asyncRoute(async (req, res) => {
 
   const result = await supabase
     .from("tasks")
-    .update(toTaskPayload(req.body, existing.data.project_id))
+    .update(toTaskPayload(req.body, existing.data.project_id, existing.data.created_by))
     .eq("id", Number(req.params.id))
     .select()
     .single();

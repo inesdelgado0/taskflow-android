@@ -42,7 +42,8 @@ interface TaskDao {
     @Query("""
         SELECT t.* FROM tasks t
         INNER JOIN user_task ut ON t.id = ut.task_id
-        WHERE ut.user_id = :userId AND ut.is_completed = 0
+        WHERE ut.user_id = :userId
+        AND (t.status = 'PENDING' OR t.status = 'IN_PROGRESS')
         ORDER BY t.deadline ASC
     """)
     fun getPendingForUserFlow(userId: Long): Flow<List<TaskEntity>>
@@ -51,7 +52,8 @@ interface TaskDao {
     @Query("""
         SELECT t.* FROM tasks t
         INNER JOIN user_task ut ON t.id = ut.task_id
-        WHERE ut.user_id = :userId AND ut.is_completed = 1
+        WHERE ut.user_id = :userId
+        AND (t.status = 'COMPLETED' OR t.status = 'CANCELLED')
         ORDER BY ut.updated_at DESC
     """)
     fun getCompletedForUserFlow(userId: Long): Flow<List<TaskEntity>>

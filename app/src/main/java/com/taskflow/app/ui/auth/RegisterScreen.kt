@@ -188,7 +188,7 @@ fun RegisterScreen(
                 if (uiState is AuthUiState.Error) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = (uiState as AuthUiState.Error).message,
+                        text = stringResource((uiState as AuthUiState.Error).messageRes),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
                         textAlign = TextAlign.Center,
@@ -322,21 +322,21 @@ private fun RegisterIdentityFields(
         value = name,
         onValueChange = onNameChange,
         placeholder = stringResource(R.string.register_placeholder_name),
-        error = formState.nameError
+        error = formState.nameError?.let { stringResource(it) }
     )
     RegisterTextField(
         label = stringResource(R.string.register_label_username),
         value = username,
         onValueChange = onUsernameChange,
         placeholder = stringResource(R.string.register_placeholder_username),
-        error = formState.usernameError
+        error = formState.usernameError?.let { stringResource(it) }
     )
     RegisterTextField(
         label = stringResource(R.string.register_label_email),
         value = email,
         onValueChange = onEmailChange,
         placeholder = stringResource(R.string.register_placeholder_email),
-        error = formState.emailError,
+        error = formState.emailError?.let { stringResource(it) },
         keyboardType = KeyboardType.Email
     )
 }
@@ -358,7 +358,7 @@ private fun RegisterPasswordFields(
         value = password,
         onValueChange = onPasswordChange,
         placeholder = stringResource(R.string.register_placeholder_password),
-        error = formState.passwordError,
+        error = formState.passwordError?.let { stringResource(it) },
         keyboardType = KeyboardType.Password,
         visualTransformation = if (passwordVisible) {
             VisualTransformation.None
@@ -377,7 +377,7 @@ private fun RegisterPasswordFields(
         value = confirmPassword,
         onValueChange = onConfirmPasswordChange,
         placeholder = stringResource(R.string.register_placeholder_confirm_password),
-        error = formState.confirmPasswordError,
+        error = formState.confirmPasswordError?.let { stringResource(it) },
         keyboardType = KeyboardType.Password,
         visualTransformation = if (confirmPasswordVisible) {
             VisualTransformation.None

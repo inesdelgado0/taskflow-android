@@ -51,18 +51,28 @@ fun UserTaskDetailsScreen(nav: NavController, managerMode: Boolean = false) {
             return@FormScreen
         }
         SectionCard(task.title) {
+            val assignment = state.userTaskAssignments.firstOrNull {
+                it.taskId == task.id && it.userId == state.currentUser?.id
+            }
             StatusPill(task.priority.name, task.priority.color())
             Text(stringResource(R.string.project_prefix, project?.name.orEmpty()), color = Muted)
             Text(task.description.orEmpty(), color = Muted)
             TwoMetrics(stringResource(R.string.deadline_label), task.deadline.displayDate(), stringResource(R.string.status_label), task.status.name)
-            val progress = if (task.status == TaskStatus.COMPLETED) 100 else if (task.status == TaskStatus.IN_PROGRESS) 60 else 0
-            TwoMetrics(stringResource(R.string.assigned_count), state.users.size.toString(), stringResource(R.string.progress_label), "$progress%")
+            val progress = assignment?.completionPercentage
+                ?: if (task.status == TaskStatus.COMPLETED) 100 else 0
+            val assignedCount = state.userTaskAssignments.count { it.taskId == task.id }
+            TwoMetrics(stringResource(R.string.assigned_count), assignedCount.toString(), stringResource(R.string.progress_label), "$progress%")
+            TwoMetrics(stringResource(R.string.location_label), assignment?.location.orEmpty(), stringResource(R.string.time_spent), "${assignment?.timeSpentMinutes ?: 0} min")
             ProgressLine(stringResource(R.string.progress_label), "$progress%", progress / 100f)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 Button(
                     onClick = {
-                        if (managerMode) nav.navigate(Routes.MANAGER_TASK_EDIT)
-                        else viewModel.updateTaskStatus(task, TaskStatus.IN_PROGRESS)
+                        if (managerMode) {
+                            viewModel.selectTask(task.id)
+                            nav.navigate(Routes.MANAGER_TASK_EDIT)
+                        } else {
+                            viewModel.updateTaskStatus(task, TaskStatus.IN_PROGRESS)
+                        }
                     },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(Blue)
@@ -71,8 +81,12 @@ fun UserTaskDetailsScreen(nav: NavController, managerMode: Boolean = false) {
                 }
                 OutlinedButton(
                     onClick = {
-                        if (managerMode) nav.navigate(Routes.MANAGER_ASSIGN_USERS)
-                        else nav.navigate(Routes.USER_OBSERVATIONS)
+                        if (managerMode) {
+                            viewModel.selectTask(task.id)
+                            nav.navigate(Routes.MANAGER_ASSIGN_USERS)
+                        } else {
+                            nav.navigate(Routes.USER_OBSERVATIONS)
+                        }
                     },
                     modifier = Modifier.weight(1f)
                 ) {

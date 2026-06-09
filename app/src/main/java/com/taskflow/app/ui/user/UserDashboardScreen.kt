@@ -53,8 +53,17 @@ fun UserDashboardScreen(nav: NavController, onLogout: () -> Unit) {
         Welcome(state.currentUser?.name ?: stringResource(R.string.dashboard_user))
         SyncStatus(state)
         NotificationStateComponent(state)
-        val activeTasks = state.tasks.filter {
-            it.status != TaskStatus.COMPLETED && it.status != TaskStatus.CANCELLED
+        val currentUserId = state.currentUser?.id
+        val userAssignments = state.userTaskAssignments.filter { assignment ->
+            currentUserId != null && assignment.userId == currentUserId
+        }
+        val userTaskIds = userAssignments.map { it.taskId }.toSet()
+        val userTasks = state.tasks.filter { task -> task.id in userTaskIds }
+        val activeTasks = userTasks.filter { task ->
+            task.status == TaskStatus.PENDING || task.status == TaskStatus.IN_PROGRESS
+        }
+        val completedTasks = state.tasks.count { task ->
+            task.id in userTaskIds && task.status == TaskStatus.COMPLETED
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
             SmallStat(
@@ -68,7 +77,7 @@ fun UserDashboardScreen(nav: NavController, onLogout: () -> Unit) {
             SmallStat(
                 Icons.Default.CalendarToday,
                 stringResource(R.string.dashboard_completed),
-                state.tasks.count { it.status == TaskStatus.COMPLETED }.toString(),
+                completedTasks.toString(),
                 stringResource(R.string.dashboard_total_synced),
                 Blue,
                 Modifier.weight(1f)
@@ -76,7 +85,11 @@ fun UserDashboardScreen(nav: NavController, onLogout: () -> Unit) {
         }
         SectionCard(stringResource(R.string.pending_tasks_title)) {
             activeTasks.forEach { task ->
-                UserTaskLine(task, state.projects) {
+                val progress = userAssignments
+                    .firstOrNull { it.taskId == task.id }
+                    ?.completionPercentage
+                    ?: if (task.status == TaskStatus.COMPLETED) 100 else 0
+                UserTaskLine(task, state.projects, progress) {
                     viewModel.selectTask(task.id)
                     nav.navigate(Routes.userTaskExecution(task.id))
                 }

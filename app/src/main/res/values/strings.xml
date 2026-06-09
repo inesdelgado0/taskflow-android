@@ -51,6 +51,10 @@
     <string name="profile_btn_save">Guardar alterações</string>
     <string name="profile_btn_change_photo">Alterar fotografia</string>
     <string name="profile_btn_logout">Terminar sessão</string>
+    <string name="language_title">Idioma</string>
+    <string name="language_system">Sistema</string>
+    <string name="language_portuguese">Portugues</string>
+    <string name="language_english">Ingles</string>
 
     <!-- Projetos -->
     <string name="projects_title">Projetos</string>
@@ -189,6 +193,9 @@
     <string name="dialog_logout_message">Tem a certeza que pretende terminar a sessão?</string>
     <string name="dialog_complete_project_title">Concluir projeto</string>
     <string name="dialog_complete_project_message">Tem a certeza que pretende marcar este projeto como concluído?</string>
+    <string name="dialog_discard_changes_title">Descartar alterações?</string>
+    <string name="dialog_discard_changes_message">Existem alterações por guardar. Tem a certeza que pretende voltar atrás?</string>
+    <string name="btn_discard">Descartar</string>
 
     <!-- Estado de sincronização -->
     <string name="sync_status_offline">Sem ligação</string>
@@ -361,6 +368,31 @@
     <string name="error_invalid_date">Data inválida. Use AAAA-MM-DD.</string>
     <string name="error_invalid_percentage">Use uma percentagem entre 0 e 100.</string>
     <string name="error_invalid_time_spent">Indique um tempo válido.</string>
+    <string name="error_select_project">Selecione um projeto.</string>
+    <string name="error_deadline_required">Indique um prazo.</string>
+    <string name="error_session_expired_short">Sessão expirada.</string>
+    <string name="error_load_tasks">Erro ao carregar tarefas.</string>
+    <string name="error_save_progress">Erro ao guardar progresso.</string>
+    <string name="error_task_not_found">Tarefa não encontrada.</string>
+    <string name="error_observation_empty">Adicione texto ou uma fotografia.</string>
+    <string name="error_observation_photo_upload">Observação criada, mas a fotografia não foi enviada.</string>
+    <string name="error_observation_save">Não foi possível guardar a observação.</string>
+    <string name="error_profile_load">Não foi possível carregar os dados do perfil.</string>
+    <string name="error_profile_save">Não foi possível guardar o perfil.</string>
+    <string name="error_profile_photo_upload">Perfil guardado, mas a fotografia não foi enviada.</string>
+    <string name="profile_saved_success">Perfil guardado com sucesso.</string>
+    <string name="user_saved_success">Utilizador guardado.</string>
+    <string name="user_deleted_success">Utilizador removido.</string>
+    <string name="error_user_save">Não foi possível guardar o utilizador.</string>
+    <string name="error_user_delete">Não foi possível remover o utilizador.</string>
+    <string name="task_saved_success">Tarefa guardada.</string>
+    <string name="task_deleted_success">Tarefa removida.</string>
+    <string name="error_task_save">Não foi possível guardar a tarefa.</string>
+    <string name="error_task_delete">Não foi possível remover a tarefa.</string>
+    <string name="error_project_delete">Não foi possível remover o projeto.</string>
+    <string name="error_project_delete_has_tasks">Não é possível remover este projeto porque tem tarefas associadas.</string>
+    <string name="error_rating_required">Selecione uma classificação entre 1 e 5.</string>
+    <string name="sync_saved_local">Guardado localmente. Será sincronizado quando houver ligação.</string>
 
     <!-- Notification channels -->
     <string name="notif_channel_tasks_name">Tarefas</string>

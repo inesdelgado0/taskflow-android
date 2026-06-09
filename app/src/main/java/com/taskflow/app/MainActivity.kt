@@ -1,16 +1,29 @@
 package com.taskflow.app
 
 import android.Manifest
+import android.content.Context
+import android.content.res.Configuration
+import android.os.LocaleList
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import com.taskflow.app.ui.common.locale.LanguageManager
 import com.taskflow.app.ui.navigation.TaskFlowNavGraph
 import dagger.hilt.android.AndroidEntryPoint
+import java.util.Locale
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -24,9 +37,7 @@ class MainActivity : ComponentActivity() {
         requestNotificationPermission()
 
         setContent {
-            MaterialTheme {
-                TaskFlowNavGraph()
-            }
+            LocalizedTaskFlowApp()
         }
     }
 
@@ -40,6 +51,48 @@ class MainActivity : ComponentActivity() {
         ) {
             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
+    }
+}
+
+@Composable
+private fun LocalizedTaskFlowApp() {
+    val baseContext = LocalContext.current
+    val selectedLanguage by remember {
+        LanguageManager.languageFlow(baseContext)
+    }.collectAsState(initial = LanguageManager.SYSTEM)
+    val localizedConfiguration = rememberLocalizedConfiguration(baseContext, selectedLanguage)
+
+    key(selectedLanguage) {
+        CompositionLocalProvider(LocalConfiguration provides localizedConfiguration) {
+            MaterialTheme {
+                TaskFlowNavGraph()
+            }
+        }
+    }
+}
+
+@Composable
+private fun rememberLocalizedConfiguration(
+    baseContext: Context,
+    selectedLanguage: String
+): Configuration {
+    return remember(baseContext, selectedLanguage) {
+        val safeLanguage = selectedLanguage.takeIf { it in LanguageManager.supportedLanguages }
+            ?: LanguageManager.SYSTEM
+        val configuration = Configuration(baseContext.resources.configuration)
+
+        if (safeLanguage == LanguageManager.SYSTEM) {
+            Locale.setDefault(configuration.locales[0] ?: Locale.getDefault())
+        } else {
+            val locale = Locale.forLanguageTag(safeLanguage).takeIf { it.language.isNotBlank() }
+                ?: Locale.getDefault()
+            Locale.setDefault(locale)
+            configuration.setLocale(locale)
+            configuration.setLocales(LocaleList(locale))
+        }
+        @Suppress("DEPRECATION")
+        baseContext.resources.updateConfiguration(configuration, baseContext.resources.displayMetrics)
+        configuration
     }
 }
 

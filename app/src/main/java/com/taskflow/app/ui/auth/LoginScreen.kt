@@ -203,7 +203,7 @@ internal fun LoginFormContent(
             value = email,
             onValueChange = onEmailChange,
             placeholder = stringResource(R.string.login_label_email),
-            error = formState.emailError,
+            error = formState.emailError?.let { stringResource(it) },
             keyboardType = KeyboardType.Email
         )
         Spacer(modifier = Modifier.height(10.dp))
@@ -211,7 +211,7 @@ internal fun LoginFormContent(
             value = password,
             onValueChange = onPasswordChange,
             placeholder = stringResource(R.string.login_label_password),
-            error = formState.passwordError,
+            error = formState.passwordError?.let { stringResource(it) },
             keyboardType = KeyboardType.Password,
             visualTransformation = if (passwordVisible) {
                 VisualTransformation.None
@@ -253,7 +253,7 @@ internal fun LoginFormContent(
         if (uiState is AuthUiState.Error) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = uiState.message,
+                text = stringResource(uiState.messageRes),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall,
                 textAlign = TextAlign.Center,

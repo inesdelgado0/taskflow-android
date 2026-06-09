@@ -124,11 +124,11 @@ fun TaskExecutionScreen(
                     CircularProgressIndicator(color = PrimaryBlue)
                 }
 
-                state.error != null && state.task == null -> Box(
+                state.errorRes != null && state.task == null -> Box(
                     Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = state.error.orEmpty(), color = MaterialTheme.colorScheme.error)
+                    Text(text = stringResource(requireNotNull(state.errorRes)), color = MaterialTheme.colorScheme.error)
                 }
 
                 state.task != null -> Column(
@@ -159,7 +159,7 @@ fun TaskExecutionScreen(
         if (showObservationDialog) {
             ObservationFormDialog(
                 isSaving = state.isSavingObservation,
-                error = state.observationError,
+                error = state.observationErrorRes?.let { stringResource(it) },
                 onDismiss = { showObservationDialog = false },
                 onSave = viewModel::saveObservation
             )
@@ -248,8 +248,16 @@ private fun TaskDetailCard(task: UserTaskItemUi) {
             )
 
             Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                DetailChip(icon = Icons.Outlined.CalendarToday, text = task.dateText)
-                DetailChip(icon = Icons.Outlined.Group, text = stringResource(R.string.members_count, 0))
+                DetailChip(icon = Icons.Outlined.CalendarToday, text = stringResource(R.string.deadline_label) + ": " + task.deadlineText)
+                DetailChip(icon = Icons.Outlined.Group, text = stringResource(R.string.members_count, task.memberCount))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                DetailText(label = stringResource(R.string.status_label), value = task.status.name)
+                DetailText(label = stringResource(R.string.data_label), value = task.dateText)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                DetailText(label = stringResource(R.string.location_label), value = task.location.ifBlank { "-" })
+                DetailText(label = stringResource(R.string.time_spent), value = "${task.timeSpentMinutes} min")
             }
 
             Row(
@@ -268,6 +276,14 @@ private fun TaskDetailCard(task: UserTaskItemUi) {
                 trackColor = ProgressTrack
             )
         }
+    }
+}
+
+@Composable
+private fun DetailText(label: String, value: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(text = label, style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+        Text(text = value, style = MaterialTheme.typography.bodySmall, color = Color(0xFF344054))
     }
 }
 
@@ -315,7 +331,7 @@ private fun ProgressFormCard(
                 value = formState.date,
                 onValueChange = onDateChanged,
                 placeholder = stringResource(R.string.task_deadline_placeholder),
-                error = formState.dateError
+                error = formState.dateError?.let { stringResource(it) }
             )
             UserTextField(
                 label = stringResource(R.string.location_label),
@@ -330,14 +346,14 @@ private fun ProgressFormCard(
                 value = formState.percentage,
                 onValueChange = onPercentageChanged,
                 placeholder = "0-100",
-                error = formState.percentageError
+                error = formState.percentageError?.let { stringResource(it) }
             )
             UserTextField(
                 label = stringResource(R.string.time_spent),
                 value = formState.timeSpent,
                 onValueChange = onTimeSpentChanged,
                 placeholder = stringResource(R.string.time_spent_placeholder),
-                error = formState.timeSpentError
+                error = formState.timeSpentError?.let { stringResource(it) }
             )
 
             Button(

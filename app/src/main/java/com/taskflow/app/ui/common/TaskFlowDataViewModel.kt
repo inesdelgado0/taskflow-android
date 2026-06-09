@@ -1,7 +1,9 @@
 package com.taskflow.app.ui.common
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.taskflow.app.R
 import com.taskflow.app.data.local.dao.UserProjectDao
 import com.taskflow.app.data.local.dao.UserTaskDao
 import com.taskflow.app.data.local.entity.UserProjectEntity
@@ -54,7 +56,8 @@ data class TaskFlowDataUiState(
     val selectedTaskId: Long? = null,
     val selectedUserId: Long? = null,
     val isRefreshing: Boolean = false,
-    val refreshError: String? = null
+    val refreshError: String? = null,
+    @StringRes val refreshErrorRes: Int? = null
 )
 
 private data class TaskFlowDataCore(
@@ -206,16 +209,23 @@ class TaskFlowDataViewModel @Inject constructor(
 
     fun refreshFromApi() {
         viewModelScope.launch(Dispatchers.IO) {
-            transient.update { it.copy(isRefreshing = true, refreshError = null) }
-            populateLocalDatabase()
+            transient.update { it.copy(isRefreshing = true, refreshError = null, refreshErrorRes = null) }
+            val userId = tokenManager.getUserId()
+            val result = if (userId != null) {
+                populateLocalDatabase(userId)
+            } else {
+                populateLocalDatabase()
+            }
+            result
                 .onSuccess {
-                    transient.update { it.copy(isRefreshing = false, refreshError = null) }
+                    transient.update { it.copy(isRefreshing = false, refreshError = null, refreshErrorRes = null) }
                 }
                 .onFailure { error ->
                     transient.update {
                         it.copy(
                             isRefreshing = false,
-                            refreshError = null
+                            refreshError = null,
+                            refreshErrorRes = null
                         )
                     }
                 }
@@ -259,7 +269,7 @@ class TaskFlowDataViewModel @Inject constructor(
         if (cleanedName.isBlank()) return
 
         viewModelScope.launch {
-            transient.update { it.copy(isRefreshing = true, refreshError = null) }
+            transient.update { it.copy(isRefreshing = true, refreshError = null, refreshErrorRes = null) }
             val now = System.currentTimeMillis()
             val creatorId = existing?.createdBy ?: uiState.value.currentUser?.id ?: uiState.value.users.firstOrNull()?.id ?: 1L
             val project = Project(
@@ -277,11 +287,17 @@ class TaskFlowDataViewModel @Inject constructor(
 
             when (val result = projectRepository.pushProject(project)) {
                 is ApiResult.Success -> {
-                    transient.update { it.copy(isRefreshing = false, refreshError = null) }
+                    transient.update { it.copy(isRefreshing = false, refreshError = null, refreshErrorRes = null) }
                     onDone()
                 }
                 is ApiResult.Error -> {
-                    transient.update { it.copy(isRefreshing = false, refreshError = result.error.message) }
+                    transient.update {
+                        it.copy(
+                            isRefreshing = false,
+                            refreshError = result.error.message,
+                            refreshErrorRes = null
+                        )
+                    }
                 }
             }
         }
@@ -291,21 +307,27 @@ class TaskFlowDataViewModel @Inject constructor(
         val id = project?.id?.takeIf { it != 0L } ?: return
         if (uiState.value.tasks.any { it.projectId == id }) {
             transient.update {
-                it.copy(refreshError = "Nao e possivel remover este projeto porque tem tarefas associadas.")
+                it.copy(
+                    refreshError = null,
+                    refreshErrorRes = R.string.error_project_delete_has_tasks
+                )
             }
             return
         }
         viewModelScope.launch {
-            transient.update { it.copy(isRefreshing = true, refreshError = null) }
+            transient.update { it.copy(isRefreshing = true, refreshError = null, refreshErrorRes = null) }
             when (val result = projectRepository.deleteProjectRemote(id)) {
                 is ApiResult.Success -> {
-                    transient.update { it.copy(isRefreshing = false, refreshError = null) }
+                    transient.update { it.copy(isRefreshing = false, refreshError = null, refreshErrorRes = null) }
                     onDone()
                 }
                 is ApiResult.Error -> transient.update {
+                    val errorMessage = result.error.message
+                    val errorRes = errorMessage.toProjectDeleteErrorRes()
                     it.copy(
                         isRefreshing = false,
-                        refreshError = result.error.message.toProjectDeleteMessage()
+                        refreshError = if (errorRes == null) errorMessage else null,
+                        refreshErrorRes = errorRes ?: R.string.error_project_delete
                     )
                 }
             }
@@ -315,10 +337,12 @@ class TaskFlowDataViewModel @Inject constructor(
     fun completeProject(project: Project?) {
         val id = project?.id?.takeIf { it != 0L } ?: return
         viewModelScope.launch {
-            transient.update { it.copy(isRefreshing = true, refreshError = null) }
+            transient.update { it.copy(isRefreshing = true, refreshError = null, refreshErrorRes = null) }
             when (val result = projectRepository.completeProjectRemote(id)) {
-                is ApiResult.Success -> transient.update { it.copy(isRefreshing = false, refreshError = null) }
-                is ApiResult.Error -> transient.update { it.copy(isRefreshing = false, refreshError = result.error.message) }
+                is ApiResult.Success -> transient.update { it.copy(isRefreshing = false, refreshError = null, refreshErrorRes = null) }
+                is ApiResult.Error -> transient.update {
+                    it.copy(isRefreshing = false, refreshError = result.error.message, refreshErrorRes = null)
+                }
             }
         }
     }
@@ -338,9 +362,19 @@ class TaskFlowDataViewModel @Inject constructor(
         if (cleanedTitle.isBlank()) return
 
         viewModelScope.launch {
-            transient.update { it.copy(isRefreshing = true, refreshError = null) }
+            transient.update { it.copy(isRefreshing = true, refreshError = null, refreshErrorRes = null) }
             val now = System.currentTimeMillis()
-            val creatorId = existing?.createdBy ?: uiState.value.currentUser?.id ?: uiState.value.users.firstOrNull()?.id ?: 1L
+            val creatorId = existing?.createdBy ?: tokenManager.getUserId()
+            if (creatorId == null) {
+                transient.update {
+                    it.copy(
+                        isRefreshing = false,
+                        refreshError = null,
+                        refreshErrorRes = R.string.error_session_expired_short
+                    )
+                }
+                return@launch
+            }
             val task = Task(
                 id = existing?.id ?: 0L,
                 projectId = projectId,
@@ -356,10 +390,12 @@ class TaskFlowDataViewModel @Inject constructor(
 
             when (val result = taskRepository.pushTask(task)) {
                 is ApiResult.Success -> {
-                    transient.update { it.copy(isRefreshing = false, refreshError = null) }
+                    transient.update { it.copy(isRefreshing = false, refreshError = null, refreshErrorRes = null) }
                     onDone()
                 }
-                is ApiResult.Error -> transient.update { it.copy(isRefreshing = false, refreshError = result.error.message) }
+                is ApiResult.Error -> transient.update {
+                    it.copy(isRefreshing = false, refreshError = result.error.message, refreshErrorRes = null)
+                }
             }
         }
     }
@@ -382,7 +418,7 @@ class TaskFlowDataViewModel @Inject constructor(
         if (existing == null && password.isNullOrBlank()) return
 
         viewModelScope.launch {
-            transient.update { it.copy(isRefreshing = true, refreshError = null) }
+            transient.update { it.copy(isRefreshing = true, refreshError = null, refreshErrorRes = null) }
             val now = System.currentTimeMillis()
             val user = User(
                 id = existing?.id ?: 0L,
@@ -400,10 +436,12 @@ class TaskFlowDataViewModel @Inject constructor(
 
             when (val result = userRepository.pushUser(user, password)) {
                 is ApiResult.Success -> {
-                    transient.update { it.copy(isRefreshing = false, refreshError = null) }
+                    transient.update { it.copy(isRefreshing = false, refreshError = null, refreshErrorRes = null) }
                     onDone()
                 }
-                is ApiResult.Error -> transient.update { it.copy(isRefreshing = false, refreshError = result.error.message) }
+                is ApiResult.Error -> transient.update {
+                    it.copy(isRefreshing = false, refreshError = result.error.message, refreshErrorRes = null)
+                }
             }
         }
     }
@@ -411,13 +449,15 @@ class TaskFlowDataViewModel @Inject constructor(
     fun deleteUser(user: User?, onDone: () -> Unit = {}) {
         val id = user?.id?.takeIf { it != 0L } ?: return
         viewModelScope.launch {
-            transient.update { it.copy(isRefreshing = true, refreshError = null) }
+            transient.update { it.copy(isRefreshing = true, refreshError = null, refreshErrorRes = null) }
             when (val result = userRepository.deleteUserRemote(id)) {
                 is ApiResult.Success -> {
-                    transient.update { it.copy(isRefreshing = false, refreshError = null) }
+                    transient.update { it.copy(isRefreshing = false, refreshError = null, refreshErrorRes = null) }
                     onDone()
                 }
-                is ApiResult.Error -> transient.update { it.copy(isRefreshing = false, refreshError = result.error.message) }
+                is ApiResult.Error -> transient.update {
+                    it.copy(isRefreshing = false, refreshError = result.error.message, refreshErrorRes = null)
+                }
             }
         }
     }
@@ -426,10 +466,12 @@ class TaskFlowDataViewModel @Inject constructor(
         val projectId = project?.id?.takeIf { it != 0L } ?: return
         val userId = user?.id?.takeIf { it != 0L } ?: return
         viewModelScope.launch {
-            transient.update { it.copy(isRefreshing = true, refreshError = null) }
+            transient.update { it.copy(isRefreshing = true, refreshError = null, refreshErrorRes = null) }
             when (val result = projectRepository.assignUserToProjectRemote(projectId, userId)) {
-                is ApiResult.Success -> transient.update { it.copy(isRefreshing = false, refreshError = null) }
-                is ApiResult.Error -> transient.update { it.copy(isRefreshing = false, refreshError = result.error.message) }
+                is ApiResult.Success -> transient.update { it.copy(isRefreshing = false, refreshError = null, refreshErrorRes = null) }
+                is ApiResult.Error -> transient.update {
+                    it.copy(isRefreshing = false, refreshError = result.error.message, refreshErrorRes = null)
+                }
             }
         }
     }
@@ -438,10 +480,12 @@ class TaskFlowDataViewModel @Inject constructor(
         val projectId = project?.id?.takeIf { it != 0L } ?: return
         val userId = user?.id?.takeIf { it != 0L } ?: return
         viewModelScope.launch {
-            transient.update { it.copy(isRefreshing = true, refreshError = null) }
+            transient.update { it.copy(isRefreshing = true, refreshError = null, refreshErrorRes = null) }
             when (val result = projectRepository.removeUserFromProjectRemote(projectId, userId)) {
-                is ApiResult.Success -> transient.update { it.copy(isRefreshing = false, refreshError = null) }
-                is ApiResult.Error -> transient.update { it.copy(isRefreshing = false, refreshError = result.error.message) }
+                is ApiResult.Success -> transient.update { it.copy(isRefreshing = false, refreshError = null, refreshErrorRes = null) }
+                is ApiResult.Error -> transient.update {
+                    it.copy(isRefreshing = false, refreshError = result.error.message, refreshErrorRes = null)
+                }
             }
         }
     }
@@ -450,10 +494,12 @@ class TaskFlowDataViewModel @Inject constructor(
         val taskId = task?.id?.takeIf { it != 0L } ?: return
         val userId = user?.id?.takeIf { it != 0L } ?: return
         viewModelScope.launch {
-            transient.update { it.copy(isRefreshing = true, refreshError = null) }
+            transient.update { it.copy(isRefreshing = true, refreshError = null, refreshErrorRes = null) }
             when (val result = taskRepository.assignUserToTaskRemote(taskId, userId)) {
-                is ApiResult.Success -> transient.update { it.copy(isRefreshing = false, refreshError = null) }
-                is ApiResult.Error -> transient.update { it.copy(isRefreshing = false, refreshError = result.error.message) }
+                is ApiResult.Success -> transient.update { it.copy(isRefreshing = false, refreshError = null, refreshErrorRes = null) }
+                is ApiResult.Error -> transient.update {
+                    it.copy(isRefreshing = false, refreshError = result.error.message, refreshErrorRes = null)
+                }
             }
         }
     }
@@ -462,10 +508,12 @@ class TaskFlowDataViewModel @Inject constructor(
         val taskId = task?.id?.takeIf { it != 0L } ?: return
         val userId = user?.id?.takeIf { it != 0L } ?: return
         viewModelScope.launch {
-            transient.update { it.copy(isRefreshing = true, refreshError = null) }
+            transient.update { it.copy(isRefreshing = true, refreshError = null, refreshErrorRes = null) }
             when (val result = taskRepository.removeUserFromTaskRemote(taskId, userId)) {
-                is ApiResult.Success -> transient.update { it.copy(isRefreshing = false, refreshError = null) }
-                is ApiResult.Error -> transient.update { it.copy(isRefreshing = false, refreshError = result.error.message) }
+                is ApiResult.Success -> transient.update { it.copy(isRefreshing = false, refreshError = null, refreshErrorRes = null) }
+                is ApiResult.Error -> transient.update {
+                    it.copy(isRefreshing = false, refreshError = result.error.message, refreshErrorRes = null)
+                }
             }
         }
     }
@@ -473,10 +521,12 @@ class TaskFlowDataViewModel @Inject constructor(
     fun updateTaskStatus(task: Task?, status: TaskStatus) {
         val id = task?.id?.takeIf { it != 0L } ?: return
         viewModelScope.launch {
-            transient.update { it.copy(isRefreshing = true, refreshError = null) }
+            transient.update { it.copy(isRefreshing = true, refreshError = null, refreshErrorRes = null) }
             when (val result = taskRepository.updateTaskStatusRemote(id, status)) {
-                is ApiResult.Success -> transient.update { it.copy(isRefreshing = false, refreshError = null) }
-                is ApiResult.Error -> transient.update { it.copy(isRefreshing = false, refreshError = result.error.message) }
+                is ApiResult.Success -> transient.update { it.copy(isRefreshing = false, refreshError = null, refreshErrorRes = null) }
+                is ApiResult.Error -> transient.update {
+                    it.copy(isRefreshing = false, refreshError = result.error.message, refreshErrorRes = null)
+                }
             }
         }
     }
@@ -484,13 +534,15 @@ class TaskFlowDataViewModel @Inject constructor(
     fun deleteTask(task: Task?, onDone: () -> Unit = {}) {
         val id = task?.id?.takeIf { it != 0L } ?: return
         viewModelScope.launch {
-            transient.update { it.copy(isRefreshing = true, refreshError = null) }
+            transient.update { it.copy(isRefreshing = true, refreshError = null, refreshErrorRes = null) }
             when (val result = taskRepository.deleteTaskRemote(id)) {
                 is ApiResult.Success -> {
-                    transient.update { it.copy(isRefreshing = false, refreshError = null) }
+                    transient.update { it.copy(isRefreshing = false, refreshError = null, refreshErrorRes = null) }
                     onDone()
                 }
-                is ApiResult.Error -> transient.update { it.copy(isRefreshing = false, refreshError = result.error.message) }
+                is ApiResult.Error -> transient.update {
+                    it.copy(isRefreshing = false, refreshError = result.error.message, refreshErrorRes = null)
+                }
             }
         }
     }
@@ -502,7 +554,7 @@ class TaskFlowDataViewModel @Inject constructor(
         if (cleanedText.isBlank()) return
 
         viewModelScope.launch {
-            transient.update { it.copy(isRefreshing = true, refreshError = null) }
+            transient.update { it.copy(isRefreshing = true, refreshError = null, refreshErrorRes = null) }
             val observation = Observation(
                 taskId = targetTask.id,
                 userId = userId,
@@ -513,10 +565,12 @@ class TaskFlowDataViewModel @Inject constructor(
 
             when (val result = observationRepository.pushObservation(observation)) {
                 is ApiResult.Success -> {
-                    transient.update { it.copy(isRefreshing = false, refreshError = null) }
+                    transient.update { it.copy(isRefreshing = false, refreshError = null, refreshErrorRes = null) }
                     onDone()
                 }
-                is ApiResult.Error -> transient.update { it.copy(isRefreshing = false, refreshError = result.error.message) }
+                is ApiResult.Error -> transient.update {
+                    it.copy(isRefreshing = false, refreshError = result.error.message, refreshErrorRes = null)
+                }
             }
         }
     }
@@ -530,7 +584,7 @@ class TaskFlowDataViewModel @Inject constructor(
             ?: return
 
         viewModelScope.launch {
-            transient.update { it.copy(isRefreshing = true, refreshError = null) }
+            transient.update { it.copy(isRefreshing = true, refreshError = null, refreshErrorRes = null) }
             val evaluation = Evaluation(
                 projectId = targetProject.id,
                 evaluatorId = evaluatorId,
@@ -544,14 +598,15 @@ class TaskFlowDataViewModel @Inject constructor(
 
             when (val result = evaluationRepository.pushEvaluation(evaluation)) {
                 is ApiResult.Success -> {
-                    transient.update { it.copy(isRefreshing = false, refreshError = null) }
+                    transient.update { it.copy(isRefreshing = false, refreshError = null, refreshErrorRes = null) }
                     onDone()
                 }
                 is ApiResult.Error -> {
                     transient.update {
                         it.copy(
                             isRefreshing = false,
-                            refreshError = "Guardado localmente. Sera sincronizado quando houver ligacao."
+                            refreshError = null,
+                            refreshErrorRes = R.string.sync_saved_local
                         )
                     }
                     onDone()
@@ -561,11 +616,11 @@ class TaskFlowDataViewModel @Inject constructor(
     }
 }
 
-private fun String?.toProjectDeleteMessage(): String =
+private fun String?.toProjectDeleteErrorRes(): Int? =
     when {
-        this == null -> "Nao foi possivel remover o projeto."
+        this == null -> R.string.error_project_delete
         contains("FOREIGN KEY", ignoreCase = true) ||
             contains("constraint", ignoreCase = true) ->
-            "Nao e possivel remover este projeto porque tem tarefas associadas."
-        else -> this
+            R.string.error_project_delete_has_tasks
+        else -> null
     }

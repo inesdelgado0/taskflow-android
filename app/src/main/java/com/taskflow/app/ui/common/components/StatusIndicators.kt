@@ -46,7 +46,18 @@ internal data class InAppNotification(
 
 internal fun TaskFlowDataUiState.inAppNotifications(): List<InAppNotification> {
     val now = System.currentTimeMillis()
-    val taskNotifications = tasks
+    val currentUserTaskIds = currentUser?.id?.let { userId ->
+        userTaskAssignments
+            .filter { assignment -> assignment.userId == userId }
+            .map { assignment -> assignment.taskId }
+            .toSet()
+    }
+    val visibleTasks = if (currentUser != null && currentUserTaskIds != null) {
+        tasks.filter { task -> task.id in currentUserTaskIds }
+    } else {
+        tasks
+    }
+    val taskNotifications = visibleTasks
         .filter { task -> task.status != TaskStatus.COMPLETED && task.status != TaskStatus.CANCELLED }
         .flatMap { task ->
             val notifications = mutableListOf<InAppNotification>()
@@ -115,9 +126,10 @@ internal fun StatusPill(text: String, color: Color) {
 
 @Composable
 internal fun SyncStatus(state: TaskFlowDataUiState) {
+    val errorText = state.refreshErrorRes?.let { stringResource(it) } ?: state.refreshError
     val (label, color) = when {
         state.isRefreshing -> stringResource(R.string.sync_status_syncing) to Orange
-        state.refreshError != null -> stringResource(R.string.sync_status_offline) to Red
+        errorText != null -> stringResource(R.string.sync_status_offline) to Red
         else -> stringResource(R.string.sync_status_synced) to Green
     }
     Row(
@@ -126,7 +138,7 @@ internal fun SyncStatus(state: TaskFlowDataUiState) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(label, color = color, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
-        state.refreshError?.let {
+        errorText?.let {
             Text(it, color = Red, style = MaterialTheme.typography.bodySmall)
         }
     }
@@ -155,7 +167,7 @@ internal fun NotificationStateComponent(state: TaskFlowDataUiState) {
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    if (state.refreshError != null) stringResource(R.string.sync_status_offline)
+                    if (state.refreshError != null || state.refreshErrorRes != null) stringResource(R.string.sync_status_offline)
                     else "Notificacoes de tarefas, prazos e sincronizacao ativas",
                     color = Muted,
                     style = MaterialTheme.typography.bodySmall

@@ -110,7 +110,12 @@ class TaskRepositoryImpl @Inject constructor(
     override suspend fun refreshUserTaskAssignments(userId: Long): ApiResult<Unit> =
         safeApiCall { taskApi.getUserTaskAssignments(userId) }
             .map { assignments -> assignments.map { it.toEntity() } }
-            .onSuccess { assignments -> userTaskDao.upsertAll(assignments) }
+            .onSuccess { assignments ->
+                assignments.forEach { remote ->
+                    val local = userTaskDao.get(remote.userId, remote.taskId)
+                    userTaskDao.upsert(mergeAssignment(local, remote))
+                }
+            }
             .map { Unit }
 
     override suspend fun pushTask(task: Task): ApiResult<Task> {
@@ -171,13 +176,7 @@ class TaskRepositoryImpl @Inject constructor(
                 userIds.forEach { userId ->
                     // Só inserir na junction se o user existir localmente (evita FK constraint)
                     if (userDao.getById(userId) != null) {
-                        userTaskDao.upsert(
-                            UserTaskEntity(
-                                userId = userId,
-                                taskId = taskId,
-                                updatedAt = System.currentTimeMillis()
-                            )
-                        )
+                        upsertAssignmentPreservingProgress(userId, taskId)
                     }
                 }
             }
@@ -187,13 +186,7 @@ class TaskRepositoryImpl @Inject constructor(
             .map { Unit }
             .onSuccess {
                 if (userDao.getById(userId) != null) {
-                    userTaskDao.upsert(
-                        UserTaskEntity(
-                            userId = userId,
-                            taskId = taskId,
-                            updatedAt = System.currentTimeMillis()
-                        )
-                    )
+                    upsertAssignmentPreservingProgress(userId, taskId)
                 }
                 auditLogger.logUpdate(currentActorId(), "TASK", taskId, details = "assignUser:$userId")
             }
@@ -286,4 +279,46 @@ class TaskRepositoryImpl @Inject constructor(
         isCompleted = isCompleted,
         updatedAt = updatedAt
     )
+
+    private fun mergeAssignment(local: UserTaskEntity?, remote: UserTaskEntity): UserTaskEntity {
+        if (local == null) return remote
+
+        val localIsNewer = local.updatedAt >= remote.updatedAt
+        val bestProgress = maxOf(local.completionPercentage, remote.completionPercentage)
+
+        return UserTaskEntity(
+            userId = remote.userId,
+            taskId = remote.taskId,
+            workDate = when {
+                localIsNewer && local.workDate != null -> local.workDate
+                remote.workDate != null -> remote.workDate
+                else -> local.workDate
+            },
+            location = when {
+                localIsNewer && !local.location.isNullOrBlank() -> local.location
+                !remote.location.isNullOrBlank() -> remote.location
+                else -> local.location
+            },
+            completionPercentage = bestProgress,
+            timeSpentMinutes = maxOf(local.timeSpentMinutes, remote.timeSpentMinutes),
+            isCompleted = local.isCompleted || remote.isCompleted || bestProgress == 100,
+            updatedAt = maxOf(local.updatedAt, remote.updatedAt)
+        )
+    }
+
+    private suspend fun upsertAssignmentPreservingProgress(userId: Long, taskId: Long) {
+        val now = System.currentTimeMillis()
+        val existing = userTaskDao.get(userId, taskId)
+        if (existing == null) {
+            userTaskDao.upsert(
+                UserTaskEntity(
+                    userId = userId,
+                    taskId = taskId,
+                    updatedAt = now
+                )
+            )
+        } else {
+            userTaskDao.upsert(existing.copy(updatedAt = maxOf(existing.updatedAt, now)))
+        }
+    }
 }
