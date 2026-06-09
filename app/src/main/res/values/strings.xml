@@ -353,4 +353,18 @@
     <string name="error_invalid_percentage">Use uma percentagem entre 0 e 100.</string>
     <string name="error_invalid_time_spent">Indique um tempo válido.</string>
 
+    <!-- Notification channels -->
+    <string name="notif_channel_tasks_name">Tarefas</string>
+    <string name="notif_channel_tasks_desc">Tarefas atribuídas e atualizações de tarefas</string>
+    <string name="notif_channel_deadlines_name">Prazos</string>
+    <string name="notif_channel_deadlines_desc">Lembretes de prazos próximos</string>
+    <string name="notif_channel_sync_name">Sincronização</string>
+    <string name="notif_channel_sync_desc">Estado da sincronização offline</string>
+    <string name="notif_task_assigned_title">Nova tarefa atribuída</string>
+    <string name="notif_deadline_reminder_title">Prazo próximo</string>
+    <string name="notif_sync_completed_title">Sincronização concluída</string>
+    <string name="notif_sync_completed_text">%1$d operação(ões) sincronizada(s)</string>
+    <string name="notif_sync_failed_title">Sincronização incompleta</string>
+    <string name="notif_sync_failed_text">Algumas operações serão tentadas novamente</string>
+
 </resources>
