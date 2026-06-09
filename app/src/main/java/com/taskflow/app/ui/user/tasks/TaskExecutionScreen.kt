@@ -124,11 +124,11 @@ fun TaskExecutionScreen(
                     CircularProgressIndicator(color = PrimaryBlue)
                 }
 
-                state.error != null && state.task == null -> Box(
+                state.errorRes != null && state.task == null -> Box(
                     Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = state.error.orEmpty(), color = MaterialTheme.colorScheme.error)
+                    Text(text = stringResource(requireNotNull(state.errorRes)), color = MaterialTheme.colorScheme.error)
                 }
 
                 state.task != null -> Column(
@@ -159,7 +159,7 @@ fun TaskExecutionScreen(
         if (showObservationDialog) {
             ObservationFormDialog(
                 isSaving = state.isSavingObservation,
-                error = state.observationError,
+                error = state.observationErrorRes?.let { stringResource(it) },
                 onDismiss = { showObservationDialog = false },
                 onSave = viewModel::saveObservation
             )
@@ -331,7 +331,7 @@ private fun ProgressFormCard(
                 value = formState.date,
                 onValueChange = onDateChanged,
                 placeholder = stringResource(R.string.task_deadline_placeholder),
-                error = formState.dateError
+                error = formState.dateError?.let { stringResource(it) }
             )
             UserTextField(
                 label = stringResource(R.string.location_label),
@@ -346,14 +346,14 @@ private fun ProgressFormCard(
                 value = formState.percentage,
                 onValueChange = onPercentageChanged,
                 placeholder = "0-100",
-                error = formState.percentageError
+                error = formState.percentageError?.let { stringResource(it) }
             )
             UserTextField(
                 label = stringResource(R.string.time_spent),
                 value = formState.timeSpent,
                 onValueChange = onTimeSpentChanged,
                 placeholder = stringResource(R.string.time_spent_placeholder),
-                error = formState.timeSpentError
+                error = formState.timeSpentError?.let { stringResource(it) }
             )
 
             Button(

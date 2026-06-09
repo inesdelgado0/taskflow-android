@@ -1,7 +1,9 @@
 package com.taskflow.app.ui.manager.tasks
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.taskflow.app.R
 import com.taskflow.app.data.local.entity.ProjectEntity
 import com.taskflow.app.data.local.entity.TaskEntity
 import com.taskflow.app.domain.usecase.manager.tasks.CreateTaskUseCase
@@ -33,9 +35,9 @@ data class ManagerTaskFormState(
     val status: TaskStatus = TaskStatus.PENDING,
     val createdBy: Long = 0,
     val createdAt: Long = 0,
-    val titleError: String? = null,
-    val projectError: String? = null,
-    val deadlineError: String? = null
+    @StringRes val titleError: Int? = null,
+    @StringRes val projectError: Int? = null,
+    @StringRes val deadlineError: Int? = null
 )
 
 data class ManagerTasksUiState(
@@ -45,8 +47,8 @@ data class ManagerTasksUiState(
     val query: String = "",
     val isLoading: Boolean = false,
     val editingTaskId: Long? = null,
-    val errorMessage: String? = null,
-    val successMessage: String? = null
+    @StringRes val errorMessageRes: Int? = null,
+    @StringRes val successMessageRes: Int? = null
 )
 
 @HiltViewModel
@@ -137,7 +139,7 @@ class ManagerTasksViewModel @Inject constructor(
 
     fun clearForm() {
         _formState.value = ManagerTaskFormState(projectId = _uiState.value.selectedProjectId)
-        _uiState.update { it.copy(editingTaskId = null, errorMessage = null, successMessage = null) }
+        _uiState.update { it.copy(editingTaskId = null, errorMessageRes = null, successMessageRes = null) }
     }
 
     fun saveTask(managerId: Long) {
@@ -161,7 +163,7 @@ class ManagerTasksViewModel @Inject constructor(
                 updatedAt = now
             )
 
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            _uiState.update { it.copy(isLoading = true, errorMessageRes = null) }
             val result = if (task.id == 0L) {
                 createTaskUseCase(task).map { Unit }
             } else {
@@ -172,14 +174,14 @@ class ManagerTasksViewModel @Inject constructor(
                 .onSuccess {
                     clearForm()
                     _uiState.update {
-                        it.copy(isLoading = false, successMessage = "Task saved.")
+                        it.copy(isLoading = false, successMessageRes = R.string.task_saved_success)
                     }
                 }
-                .onFailure { error ->
+                .onFailure {
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = error.message ?: "Unable to save task."
+                            errorMessageRes = R.string.error_task_save
                         )
                     }
                 }
@@ -188,18 +190,18 @@ class ManagerTasksViewModel @Inject constructor(
 
     fun deleteTask(task: TaskEntity) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            _uiState.update { it.copy(isLoading = true, errorMessageRes = null) }
             deleteTaskUseCase(task)
                 .onSuccess {
                     _uiState.update {
-                        it.copy(isLoading = false, successMessage = "Task deleted.")
+                        it.copy(isLoading = false, successMessageRes = R.string.task_deleted_success)
                     }
                 }
-                .onFailure { error ->
+                .onFailure {
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = error.message ?: "Unable to delete task."
+                            errorMessageRes = R.string.error_task_delete
                         )
                     }
                 }
@@ -222,19 +224,19 @@ class ManagerTasksViewModel @Inject constructor(
 
     private fun validateForm(form: ManagerTaskFormState): ManagerTaskFormState {
         val deadlineError = if (form.deadlineText.isBlank()) {
-            null
+            R.string.error_deadline_required
         } else {
             try {
                 parseDeadline(form.deadlineText)
                 null
             } catch (_: DateTimeParseException) {
-                "Use yyyy-mm-dd."
+                R.string.error_invalid_date
             }
         }
 
         return form.copy(
-            titleError = if (form.title.isBlank()) "Required field." else null,
-            projectError = if (form.projectId == 0L) "Select a project." else null,
+            titleError = if (form.title.isBlank()) R.string.error_field_required else null,
+            projectError = if (form.projectId == 0L) R.string.error_select_project else null,
             deadlineError = deadlineError
         )
     }

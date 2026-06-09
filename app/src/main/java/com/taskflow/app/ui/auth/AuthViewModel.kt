@@ -1,8 +1,10 @@
 package com.taskflow.app.ui.auth
 
 import android.util.Patterns
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.taskflow.app.R
 import com.taskflow.app.domain.model.User
 import com.taskflow.app.domain.usecase.auth.LoginUseCase
 import com.taskflow.app.domain.usecase.auth.LogoutUseCase
@@ -20,15 +22,15 @@ sealed class AuthUiState {
     data object Idle : AuthUiState()
     data object Loading : AuthUiState()
     data class Success(val user: User) : AuthUiState()
-    data class Error(val message: String) : AuthUiState()
+    data class Error(@StringRes val messageRes: Int) : AuthUiState()
 }
 
 data class AuthFormState(
-    val emailError: String? = null,
-    val passwordError: String? = null,
-    val nameError: String? = null,
-    val usernameError: String? = null,
-    val confirmPasswordError: String? = null
+    @StringRes val emailError: Int? = null,
+    @StringRes val passwordError: Int? = null,
+    @StringRes val nameError: Int? = null,
+    @StringRes val usernameError: Int? = null,
+    @StringRes val confirmPasswordError: Int? = null
 )
 
 @HiltViewModel
@@ -54,8 +56,8 @@ class AuthViewModel @Inject constructor(
             _uiState.value = AuthUiState.Loading
             loginUseCase(email, password, role)
                 .onSuccess { user -> _uiState.value = AuthUiState.Success(user) }
-                .onFailure { error ->
-                    _uiState.value = AuthUiState.Error(error.message ?: "Invalid credentials.")
+                .onFailure {
+                    _uiState.value = AuthUiState.Error(R.string.error_invalid_credentials)
                 }
         }
     }
@@ -76,8 +78,8 @@ class AuthViewModel @Inject constructor(
             _uiState.value = AuthUiState.Loading
             registerUseCase(name, username, email, password)
                 .onSuccess { user -> _uiState.value = AuthUiState.Success(user) }
-                .onFailure { error ->
-                    _uiState.value = AuthUiState.Error(error.message ?: "Unable to register.")
+                .onFailure {
+                    _uiState.value = AuthUiState.Error(R.string.error_unknown)
                 }
         }
     }
@@ -109,28 +111,28 @@ class AuthViewModel @Inject constructor(
         confirmPassword: String
     ): AuthFormState =
         AuthFormState(
-            nameError = if (name.isBlank()) "This field is required." else null,
-            usernameError = if (username.isBlank()) "This field is required." else null,
+            nameError = if (name.isBlank()) R.string.error_field_required else null,
+            usernameError = if (username.isBlank()) R.string.error_field_required else null,
             emailError = validateEmail(email),
             passwordError = validatePassword(password),
             confirmPasswordError = when {
-                confirmPassword.isBlank() -> "This field is required."
-                password != confirmPassword -> "Passwords do not match."
+                confirmPassword.isBlank() -> R.string.error_field_required
+                password != confirmPassword -> R.string.error_passwords_no_match
                 else -> null
             }
         )
 
-    private fun validateEmail(email: String): String? =
+    private fun validateEmail(email: String): Int? =
         when {
-            email.isBlank() -> "This field is required."
-            !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> "Invalid email address."
+            email.isBlank() -> R.string.error_field_required
+            !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> R.string.error_invalid_email
             else -> null
         }
 
-    private fun validatePassword(password: String): String? =
+    private fun validatePassword(password: String): Int? =
         when {
-            password.isBlank() -> "This field is required."
-            password.length < 8 -> "Password must be at least 8 characters."
+            password.isBlank() -> R.string.error_field_required
+            password.length < 8 -> R.string.error_password_too_short
             else -> null
         }
 

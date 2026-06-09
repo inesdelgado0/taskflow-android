@@ -1,7 +1,9 @@
 package com.taskflow.app.ui.user.tasks
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.taskflow.app.R
 import com.taskflow.app.data.local.dao.UserTaskDao
 import com.taskflow.app.data.remote.TokenManager
 import com.taskflow.app.domain.model.Task
@@ -43,7 +45,7 @@ data class UserTaskItemUi(
 
 data class UserTasksUiState(
     val isLoading: Boolean = true,
-    val error: String? = null,
+    @StringRes val errorRes: Int? = null,
     val userName: String = "Utilizador",
     val pendingTasks: List<UserTaskItemUi> = emptyList(),
     val completedTasks: List<UserTaskItemUi> = emptyList()
@@ -74,10 +76,10 @@ class UserTasksViewModel @Inject constructor(
 
     fun loadUserTasks() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorRes = null)
             val userId = tokenManager.getUserId()
             if (userId == null) {
-                _uiState.value = UserTasksUiState(isLoading = false, error = "Sessao expirada.")
+                _uiState.value = UserTasksUiState(isLoading = false, errorRes = R.string.error_session_expired_short)
                 return@launch
             }
 
@@ -96,10 +98,10 @@ class UserTasksViewModel @Inject constructor(
                             completedTasks = completed.map { it.toUi(userId) }
                         )
                     }
-            }.onFailure { error ->
+            }.onFailure {
                 _uiState.value = UserTasksUiState(
                     isLoading = false,
-                    error = error.message ?: "Erro ao carregar tarefas."
+                    errorRes = R.string.error_load_tasks
                 )
             }
         }

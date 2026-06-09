@@ -43,7 +43,11 @@ fun ProjectFormScreen(nav: NavController, edit: Boolean) {
     val state by viewModel.uiState.collectAsState()
     val project = state.projects.firstOrNull { it.id == state.selectedProjectId } ?: state.projects.firstOrNull()
     val managers = state.users.projectManagers()
-    FormScreen(if (edit) stringResource(R.string.edit_project) else stringResource(R.string.create_project), onBack = { nav.popBackStack() }) {
+    FormScreen(
+        title = if (edit) stringResource(R.string.edit_project) else stringResource(R.string.create_project),
+        onBack = { nav.popBackStack() },
+        confirmOnBack = true
+    ) {
         SyncStatus(state)
         ProjectFormContent(
             edit = edit,
