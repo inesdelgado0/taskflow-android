@@ -52,7 +52,6 @@
     <string name="profile_btn_change_photo">Change photo</string>
     <string name="profile_btn_logout">Sign out</string>
     <string name="language_title">Language</string>
-    <string name="language_system">System</string>
     <string name="language_portuguese">Portuguese</string>
     <string name="language_english">English</string>
 

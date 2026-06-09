@@ -31,7 +31,7 @@ import com.taskflow.app.ui.common.util.projectManagers
 import com.taskflow.app.ui.navigation.Routes
 
 @Composable
-fun ManagerTasksListScreen(nav: NavController) {
+fun ManagerTasksListScreen(nav: NavController, userId: Long? = null) {
     val viewModel: TaskFlowDataViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsState()
     var query by rememberSaveable { mutableStateOf("") }
@@ -49,6 +49,11 @@ fun ManagerTasksListScreen(nav: NavController) {
         .filter { task ->
             selectedManagerId == null ||
                 state.projects.firstOrNull { it.id == task.projectId }?.managerId == selectedManagerId
+        }
+        .filter { task ->
+            userId == null || state.userTaskAssignments.any { assignment ->
+                assignment.userId == userId && assignment.taskId == task.id
+            }
         }
         .filter { task ->
             if (showCompleted) {
@@ -101,8 +106,7 @@ fun ManagerTasksListScreen(nav: NavController) {
         }
         filteredTasks.forEach { task ->
             ManagerTaskCard(task, state.projects, {
-                viewModel.selectTask(task.id)
-                nav.navigate(Routes.MANAGER_ASSIGN_USERS)
+                nav.navigate(Routes.managerAssignUsers(task.id))
             }, {
                 viewModel.selectTask(task.id)
                 nav.navigate(Routes.MANAGER_TASK_EDIT)

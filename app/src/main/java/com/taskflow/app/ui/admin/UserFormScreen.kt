@@ -69,10 +69,26 @@ fun UserFormScreen(nav: NavController, edit: Boolean) {
     var confirmPassword by rememberSaveable(user?.id, edit) { mutableStateOf("") }
     var passwordVisible by rememberSaveable(user?.id, edit) { mutableStateOf(false) }
     var confirmPasswordVisible by rememberSaveable(user?.id, edit) { mutableStateOf(false) }
+    val hasChanges = if (edit) {
+        pendingPhoto != user?.photoUrl ||
+            name != user?.name.orEmpty() ||
+            username != user?.username.orEmpty() ||
+            email != user?.email.orEmpty() ||
+            role != (user?.role ?: UserRole.USER) ||
+            password.isNotBlank()
+    } else {
+        pendingPhoto != null ||
+            name.isNotBlank() ||
+            username.isNotBlank() ||
+            email.isNotBlank() ||
+            role != UserRole.USER ||
+            password.isNotBlank() ||
+            confirmPassword.isNotBlank()
+    }
     FormScreen(
         title = if (edit) stringResource(R.string.edit_user) else stringResource(R.string.create_user),
         onBack = { nav.popBackStack() },
-        confirmOnBack = true
+        confirmOnBack = hasChanges
     ) {
         Avatar(if (edit) user?.name.initial() else "", if (edit) user?.toDemoUser()?.color ?: Green else androidx.compose.ui.graphics.Color(0xFFE5E7EB), size = 82, camera = !edit)
         TextButton(onClick = { photoPicker.launch("image/*") }, modifier = Modifier.align(androidx.compose.ui.Alignment.CenterHorizontally)) {

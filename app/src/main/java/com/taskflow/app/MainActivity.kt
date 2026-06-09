@@ -59,7 +59,7 @@ private fun LocalizedTaskFlowApp() {
     val baseContext = LocalContext.current
     val selectedLanguage by remember {
         LanguageManager.languageFlow(baseContext)
-    }.collectAsState(initial = LanguageManager.SYSTEM)
+    }.collectAsState(initial = LanguageManager.PORTUGUESE)
     val localizedConfiguration = rememberLocalizedConfiguration(baseContext, selectedLanguage)
 
     key(selectedLanguage) {
@@ -78,18 +78,14 @@ private fun rememberLocalizedConfiguration(
 ): Configuration {
     return remember(baseContext, selectedLanguage) {
         val safeLanguage = selectedLanguage.takeIf { it in LanguageManager.supportedLanguages }
-            ?: LanguageManager.SYSTEM
+            ?: LanguageManager.PORTUGUESE
         val configuration = Configuration(baseContext.resources.configuration)
+        val locale = Locale.forLanguageTag(safeLanguage).takeIf { it.language.isNotBlank() }
+            ?: Locale.forLanguageTag(LanguageManager.PORTUGUESE)
 
-        if (safeLanguage == LanguageManager.SYSTEM) {
-            Locale.setDefault(configuration.locales[0] ?: Locale.getDefault())
-        } else {
-            val locale = Locale.forLanguageTag(safeLanguage).takeIf { it.language.isNotBlank() }
-                ?: Locale.getDefault()
-            Locale.setDefault(locale)
-            configuration.setLocale(locale)
-            configuration.setLocales(LocaleList(locale))
-        }
+        Locale.setDefault(locale)
+        configuration.setLocale(locale)
+        configuration.setLocales(LocaleList(locale))
         @Suppress("DEPRECATION")
         baseContext.resources.updateConfiguration(configuration, baseContext.resources.displayMetrics)
         configuration

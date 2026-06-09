@@ -257,7 +257,19 @@ fun TaskFlowNavGraph() {
         composable(Routes.MANAGER_TASK_DETAILS) { ManagerTaskDetailsScreen(navController) }
         composable(Routes.MANAGER_TEAM) { ManagerTeamScreen(navController) }
         composable(Routes.MANAGER_ADD_TEAM) { AddTeamScreen(navController) }
-        composable(Routes.MANAGER_ASSIGN_USERS) { AssignUsersScreen(navController) }
+        composable(
+            route = Routes.MANAGER_ASSIGN_USERS,
+            arguments = listOf(
+                navArgument(Routes.MANAGER_TASK_ID_ARG) {
+                    type = NavType.LongType
+                }
+            )
+        ) { backStackEntry ->
+            AssignUsersScreen(
+                navController,
+                taskId = backStackEntry.arguments?.getLong(Routes.MANAGER_TASK_ID_ARG)
+            )
+        }
         composable(
             route = Routes.MANAGER_EVALUATE_USER,
             arguments = listOf(
@@ -276,6 +288,20 @@ fun TaskFlowNavGraph() {
         composable(Routes.MANAGER_STATS) { ManagerStatsScreen(navController) }
         composable(Routes.MANAGER_PROFILE) {
             ProfileScreen(navController, role = "G", accent = Color(0xFF06C167))
+        }
+
+        composable(
+            route = Routes.MANAGER_USER_TASKS,
+            arguments = listOf(
+                navArgument(Routes.MANAGER_USER_ID_ARG) {
+                    type = NavType.LongType
+                }
+            )
+        ) { backStackEntry ->
+            ManagerTasksListScreen(
+                navController,
+                userId = backStackEntry.arguments?.getLong(Routes.MANAGER_USER_ID_ARG)
+            )
         }
 
         composable(Routes.USER_TASK_DETAILS) { UserTaskDetailsScreen(navController) }

@@ -52,9 +52,8 @@
     <string name="profile_btn_change_photo">Alterar fotografia</string>
     <string name="profile_btn_logout">Terminar sessão</string>
     <string name="language_title">Idioma</string>
-    <string name="language_system">Sistema</string>
-    <string name="language_portuguese">Portugues</string>
-    <string name="language_english">Ingles</string>
+    <string name="language_portuguese">Português</string>
+    <string name="language_english">Inglês</string>
 
     <!-- Projetos -->
     <string name="projects_title">Projetos</string>
