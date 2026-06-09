@@ -155,14 +155,14 @@ private fun TaskFormCard(
                 onProjectSelected = viewModel::onProjectSelected
             )
             formState.projectError?.let {
-                Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                Text(text = stringResource(it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
             Spacer(modifier = Modifier.height(12.dp))
             TaskTextField(
                 label = stringResource(R.string.task_label_title),
                 value = formState.title,
                 onValueChange = viewModel::onTitleChange,
-                error = formState.titleError
+                error = formState.titleError?.let { stringResource(it) }
             )
             TaskTextField(
                 label = stringResource(R.string.task_label_description),
@@ -174,7 +174,7 @@ private fun TaskFormCard(
                 label = stringResource(R.string.task_label_deadline),
                 value = formState.deadlineText,
                 onValueChange = viewModel::onDeadlineChange,
-                error = formState.deadlineError,
+                error = formState.deadlineError?.let { stringResource(it) },
                 placeholder = stringResource(R.string.task_deadline_placeholder),
                 keyboardType = KeyboardType.Text
             )
@@ -213,8 +213,8 @@ private fun TaskFormCard(
             ) {
                 Text(text = stringResource(R.string.btn_cancel), color = TextSecondary)
             }
-            uiState.errorMessage?.let {
-                Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            uiState.errorMessageRes?.let {
+                Text(text = stringResource(it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
         }
     }

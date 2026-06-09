@@ -41,7 +41,11 @@ fun TaskFormScreen(nav: NavController, edit: Boolean) {
     val task = state.tasks.firstOrNull { it.id == state.selectedTaskId } ?: state.tasks.firstOrNull()
     val project = state.projects.firstOrNull { it.id == task?.projectId } ?: state.projects.firstOrNull()
     val initialProjectId = if (edit) task?.projectId else state.selectedProjectId ?: project?.id
-    FormScreen(if (edit) stringResource(R.string.edit_task_title) else stringResource(R.string.create_task_title), { nav.popBackStack() }) {
+    FormScreen(
+        title = if (edit) stringResource(R.string.edit_task_title) else stringResource(R.string.create_task_title),
+        onBack = { nav.popBackStack() },
+        confirmOnBack = true
+    ) {
         SyncStatus(state)
         TaskFormContent(
             edit = edit,

@@ -1,7 +1,9 @@
 package com.taskflow.app.ui.admin.users
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.taskflow.app.R
 import com.taskflow.app.domain.model.User
 import com.taskflow.app.domain.usecase.admin.users.CreateUserUseCase
 import com.taskflow.app.domain.usecase.admin.users.DeleteUserUseCase
@@ -28,18 +30,18 @@ data class AdminUserFormState(
     val createdAt: Long = 0,
     val role: UserRole = UserRole.USER,
     val isActive: Boolean = true,
-    val nameError: String? = null,
-    val usernameError: String? = null,
-    val emailError: String? = null,
-    val passwordError: String? = null
+    @StringRes val nameError: Int? = null,
+    @StringRes val usernameError: Int? = null,
+    @StringRes val emailError: Int? = null,
+    @StringRes val passwordError: Int? = null
 )
 
 data class AdminUsersUiState(
     val users: List<User> = emptyList(),
     val query: String = "",
     val isLoading: Boolean = false,
-    val errorMessage: String? = null,
-    val successMessage: String? = null,
+    @StringRes val errorMessageRes: Int? = null,
+    @StringRes val successMessageRes: Int? = null,
     val editingUserId: Long? = null
 )
 
@@ -122,8 +124,8 @@ class AdminUsersViewModel @Inject constructor(
         _formState.value = AdminUserFormState()
         transientState.value = transientState.value.copy(
             editingUserId = null,
-            errorMessage = null,
-            successMessage = null
+            errorMessageRes = null,
+            successMessageRes = null
         )
     }
 
@@ -133,7 +135,7 @@ class AdminUsersViewModel @Inject constructor(
         if (validation.hasErrors()) return
 
         viewModelScope.launch {
-            transientState.value = transientState.value.copy(isLoading = true, errorMessage = null)
+            transientState.value = transientState.value.copy(isLoading = true, errorMessageRes = null)
             val now = System.currentTimeMillis()
             val result = if (validation.id == 0L) {
                 createUserUseCase(
@@ -172,14 +174,14 @@ class AdminUsersViewModel @Inject constructor(
                     transientState.value = transientState.value.copy(
                         isLoading = false,
                         editingUserId = null,
-                        successMessage = "User saved.",
-                        errorMessage = null
+                        successMessageRes = R.string.user_saved_success,
+                        errorMessageRes = null
                     )
                 }
-                .onFailure { error ->
+                .onFailure {
                     transientState.value = transientState.value.copy(
                         isLoading = false,
-                        errorMessage = error.message ?: "Unable to save user."
+                        errorMessageRes = R.string.error_user_save
                     )
                 }
         }
@@ -187,18 +189,18 @@ class AdminUsersViewModel @Inject constructor(
 
     fun deleteUser(userId: Long) {
         viewModelScope.launch {
-            transientState.value = transientState.value.copy(isLoading = true, errorMessage = null)
+            transientState.value = transientState.value.copy(isLoading = true, errorMessageRes = null)
             deleteUserUseCase(userId)
                 .onSuccess {
                     transientState.value = transientState.value.copy(
                         isLoading = false,
-                        successMessage = "User deleted."
+                        successMessageRes = R.string.user_deleted_success
                     )
                 }
-                .onFailure { error ->
+                .onFailure {
                     transientState.value = transientState.value.copy(
                         isLoading = false,
-                        errorMessage = error.message ?: "Unable to delete user."
+                        errorMessageRes = R.string.error_user_delete
                     )
                 }
         }
@@ -206,17 +208,17 @@ class AdminUsersViewModel @Inject constructor(
 
     private fun validateForm(form: AdminUserFormState): AdminUserFormState =
         form.copy(
-            nameError = if (form.name.isBlank()) "Required field." else null,
-            usernameError = if (form.username.isBlank()) "Required field." else null,
+            nameError = if (form.name.isBlank()) R.string.error_field_required else null,
+            usernameError = if (form.username.isBlank()) R.string.error_field_required else null,
             emailError = when {
-                form.email.isBlank() -> "Required field."
-                !android.util.Patterns.EMAIL_ADDRESS.matcher(form.email).matches() -> "Invalid email."
+                form.email.isBlank() -> R.string.error_field_required
+                !android.util.Patterns.EMAIL_ADDRESS.matcher(form.email).matches() -> R.string.error_invalid_email
                 else -> null
             },
             passwordError = when {
-                form.id == 0L && form.password.length < 8 -> "Minimum 8 characters."
+                form.id == 0L && form.password.length < 8 -> R.string.error_password_too_short
                 form.id != 0L && form.password.isNotBlank() && form.password.length < 8 -> {
-                    "Minimum 8 characters."
+                    R.string.error_password_too_short
                 }
                 else -> null
             }

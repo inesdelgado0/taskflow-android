@@ -1,8 +1,10 @@
 package com.taskflow.app.ui.user.tasks
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.taskflow.app.R
 import com.taskflow.app.data.local.dao.UserTaskDao
 import com.taskflow.app.data.remote.TokenManager
 import com.taskflow.app.domain.model.Observation
@@ -29,8 +31,8 @@ data class TaskExecutionUiState(
     val isSavingObservation: Boolean = false,
     val saved: Boolean = false,
     val observationSaved: Boolean = false,
-    val error: String? = null,
-    val observationError: String? = null,
+    @StringRes val errorRes: Int? = null,
+    @StringRes val observationErrorRes: Int? = null,
     val task: UserTaskItemUi? = null,
     val observations: List<Observation> = emptyList()
 )
@@ -40,9 +42,9 @@ data class TaskProgressFormState(
     val location: String = "",
     val percentage: String = "",
     val timeSpent: String = "",
-    val dateError: String? = null,
-    val percentageError: String? = null,
-    val timeSpentError: String? = null
+    @StringRes val dateError: Int? = null,
+    @StringRes val percentageError: Int? = null,
+    @StringRes val timeSpentError: Int? = null
 )
 
 @HiltViewModel
@@ -90,7 +92,7 @@ class TaskExecutionViewModel @Inject constructor(
         viewModelScope.launch {
             val userId = tokenManager.getUserId()
             if (userId == null) {
-                _uiState.value = _uiState.value.copy(error = "Sessao expirada.")
+                _uiState.value = _uiState.value.copy(errorRes = R.string.error_session_expired)
                 return@launch
             }
 
@@ -102,14 +104,14 @@ class TaskExecutionViewModel @Inject constructor(
 
             if (hasErrors) {
                 _formState.value = form.copy(
-                    dateError = if (!isValidDate(form.date)) "Data invalida. Use AAAA-MM-DD." else null,
-                    percentageError = if (percentage == null || percentage !in 0..100) "Use um valor entre 0 e 100." else null,
-                    timeSpentError = if (timeSpent == null || timeSpent < 0) "Indique tempo valido." else null
+                    dateError = if (!isValidDate(form.date)) R.string.error_invalid_date else null,
+                    percentageError = if (percentage == null || percentage !in 0..100) R.string.error_invalid_percentage else null,
+                    timeSpentError = if (timeSpent == null || timeSpent < 0) R.string.error_invalid_time_spent else null
                 )
                 return@launch
             }
 
-            _uiState.value = _uiState.value.copy(isSaving = true, error = null)
+            _uiState.value = _uiState.value.copy(isSaving = true, errorRes = null)
             updateTaskProgressUseCase(
                 userId = userId,
                 taskId = taskId,
@@ -123,7 +125,7 @@ class TaskExecutionViewModel @Inject constructor(
             }.onFailure { error ->
                 _uiState.value = _uiState.value.copy(
                     isSaving = false,
-                    error = error.message ?: "Erro ao guardar progresso."
+                    errorRes = R.string.error_save_progress
                 )
             }
         }
@@ -134,19 +136,19 @@ class TaskExecutionViewModel @Inject constructor(
             val cleanedText = text.trim().ifBlank { null }
             if (cleanedText == null && photoBytes == null) {
                 _uiState.update {
-                    it.copy(observationError = "Adicione texto ou uma fotografia.")
+                    it.copy(observationErrorRes = R.string.error_observation_empty)
                 }
                 return@launch
             }
 
             val userId = tokenManager.getUserId()
             if (userId == null) {
-                _uiState.update { it.copy(observationError = "Sessao expirada.") }
+                _uiState.update { it.copy(observationErrorRes = R.string.error_session_expired_short) }
                 return@launch
             }
 
             _uiState.update {
-                it.copy(isSavingObservation = true, observationError = null, observationSaved = false)
+                it.copy(isSavingObservation = true, observationErrorRes = null, observationSaved = false)
             }
             val observation = Observation(
                 taskId = taskId,
@@ -168,13 +170,13 @@ class TaskExecutionViewModel @Inject constructor(
                                 it.copy(
                                     isSavingObservation = false,
                                     observationSaved = true,
-                                    observationError = null
+                                    observationErrorRes = null
                                 )
                             }
                             is ApiResult.Error -> _uiState.update {
                                 it.copy(
                                     isSavingObservation = false,
-                                    observationError = upload.error.message ?: "Observacao criada, mas a fotografia nao foi enviada."
+                                    observationErrorRes = R.string.error_observation_photo_upload
                                 )
                             }
                         }
@@ -183,7 +185,7 @@ class TaskExecutionViewModel @Inject constructor(
                             it.copy(
                                 isSavingObservation = false,
                                 observationSaved = true,
-                                observationError = null
+                                observationErrorRes = null
                             )
                         }
                     }
@@ -191,7 +193,7 @@ class TaskExecutionViewModel @Inject constructor(
                 is ApiResult.Error -> _uiState.update {
                     it.copy(
                         isSavingObservation = false,
-                        observationError = result.error.message ?: "Nao foi possivel guardar a observacao."
+                        observationErrorRes = R.string.error_observation_save
                     )
                 }
             }
@@ -204,12 +206,12 @@ class TaskExecutionViewModel @Inject constructor(
 
     private fun loadTask() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorRes = null)
             val userId = tokenManager.getUserId()
             val task = taskRepository.getTaskById(taskId)
 
             if (userId == null || task == null) {
-                _uiState.value = TaskExecutionUiState(isLoading = false, error = "Tarefa nao encontrada.")
+                _uiState.value = TaskExecutionUiState(isLoading = false, errorRes = R.string.error_task_not_found)
                 return@launch
             }
 

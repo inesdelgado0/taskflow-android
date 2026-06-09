@@ -84,8 +84,8 @@ fun UserTaskHistoryScreen(
                 CircularProgressIndicator(color = PrimaryBlue)
             }
 
-            state.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(text = state.error.orEmpty(), color = MaterialTheme.colorScheme.error)
+            state.errorRes != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(text = stringResource(requireNotNull(state.errorRes)), color = MaterialTheme.colorScheme.error)
             }
 
             else -> {

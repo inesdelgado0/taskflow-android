@@ -10,9 +10,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.taskflow.app.R
 import com.taskflow.app.domain.model.Evaluation
 import com.taskflow.app.domain.model.User
 
@@ -48,7 +50,7 @@ fun EvaluationScreen(
             comment     = state.comment,
             isLoading   = state.isLoading,
             isSaved     = state.isSaved,
-            errorMessage = state.errorMessage,
+            errorMessage = state.errorMessageRes?.let { stringResource(it) },
             onRating    = viewModel::onRatingChange,
             onComment   = viewModel::onCommentChange,
             onSubmit    = { viewModel.submitEvaluation(projectId, evaluatorId) },
@@ -202,7 +204,7 @@ private fun EvaluationFormScreen(
             OutlinedButton(
                 onClick  = onBack,
                 modifier = Modifier.weight(1f)
-            ) { Text("Cancelar") }
+            ) { Text(stringResource(R.string.btn_cancel)) }
 
             Button(
                 onClick  = onSubmit,
@@ -215,7 +217,7 @@ private fun EvaluationFormScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text(if (isSaved) "Guardado ✓" else "Guardar")
+                    Text(stringResource(R.string.btn_save))
                 }
             }
         }

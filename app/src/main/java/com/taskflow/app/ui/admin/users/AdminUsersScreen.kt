@@ -155,26 +155,26 @@ private fun UserFormCard(
                 label = stringResource(R.string.register_label_name),
                 value = formState.name,
                 onValueChange = viewModel::onNameChange,
-                error = formState.nameError
+                error = formState.nameError?.let { stringResource(it) }
             )
             UserTextField(
                 label = stringResource(R.string.register_label_username),
                 value = formState.username,
                 onValueChange = viewModel::onUsernameChange,
-                error = formState.usernameError
+                error = formState.usernameError?.let { stringResource(it) }
             )
             UserTextField(
                 label = stringResource(R.string.register_label_email),
                 value = formState.email,
                 onValueChange = viewModel::onEmailChange,
-                error = formState.emailError,
+                error = formState.emailError?.let { stringResource(it) },
                 keyboardType = KeyboardType.Email
             )
             UserTextField(
                 label = stringResource(R.string.register_label_password),
                 value = formState.password,
                 onValueChange = viewModel::onPasswordChange,
-                error = formState.passwordError,
+                error = formState.passwordError?.let { stringResource(it) },
                 keyboardType = KeyboardType.Password,
                 isPassword = true,
                 passwordVisible = passwordVisible,
@@ -222,9 +222,9 @@ private fun UserFormCard(
             ) {
                 Text(text = stringResource(R.string.btn_cancel), color = TextSecondary)
             }
-            uiState.errorMessage?.let {
+            uiState.errorMessageRes?.let {
                 Text(
-                    text = it,
+                    text = stringResource(it),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall
                 )

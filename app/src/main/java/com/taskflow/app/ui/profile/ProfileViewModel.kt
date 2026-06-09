@@ -1,8 +1,10 @@
 package com.taskflow.app.ui.profile
 
 import android.util.Patterns
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.taskflow.app.R
 import com.taskflow.app.data.remote.TokenManager
 import com.taskflow.app.domain.model.User
 import com.taskflow.app.domain.repository.UserRepository
@@ -25,12 +27,12 @@ data class ProfileUiState(
     val role: UserRole = UserRole.USER,
     val photoUrl: String? = null,
     val newPassword: String = "",
-    val nameError: String? = null,
-    val usernameError: String? = null,
-    val emailError: String? = null,
-    val passwordError: String? = null,
-    val successMessage: String? = null,
-    val errorMessage: String? = null
+    @StringRes val nameError: Int? = null,
+    @StringRes val usernameError: Int? = null,
+    @StringRes val emailError: Int? = null,
+    @StringRes val passwordError: Int? = null,
+    @StringRes val successMessageRes: Int? = null,
+    @StringRes val errorMessageRes: Int? = null
 )
 
 @HiltViewModel
@@ -51,7 +53,7 @@ class ProfileViewModel @Inject constructor(
 
     fun loadProfile() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
+            _uiState.update { it.copy(isLoading = true, errorMessageRes = null, successMessageRes = null) }
 
             val userId = tokenManager.getUserId()
             val storedRole = tokenManager.getUserRole()?.toUserRoleOrNull() ?: UserRole.USER
@@ -65,7 +67,7 @@ class ProfileViewModel @Inject constructor(
                     it.copy(
                         isLoading = false,
                         role = storedRole,
-                        errorMessage = "Nao foi possivel carregar os dados do perfil."
+                        errorMessageRes = R.string.error_profile_load
                     )
                 }
                 return@launch
@@ -85,33 +87,33 @@ class ProfileViewModel @Inject constructor(
                     usernameError = null,
                     emailError = null,
                     passwordError = null,
-                    successMessage = null,
-                    errorMessage = null
+                    successMessageRes = null,
+                    errorMessageRes = null
                 )
             }
         }
     }
 
     fun onNameChange(value: String) {
-        _uiState.update { it.copy(name = value, nameError = null, successMessage = null) }
+        _uiState.update { it.copy(name = value, nameError = null, successMessageRes = null) }
     }
 
     fun onUsernameChange(value: String) {
-        _uiState.update { it.copy(username = value, usernameError = null, successMessage = null) }
+        _uiState.update { it.copy(username = value, usernameError = null, successMessageRes = null) }
     }
 
     fun onEmailChange(value: String) {
-        _uiState.update { it.copy(email = value, emailError = null, successMessage = null) }
+        _uiState.update { it.copy(email = value, emailError = null, successMessageRes = null) }
     }
 
     fun onPasswordChange(value: String) {
-        _uiState.update { it.copy(newPassword = value, passwordError = null, successMessage = null) }
+        _uiState.update { it.copy(newPassword = value, passwordError = null, successMessageRes = null) }
     }
 
     fun onPhotoSelected(value: String?, bytes: ByteArray? = null, contentType: String? = null) {
         pendingPhotoBytes = bytes
         pendingPhotoContentType = contentType
-        _uiState.update { it.copy(photoUrl = value, successMessage = null) }
+        _uiState.update { it.copy(photoUrl = value, successMessageRes = null) }
     }
 
     fun saveProfile() {
@@ -121,12 +123,12 @@ class ProfileViewModel @Inject constructor(
         if (current.hasErrors()) return
 
         val user = current.user ?: run {
-            _uiState.update { it.copy(errorMessage = "Nao foi possivel guardar o perfil.") }
+            _uiState.update { it.copy(errorMessageRes = R.string.error_profile_save) }
             return
         }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null, successMessage = null) }
+            _uiState.update { it.copy(isLoading = true, errorMessageRes = null, successMessageRes = null) }
 
             val updatedAt = System.currentTimeMillis()
             val updatedUser = user.copy(
@@ -154,7 +156,7 @@ class ProfileViewModel @Inject constructor(
                                 _uiState.update {
                                     it.copy(
                                         isLoading = false,
-                                        errorMessage = upload.error.message ?: "Perfil guardado, mas a fotografia nao foi enviada."
+                                        errorMessageRes = R.string.error_profile_photo_upload
                                     )
                                 }
                                 return@launch
@@ -174,7 +176,7 @@ class ProfileViewModel @Inject constructor(
                             photoUrl = finalUser.photoUrl,
                             role = finalUser.role,
                             newPassword = "",
-                            successMessage = "Perfil guardado com sucesso."
+                            successMessageRes = R.string.profile_saved_success
                         )
                     }
                 }
@@ -182,7 +184,7 @@ class ProfileViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = result.error.message ?: "Nao foi possivel guardar o perfil."
+                            errorMessageRes = R.string.error_profile_save
                         )
                     }
                 }
@@ -192,20 +194,20 @@ class ProfileViewModel @Inject constructor(
 
     private fun validate(state: ProfileUiState): ProfileUiState =
         state.copy(
-            nameError = if (state.name.isBlank()) "Campo obrigatorio." else null,
-            usernameError = if (state.username.isBlank()) "Campo obrigatorio." else null,
+            nameError = if (state.name.isBlank()) R.string.error_field_required else null,
+            usernameError = if (state.username.isBlank()) R.string.error_field_required else null,
             emailError = when {
-                state.email.isBlank() -> "Campo obrigatorio."
-                !Patterns.EMAIL_ADDRESS.matcher(state.email).matches() -> "Email invalido."
+                state.email.isBlank() -> R.string.error_field_required
+                !Patterns.EMAIL_ADDRESS.matcher(state.email).matches() -> R.string.error_invalid_email
                 else -> null
             },
             passwordError = when {
                 state.newPassword.isBlank() -> null
-                state.newPassword.length < 8 -> "Minimo 8 caracteres."
+                state.newPassword.length < 8 -> R.string.error_password_too_short
                 else -> null
             },
-            successMessage = null,
-            errorMessage = null
+            successMessageRes = null,
+            errorMessageRes = null
         )
 
     private fun ProfileUiState.hasErrors(): Boolean =

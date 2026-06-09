@@ -97,7 +97,11 @@ fun ProfileScreen(nav: NavController, role: String, accent: Color) {
         }
     )
 
-    ProfileFormScreen(title = stringResource(R.string.profile_title), onBack = { nav.popBackStack() }) {
+    ProfileFormScreen(
+        title = stringResource(R.string.profile_title),
+        onBack = { nav.popBackStack() },
+        confirmOnBack = true
+    ) {
         ProfileCard {
             if (state.isLoading && state.user == null) {
                 Box(Modifier.fillMaxWidth().height(220.dp), contentAlignment = Alignment.Center) {
@@ -188,19 +192,19 @@ private fun ColumnScope.EditableProfileContent(
         value = state.name,
         onValueChange = onNameChange
     )
-    state.nameError?.let { FormError(it) }
+    state.nameError?.let { FormError(stringResource(it)) }
     ProfileFieldInline(
         label = stringResource(R.string.register_label_username),
         value = state.username,
         onValueChange = onUsernameChange
     )
-    state.usernameError?.let { FormError(it) }
+    state.usernameError?.let { FormError(stringResource(it)) }
     ProfileFieldInline(
         label = stringResource(R.string.profile_label_email),
         value = state.email,
         onValueChange = onEmailChange
     )
-    state.emailError?.let { FormError(it) }
+    state.emailError?.let { FormError(stringResource(it)) }
     ProfileFieldInline(
         label = stringResource(R.string.user_label_role),
         value = if (role == "A") stringResource(R.string.dashboard_admin) else if (role == "G") stringResource(R.string.dashboard_manager) else stringResource(R.string.dashboard_user),
@@ -212,14 +216,14 @@ private fun ColumnScope.EditableProfileContent(
         onValueChange = onPasswordChange,
         placeholder = stringResource(R.string.keep_current_password)
     )
-    state.passwordError?.let { FormError(it) }
+    state.passwordError?.let { FormError(stringResource(it)) }
     LanguageSelector(
         selectedLanguage = selectedLanguage,
         onLanguageSelected = onLanguageSelected
     )
-    state.errorMessage?.let { FormError(it) }
-    state.successMessage?.let {
-        Text(it, color = com.taskflow.app.ui.common.theme.Green, style = MaterialTheme.typography.bodySmall)
+    state.errorMessageRes?.let { FormError(stringResource(it)) }
+    state.successMessageRes?.let {
+        Text(stringResource(it), color = com.taskflow.app.ui.common.theme.Green, style = MaterialTheme.typography.bodySmall)
     }
     Button(
         onClick = onSave,

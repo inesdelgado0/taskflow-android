@@ -3,6 +3,7 @@ package com.taskflow.app
 import android.Manifest
 import android.content.Context
 import android.content.res.Configuration
+import android.os.LocaleList
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -14,11 +15,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
-import androidx.core.os.ConfigurationCompat
 import com.taskflow.app.ui.common.locale.LanguageManager
 import com.taskflow.app.ui.navigation.TaskFlowNavGraph
 import dagger.hilt.android.AndroidEntryPoint
@@ -59,35 +60,39 @@ private fun LocalizedTaskFlowApp() {
     val selectedLanguage by remember {
         LanguageManager.languageFlow(baseContext)
     }.collectAsState(initial = LanguageManager.SYSTEM)
-    val localizedContext = rememberLocalizedContext(baseContext, selectedLanguage)
+    val localizedConfiguration = rememberLocalizedConfiguration(baseContext, selectedLanguage)
 
-    CompositionLocalProvider(
-        LocalContext provides localizedContext,
-        LocalConfiguration provides localizedContext.resources.configuration
-    ) {
-        MaterialTheme {
-            TaskFlowNavGraph()
+    key(selectedLanguage) {
+        CompositionLocalProvider(LocalConfiguration provides localizedConfiguration) {
+            MaterialTheme {
+                TaskFlowNavGraph()
+            }
         }
     }
 }
 
 @Composable
-private fun rememberLocalizedContext(
+private fun rememberLocalizedConfiguration(
     baseContext: Context,
     selectedLanguage: String
-): Context {
-    val currentConfiguration = LocalConfiguration.current
-    return remember(baseContext, selectedLanguage, currentConfiguration) {
-        if (selectedLanguage == LanguageManager.SYSTEM) {
-            ConfigurationCompat.getLocales(currentConfiguration)[0]?.let(Locale::setDefault)
-            baseContext
+): Configuration {
+    return remember(baseContext, selectedLanguage) {
+        val safeLanguage = selectedLanguage.takeIf { it in LanguageManager.supportedLanguages }
+            ?: LanguageManager.SYSTEM
+        val configuration = Configuration(baseContext.resources.configuration)
+
+        if (safeLanguage == LanguageManager.SYSTEM) {
+            Locale.setDefault(configuration.locales[0] ?: Locale.getDefault())
         } else {
-            val locale = Locale.forLanguageTag(selectedLanguage)
+            val locale = Locale.forLanguageTag(safeLanguage).takeIf { it.language.isNotBlank() }
+                ?: Locale.getDefault()
             Locale.setDefault(locale)
-            val configuration = Configuration(currentConfiguration)
             configuration.setLocale(locale)
-            baseContext.createConfigurationContext(configuration)
+            configuration.setLocales(LocaleList(locale))
         }
+        @Suppress("DEPRECATION")
+        baseContext.resources.updateConfiguration(configuration, baseContext.resources.displayMetrics)
+        configuration
     }
 }
 

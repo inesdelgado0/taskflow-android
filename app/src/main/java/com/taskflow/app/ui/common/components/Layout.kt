@@ -28,13 +28,19 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -53,6 +59,7 @@ import com.taskflow.app.ui.common.theme.Blue
 import com.taskflow.app.ui.common.theme.Border
 import com.taskflow.app.ui.common.theme.Muted
 import com.taskflow.app.ui.common.theme.Page
+import com.taskflow.app.ui.common.theme.Red
 import com.taskflow.app.ui.common.theme.White
 
 @Composable
@@ -70,6 +77,7 @@ internal fun AppScaffold(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val windowInfo = rememberWindowInfo()
+    var showLogoutDialog by remember { mutableStateOf(false) }
     val contentModifier = Modifier
         .fillMaxWidth()
         .widthIn(max = if (windowInfo.isLandscape) 920.dp else 560.dp)
@@ -96,7 +104,9 @@ internal fun AppScaffold(
                 ) {
                     Avatar(role, accent, 34)
                 }
-                IconButton(onClick = onLogout) { Icon(Icons.AutoMirrored.Filled.ExitToApp, stringResource(R.string.cd_logout)) }
+                IconButton(onClick = { showLogoutDialog = true }) {
+                    Icon(Icons.AutoMirrored.Filled.ExitToApp, stringResource(R.string.cd_logout))
+                }
             }
         }
         LazyColumn(
@@ -107,6 +117,18 @@ internal fun AppScaffold(
             item { Column(modifier = contentModifier, verticalArrangement = Arrangement.spacedBy(12.dp), content = content) }
         }
     }
+
+    ConfirmActionDialog(
+        visible = showLogoutDialog,
+        title = stringResource(R.string.dialog_logout_title),
+        message = stringResource(R.string.dialog_logout_message),
+        confirmText = stringResource(R.string.profile_btn_logout),
+        onConfirm = {
+            showLogoutDialog = false
+            onLogout()
+        },
+        onDismiss = { showLogoutDialog = false }
+    )
 }
 
 @Composable
@@ -131,10 +153,19 @@ internal fun ListScreen(title: String, actionText: String?, onBack: () -> Unit, 
 }
 
 @Composable
-internal fun FormScreen(title: String, onBack: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+internal fun FormScreen(
+    title: String,
+    onBack: () -> Unit,
+    confirmOnBack: Boolean = false,
+    content: @Composable ColumnScope.() -> Unit
+) {
     val windowInfo = rememberWindowInfo()
+    var showDiscardDialog by remember { mutableStateOf(false) }
+    val handleBack = {
+        if (confirmOnBack) showDiscardDialog = true else onBack()
+    }
     Column(Modifier.fillMaxSize().background(Page)) {
-        TopBar(title, onBack)
+        TopBar(title, handleBack)
         LazyColumn(
             Modifier.fillMaxSize().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -149,6 +180,18 @@ internal fun FormScreen(title: String, onBack: () -> Unit, content: @Composable 
             }
         }
     }
+
+    ConfirmActionDialog(
+        visible = showDiscardDialog,
+        title = stringResource(R.string.dialog_discard_changes_title),
+        message = stringResource(R.string.dialog_discard_changes_message),
+        confirmText = stringResource(R.string.btn_discard),
+        onConfirm = {
+            showDiscardDialog = false
+            onBack()
+        },
+        onDismiss = { showDiscardDialog = false }
+    )
 }
 
 @Composable
@@ -183,10 +226,19 @@ internal fun Welcome(name: String) {
 }
 
 @Composable
-internal fun ProfileFormScreen(title: String, onBack: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+internal fun ProfileFormScreen(
+    title: String,
+    onBack: () -> Unit,
+    confirmOnBack: Boolean = false,
+    content: @Composable ColumnScope.() -> Unit
+) {
     val windowInfo = rememberWindowInfo()
+    var showDiscardDialog by remember { mutableStateOf(false) }
+    val handleBack = {
+        if (confirmOnBack) showDiscardDialog = true else onBack()
+    }
     Column(Modifier.fillMaxSize().background(Page)) {
-        TopBar(title, onBack)
+        TopBar(title, handleBack)
         LazyColumn(
             Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -200,6 +252,18 @@ internal fun ProfileFormScreen(title: String, onBack: () -> Unit, content: @Comp
             }
         }
     }
+
+    ConfirmActionDialog(
+        visible = showDiscardDialog,
+        title = stringResource(R.string.dialog_discard_changes_title),
+        message = stringResource(R.string.dialog_discard_changes_message),
+        confirmText = stringResource(R.string.btn_discard),
+        onConfirm = {
+            showDiscardDialog = false
+            onBack()
+        },
+        onDismiss = { showDiscardDialog = false }
+    )
 }
 
 @Composable
@@ -217,4 +281,32 @@ internal fun ProfileCard(content: @Composable ColumnScope.() -> Unit) {
             content = content
         )
     }
+}
+
+@Composable
+internal fun ConfirmActionDialog(
+    visible: Boolean,
+    title: String,
+    message: String,
+    confirmText: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    if (!visible) return
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = { Text(message) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(confirmText, color = Red)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.btn_cancel))
+            }
+        }
+    )
 }
