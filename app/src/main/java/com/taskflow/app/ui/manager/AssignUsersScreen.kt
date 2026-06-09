@@ -49,11 +49,11 @@ import com.taskflow.app.ui.common.theme.Soft
 import com.taskflow.app.ui.common.util.initial
 
 @Composable
-fun AssignUsersScreen(nav: NavController) {
+fun AssignUsersScreen(nav: NavController, taskId: Long?) {
     val viewModel: TaskFlowDataViewModel = hiltViewModel()
     val state by taskFlowState()
     var query by rememberSaveable { mutableStateOf("") }
-    val task = state.tasks.firstOrNull { it.id == state.selectedTaskId } ?: state.tasks.firstOrNull()
+    val task = taskId?.let { id -> state.tasks.firstOrNull { it.id == id } }
     val project = state.projects.firstOrNull { it.id == task?.projectId }
     val projectUserIds = state.userProjectAssignments
         .filter { it.projectId == project?.id }

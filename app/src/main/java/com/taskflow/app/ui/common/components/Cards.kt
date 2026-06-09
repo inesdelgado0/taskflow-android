@@ -297,7 +297,7 @@ internal fun TaskPriorityLine(level: String, title: String, color: Color) {
 
 @Composable
 internal fun ManagerTaskCard(task: Task, projects: List<Project>, onAssign: () -> Unit, onEdit: () -> Unit) {
-    val progress = if (task.status == TaskStatus.COMPLETED) 1f else if (task.status == TaskStatus.IN_PROGRESS) 0.6f else 0f
+    val progress = if (task.status == TaskStatus.COMPLETED) 1f else 0f
     SectionCard("") {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Column {

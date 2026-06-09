@@ -182,12 +182,14 @@ class TaskRepositoryImpl @Inject constructor(
             }
 
     override suspend fun assignUserToTaskRemote(taskId: Long, userId: Long): ApiResult<Unit> =
-        safeApiCall { taskApi.assignUser(taskId, AssignUserRequest(userId)) }
+        safeApiCall {
+            if (userDao.getById(userId) != null) {
+                upsertAssignmentPreservingProgress(userId, taskId)
+            }
+            taskApi.assignUser(taskId, AssignUserRequest(userId))
+        }
             .map { Unit }
             .onSuccess {
-                if (userDao.getById(userId) != null) {
-                    upsertAssignmentPreservingProgress(userId, taskId)
-                }
                 auditLogger.logUpdate(currentActorId(), "TASK", taskId, details = "assignUser:$userId")
             }
 
@@ -274,7 +276,7 @@ class TaskRepositoryImpl @Inject constructor(
         taskId = taskId,
         workDate = workDate,
         location = location,
-        completionPercentage = completionPercentage,
+        completionPercentage = if (isCompleted) 100 else completionPercentage,
         timeSpentMinutes = timeSpentMinutes,
         isCompleted = isCompleted,
         updatedAt = updatedAt
@@ -309,11 +311,15 @@ class TaskRepositoryImpl @Inject constructor(
     private suspend fun upsertAssignmentPreservingProgress(userId: Long, taskId: Long) {
         val now = System.currentTimeMillis()
         val existing = userTaskDao.get(userId, taskId)
+        val task = taskDao.getById(taskId)
+        val initialProgress = if (task?.status == TaskStatus.COMPLETED) 100 else 0
         if (existing == null) {
             userTaskDao.upsert(
                 UserTaskEntity(
                     userId = userId,
                     taskId = taskId,
+                    completionPercentage = initialProgress,
+                    isCompleted = initialProgress == 100,
                     updatedAt = now
                 )
             )

@@ -106,8 +106,7 @@ fun ManagerTasksListScreen(nav: NavController, userId: Long? = null) {
         }
         filteredTasks.forEach { task ->
             ManagerTaskCard(task, state.projects, {
-                viewModel.selectTask(task.id)
-                nav.navigate(Routes.MANAGER_ASSIGN_USERS)
+                nav.navigate(Routes.managerAssignUsers(task.id))
             }, {
                 viewModel.selectTask(task.id)
                 nav.navigate(Routes.MANAGER_TASK_EDIT)

@@ -30,7 +30,8 @@ object Routes {
     const val MANAGER_TASK_DETAILS = "manager/tasks/details"
     const val MANAGER_TEAM = "manager/team"
     const val MANAGER_ADD_TEAM = "manager/team/add"
-    const val MANAGER_ASSIGN_USERS = "manager/tasks/assign-users"
+    const val MANAGER_TASK_ID_ARG = "taskId"
+    const val MANAGER_ASSIGN_USERS = "manager/tasks/{$MANAGER_TASK_ID_ARG}/assign-users"
     const val MANAGER_EVALUATE_USER = "manager/evaluate-user/{$MANAGER_USER_ID_ARG}"
     const val MANAGER_PROJECTS = "manager/projects"
     const val MANAGER_PROJECT_DETAILS = "manager/projects/details"
@@ -52,6 +53,7 @@ object Routes {
     fun managerDashboard(managerId: Long): String = "$MANAGER_DASHBOARD/$managerId"
     fun managerEvaluateUser(userId: Long): String = "manager/evaluate-user/$userId"
     fun managerUserTasks(userId: Long): String = "manager/tasks/user/$userId"
+    fun managerAssignUsers(taskId: Long): String = "manager/tasks/$taskId/assign-users"
     fun userTaskExecution(taskId: Long): String = "user/tasks/$taskId/execution"
 }
 

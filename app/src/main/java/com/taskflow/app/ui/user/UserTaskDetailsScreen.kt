@@ -82,8 +82,7 @@ fun UserTaskDetailsScreen(nav: NavController, managerMode: Boolean = false) {
                 OutlinedButton(
                     onClick = {
                         if (managerMode) {
-                            viewModel.selectTask(task.id)
-                            nav.navigate(Routes.MANAGER_ASSIGN_USERS)
+                            nav.navigate(Routes.managerAssignUsers(task.id))
                         } else {
                             nav.navigate(Routes.USER_OBSERVATIONS)
                         }
