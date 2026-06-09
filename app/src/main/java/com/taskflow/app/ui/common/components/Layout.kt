@@ -24,10 +24,14 @@ import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -35,6 +39,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -67,9 +75,13 @@ internal fun AppScaffold(
     accent: Color,
     onLogout: () -> Unit,
     onProfile: () -> Unit,
+    onNotificationClick: (Long?) -> Unit = {},
     content: @Composable ColumnScope.() -> Unit
 ) {
     val windowInfo = rememberWindowInfo()
+    val state by taskFlowState()
+    val notifications = state.inAppNotifications()
+    var notificationsExpanded by remember { mutableStateOf(false) }
     val contentModifier = Modifier
         .fillMaxWidth()
         .widthIn(max = if (windowInfo.isLandscape) 920.dp else 560.dp)
@@ -88,7 +100,54 @@ internal fun AppScaffold(
         ) {
             Text("TaskFlow", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                Icon(Icons.Default.Notifications, stringResource(R.string.cd_notifications), modifier = Modifier.size(22.dp))
+                Box {
+                    IconButton(onClick = { notificationsExpanded = true }) {
+                        BadgedBox(
+                            badge = {
+                                if (notifications.isNotEmpty()) {
+                                    Badge { Text(notifications.size.toString()) }
+                                }
+                            }
+                        ) {
+                            Icon(
+                                Icons.Default.Notifications,
+                                stringResource(R.string.cd_notifications),
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+                    DropdownMenu(
+                        expanded = notificationsExpanded,
+                        onDismissRequest = { notificationsExpanded = false }
+                    ) {
+                        if (notifications.isEmpty()) {
+                            DropdownMenuItem(
+                                text = {
+                                    Column {
+                                        Text(stringResource(R.string.sync_status_synced), fontWeight = FontWeight.SemiBold)
+                                        Text("Sem alertas no momento", color = Muted, style = MaterialTheme.typography.bodySmall)
+                                    }
+                                },
+                                onClick = { notificationsExpanded = false }
+                            )
+                        } else {
+                            notifications.forEach { notification ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Column(Modifier.widthIn(min = 220.dp, max = 320.dp)) {
+                                            Text(notification.title, fontWeight = FontWeight.SemiBold)
+                                            Text(notification.message, color = Muted, style = MaterialTheme.typography.bodySmall)
+                                        }
+                                    },
+                                    onClick = {
+                                        notificationsExpanded = false
+                                        onNotificationClick(notification.taskId)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
                 Box(
                     modifier = Modifier
                         .semantics { contentDescription = openProfileDescription }

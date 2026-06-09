@@ -22,6 +22,7 @@ import com.taskflow.app.domain.util.TaskStatus
 import com.taskflow.app.ui.common.TaskFlowDataViewModel
 import com.taskflow.app.ui.common.components.AppScaffold
 import com.taskflow.app.ui.common.components.EmptyData
+import com.taskflow.app.ui.common.components.NotificationStateComponent
 import com.taskflow.app.ui.common.components.SectionCard
 import com.taskflow.app.ui.common.components.SmallStat
 import com.taskflow.app.ui.common.components.SyncStatus
@@ -41,10 +42,17 @@ fun UserDashboardScreen(nav: NavController, onLogout: () -> Unit) {
         role = "U",
         accent = Orange,
         onLogout = onLogout,
-        onProfile = { nav.navigate(Routes.USER_PROFILE) }
+        onProfile = { nav.navigate(Routes.USER_PROFILE) },
+        onNotificationClick = { taskId ->
+            taskId?.let {
+                viewModel.selectTask(it)
+                nav.navigate(Routes.userTaskExecution(it))
+            }
+        }
     ) {
         Welcome(state.currentUser?.name ?: stringResource(R.string.dashboard_user))
         SyncStatus(state)
+        NotificationStateComponent(state)
         val activeTasks = state.tasks.filter {
             it.status != TaskStatus.COMPLETED && it.status != TaskStatus.CANCELLED
         }

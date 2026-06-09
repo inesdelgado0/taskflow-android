@@ -139,6 +139,10 @@ private class FakeUserTaskDao(
         saved[userTask.userId to userTask.taskId] = userTask
     }
 
+    override suspend fun upsertAll(userTasks: List<UserTaskEntity>) {
+        userTasks.forEach { upsert(it) }
+    }
+
     override suspend fun get(userId: Long, taskId: Long): UserTaskEntity? =
         saved[userId to taskId]
 
@@ -147,6 +151,9 @@ private class FakeUserTaskDao(
 
     override fun getTasksByUserFlow(userId: Long): Flow<List<UserTaskEntity>> =
         flowOf(saved.values.filter { it.userId == userId })
+
+    override fun getAllFlow(): Flow<List<UserTaskEntity>> =
+        flowOf(saved.values.toList())
 
     override suspend fun updateProgress(
         userId: Long,
@@ -175,6 +182,10 @@ private class FakeUserTaskDao(
     override suspend fun deleteAllForTask(taskId: Long) {
         saved.keys.filter { it.second == taskId }.forEach(saved::remove)
     }
+
+    override suspend fun delete(taskId: Long, userId: Long) {
+        saved.remove(userId to taskId)
+    }
 }
 
 private class FakeTaskRepository : TaskRepository {
@@ -199,7 +210,19 @@ private class FakeTaskRepository : TaskRepository {
         lastStatusUpdate = id to status
     }
     override suspend fun refreshTasks(projectId: Long): ApiResult<List<Task>> = ApiResult.Success(emptyList())
+    override suspend fun refreshUserTaskAssignments(userId: Long): ApiResult<Unit> = ApiResult.Success(Unit)
     override suspend fun pushTask(task: Task): ApiResult<Task> = ApiResult.Success(task)
+    override suspend fun pushTaskProgress(
+        taskId: Long,
+        userId: Long,
+        workDate: Long?,
+        location: String?,
+        completionPercentage: Int,
+        timeSpentMinutes: Int
+    ): ApiResult<Unit> = ApiResult.Success(Unit)
+    override suspend fun refreshTaskUsers(taskId: Long): ApiResult<List<Long>> = ApiResult.Success(emptyList())
+    override suspend fun assignUserToTaskRemote(taskId: Long, userId: Long): ApiResult<Unit> = ApiResult.Success(Unit)
+    override suspend fun removeUserFromTaskRemote(taskId: Long, userId: Long): ApiResult<Unit> = ApiResult.Success(Unit)
     override suspend fun updateTaskStatusRemote(id: Long, status: TaskStatus): ApiResult<Task> =
         ApiResult.Success(
             Task(
