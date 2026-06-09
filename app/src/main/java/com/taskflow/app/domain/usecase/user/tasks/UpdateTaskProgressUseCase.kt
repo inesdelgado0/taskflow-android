@@ -60,11 +60,9 @@ class UpdateTaskProgressUseCase @Inject constructor(
                 timeSpent = timeSpentMinutes,
                 workDate = workDate,
                 location = location.ifBlank { null },
+                isCompleted = percentage == 100,
                 updatedAt = now
             )
-            if (percentage == 100) {
-                userTaskDao.markCompleted(userId, taskId, now)
-            }
         }
 
         taskRepository.updateTaskStatus(

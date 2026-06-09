@@ -216,7 +216,10 @@ class TaskExecutionViewModel @Inject constructor(
             val assignment = userTaskDao.get(userId, taskId)
             val uiTask = task.toUi(
                 progress = assignment?.completionPercentage ?: 0,
-                timeSpentMinutes = assignment?.timeSpentMinutes ?: 0
+                timeSpentMinutes = assignment?.timeSpentMinutes ?: 0,
+                workDate = assignment?.workDate,
+                location = assignment?.location,
+                memberCount = userTaskDao.countUsersByTask(taskId)
             )
 
             _uiState.value = TaskExecutionUiState(isLoading = false, task = uiTask)
@@ -243,7 +246,13 @@ class TaskExecutionViewModel @Inject constructor(
         }
     }
 
-    private suspend fun Task.toUi(progress: Int, timeSpentMinutes: Int): UserTaskItemUi {
+    private suspend fun Task.toUi(
+        progress: Int,
+        timeSpentMinutes: Int,
+        workDate: Long?,
+        location: String?,
+        memberCount: Int
+    ): UserTaskItemUi {
         val projectName = projectRepository.getProjectById(projectId)?.name ?: "Projeto"
         return UserTaskItemUi(
             id = id,
@@ -252,9 +261,11 @@ class TaskExecutionViewModel @Inject constructor(
             description = description.orEmpty(),
             priority = priority.name.lowercase().replaceFirstChar { it.uppercase() },
             deadlineText = deadline.toDisplayDate(),
-            dateText = deadline.toDisplayDate(),
+            dateText = workDate.toDisplayDate(),
+            location = location.orEmpty(),
             progress = progress.coerceIn(0, 100),
             timeSpentMinutes = timeSpentMinutes,
+            memberCount = memberCount,
             status = status
         )
     }

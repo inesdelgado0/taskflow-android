@@ -248,8 +248,16 @@ private fun TaskDetailCard(task: UserTaskItemUi) {
             )
 
             Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                DetailChip(icon = Icons.Outlined.CalendarToday, text = task.dateText)
-                DetailChip(icon = Icons.Outlined.Group, text = stringResource(R.string.members_count, 0))
+                DetailChip(icon = Icons.Outlined.CalendarToday, text = stringResource(R.string.deadline_label) + ": " + task.deadlineText)
+                DetailChip(icon = Icons.Outlined.Group, text = stringResource(R.string.members_count, task.memberCount))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                DetailText(label = stringResource(R.string.status_label), value = task.status.name)
+                DetailText(label = stringResource(R.string.data_label), value = task.dateText)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                DetailText(label = stringResource(R.string.location_label), value = task.location.ifBlank { "-" })
+                DetailText(label = stringResource(R.string.time_spent), value = "${task.timeSpentMinutes} min")
             }
 
             Row(
@@ -268,6 +276,14 @@ private fun TaskDetailCard(task: UserTaskItemUi) {
                 trackColor = ProgressTrack
             )
         }
+    }
+}
+
+@Composable
+private fun DetailText(label: String, value: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(text = label, style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+        Text(text = value, style = MaterialTheme.typography.bodySmall, color = Color(0xFF344054))
     }
 }
 

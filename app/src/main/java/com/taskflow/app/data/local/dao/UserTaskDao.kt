@@ -39,6 +39,7 @@ interface UserTaskDao {
             time_spent_minutes = :timeSpent,
             work_date = :workDate,
             location = :location,
+            is_completed = :isCompleted,
             updated_at = :updatedAt
         WHERE user_id = :userId AND task_id = :taskId
     """)
@@ -49,8 +50,12 @@ interface UserTaskDao {
         timeSpent: Int,
         workDate: Long?,
         location: String?,
+        isCompleted: Boolean,
         updatedAt: Long
     )
+
+    @Query("SELECT COUNT(*) FROM user_task WHERE task_id = :taskId")
+    suspend fun countUsersByTask(taskId: Long): Int
 
     @Query("UPDATE user_task SET is_completed = 1, updated_at = :updatedAt WHERE user_id = :userId AND task_id = :taskId")
     suspend fun markCompleted(userId: Long, taskId: Long, updatedAt: Long)

@@ -402,8 +402,8 @@ internal fun AvailableUser(user: DemoUser) {
 }
 
 @Composable
-internal fun UserTaskLine(task: Task, projects: List<Project>, onClick: () -> Unit) {
-    val progress = if (task.status == TaskStatus.COMPLETED) 1f else if (task.status == TaskStatus.IN_PROGRESS) 0.6f else 0f
+internal fun UserTaskLine(task: Task, projects: List<Project>, progressPercent: Int, onClick: () -> Unit) {
+    val progress = progressPercent.coerceIn(0, 100) / 100f
     Column(Modifier.fillMaxWidth().clickable(onClick = onClick).background(Color.White, RoundedCornerShape(8.dp)).padding(10.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Column(Modifier.weight(1f)) {
@@ -421,7 +421,7 @@ internal fun UserTaskLine(task: Task, projects: List<Project>, onClick: () -> Un
             )
         }
         Spacer(Modifier.height(8.dp))
-        ProgressLine("", "${(progress * 100).toInt()}%", progress)
+        ProgressLine("", "${progressPercent.coerceIn(0, 100)}%", progress)
     }
 }
 

@@ -32,8 +32,10 @@ data class UserTaskItemUi(
     val priority: String,
     val deadlineText: String,
     val dateText: String,
+    val location: String,
     val progress: Int,
     val timeSpentMinutes: Int,
+    val memberCount: Int,
     val status: TaskStatus,
     val rating: Double? = null
 )
@@ -105,6 +107,7 @@ class UserTasksViewModel @Inject constructor(
         val assignment = userTaskDao.get(userId, id)
         val projectName = projectRepository.getProjectById(projectId)?.name ?: "Projeto"
         val progress = assignment?.completionPercentage ?: if (status == TaskStatus.COMPLETED) 100 else 0
+        val memberCount = userTaskDao.countUsersByTask(id)
 
         return UserTaskItemUi(
             id = id,
@@ -114,8 +117,10 @@ class UserTasksViewModel @Inject constructor(
             priority = priority.name.lowercase().replaceFirstChar { it.uppercase() },
             deadlineText = deadline.toDeadlineText(),
             dateText = (assignment?.workDate ?: deadline).toDateText(),
+            location = assignment?.location.orEmpty(),
             progress = progress.coerceIn(0, 100),
             timeSpentMinutes = assignment?.timeSpentMinutes ?: 0,
+            memberCount = memberCount,
             status = status
         )
     }
