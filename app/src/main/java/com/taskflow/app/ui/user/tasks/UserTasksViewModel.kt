@@ -6,6 +6,7 @@ import com.taskflow.app.data.local.dao.UserTaskDao
 import com.taskflow.app.data.remote.TokenManager
 import com.taskflow.app.domain.model.Task
 import com.taskflow.app.domain.repository.ProjectRepository
+import com.taskflow.app.domain.repository.EvaluationRepository
 import com.taskflow.app.domain.repository.UserRepository
 import com.taskflow.app.domain.usecase.sync.PopulateLocalDatabaseUseCase
 import com.taskflow.app.domain.usecase.user.tasks.GetCompletedUserTasksUseCase
@@ -57,6 +58,7 @@ class UserTasksViewModel @Inject constructor(
     private val tokenManager: TokenManager,
     private val userRepository: UserRepository,
     private val projectRepository: ProjectRepository,
+    private val evaluationRepository: EvaluationRepository,
     private val userTaskDao: UserTaskDao,
     private val populateLocalDatabase: PopulateLocalDatabaseUseCase,
     private val getPendingUserTasksUseCase: GetPendingUserTasksUseCase,
@@ -108,6 +110,10 @@ class UserTasksViewModel @Inject constructor(
         val projectName = projectRepository.getProjectById(projectId)?.name ?: "Projeto"
         val progress = assignment?.completionPercentage ?: if (status == TaskStatus.COMPLETED) 100 else 0
         val memberCount = userTaskDao.countUsersByTask(id)
+        val rating = evaluationRepository
+            .getEvaluationForUserInProject(projectId, userId)
+            ?.rating
+            ?.toDouble()
 
         return UserTaskItemUi(
             id = id,
@@ -121,7 +127,8 @@ class UserTasksViewModel @Inject constructor(
             progress = progress.coerceIn(0, 100),
             timeSpentMinutes = assignment?.timeSpentMinutes ?: 0,
             memberCount = memberCount,
-            status = status
+            status = status,
+            rating = rating
         )
     }
 

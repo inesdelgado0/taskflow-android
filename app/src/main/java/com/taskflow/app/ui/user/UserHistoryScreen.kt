@@ -25,6 +25,7 @@ import com.taskflow.app.ui.common.components.SectionCard
 import com.taskflow.app.ui.common.components.taskFlowState
 import com.taskflow.app.ui.common.util.averageRating
 import com.taskflow.app.ui.common.util.displayDate
+import com.taskflow.app.data.local.entity.UserTaskEntity
 import com.taskflow.app.domain.model.Evaluation
 import com.taskflow.app.domain.model.Project
 import com.taskflow.app.domain.model.Task
@@ -36,8 +37,21 @@ fun UserHistoryScreen(nav: NavController) {
         UserHistoryContent(
             tasks = state.tasks,
             projects = state.projects,
-            evaluations = state.evaluations
+            evaluations = state.allEvaluations,
+            assignments = state.userTaskAssignments,
+            currentUserId = state.currentUser?.id
         )
+    }
+}
+
+private fun Int.toDurationText(): String {
+    val hours = this / 60
+    val minutes = this % 60
+    return when {
+        this == 0 -> "0h"
+        minutes == 0 -> "${hours}h"
+        hours == 0 -> "${minutes}min"
+        else -> "${hours}h ${minutes}min"
     }
 }
 
@@ -45,11 +59,19 @@ fun UserHistoryScreen(nav: NavController) {
 internal fun UserHistoryContent(
     tasks: List<Task>,
     projects: List<Project>,
-    evaluations: List<Evaluation>
+    evaluations: List<Evaluation>,
+    assignments: List<UserTaskEntity>,
+    currentUserId: Long?
 ) {
     var selectedFilter by remember { mutableStateOf("all") }
-    val historyTasks = tasks.filter {
-        it.status == TaskStatus.COMPLETED || it.status == TaskStatus.CANCELLED
+    val userAssignments = assignments.filter { assignment ->
+        currentUserId != null && assignment.userId == currentUserId
+    }
+    val historyTasks = tasks.filter { task ->
+        val assignment = userAssignments.firstOrNull { it.taskId == task.id }
+        assignment?.isCompleted == true ||
+            task.status == TaskStatus.COMPLETED ||
+            task.status == TaskStatus.CANCELLED
     }
     val filteredTasks = when (selectedFilter) {
         "all" -> historyTasks
@@ -83,16 +105,29 @@ internal fun UserHistoryContent(
             HistoryCard(
                 title = task.title,
                 project = projects.firstOrNull { it.id == task.projectId }?.name.orEmpty(),
-                time = "",
-                date = task.updatedAt.displayDate(),
-                rating = evaluations.firstOrNull()?.rating ?: 0
+                time = userAssignments.firstOrNull { it.taskId == task.id }
+                    ?.timeSpentMinutes
+                    ?.toDurationText()
+                    .orEmpty(),
+                date = (userAssignments.firstOrNull { it.taskId == task.id }?.workDate ?: task.updatedAt).displayDate(),
+                rating = evaluations.firstOrNull {
+                    it.projectId == task.projectId && it.evaluatedUserId == currentUserId
+                }?.rating ?: 0
             )
         }
     }
     if (filteredTasks.isEmpty()) EmptyData()
     SectionCard(stringResource(R.string.monthly_summary)) {
         Metric(stringResource(R.string.completed_tasks_metric), filteredTasks.count { it.status == TaskStatus.COMPLETED }.toString())
-        Metric(stringResource(R.string.total_time), "")
-        Metric(stringResource(R.string.average_rating), evaluations.averageRating())
+        Metric(
+            stringResource(R.string.total_time),
+            filteredTasks.sumOf { task ->
+                userAssignments.firstOrNull { it.taskId == task.id }?.timeSpentMinutes ?: 0
+            }.toDurationText()
+        )
+        Metric(
+            stringResource(R.string.average_rating),
+            evaluations.filter { it.evaluatedUserId == currentUserId }.averageRating()
+        )
     }
 }
