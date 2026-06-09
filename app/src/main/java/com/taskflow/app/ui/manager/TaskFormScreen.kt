@@ -11,6 +11,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,10 +42,11 @@ fun TaskFormScreen(nav: NavController, edit: Boolean) {
     val task = state.tasks.firstOrNull { it.id == state.selectedTaskId } ?: state.tasks.firstOrNull()
     val project = state.projects.firstOrNull { it.id == task?.projectId } ?: state.projects.firstOrNull()
     val initialProjectId = if (edit) task?.projectId else state.selectedProjectId ?: project?.id
+    var hasChanges by rememberSaveable(edit, task?.id, initialProjectId) { mutableStateOf(false) }
     FormScreen(
         title = if (edit) stringResource(R.string.edit_task_title) else stringResource(R.string.create_task_title),
         onBack = { nav.popBackStack() },
-        confirmOnBack = true
+        confirmOnBack = hasChanges
     ) {
         SyncStatus(state)
         TaskFormContent(
@@ -56,6 +58,7 @@ fun TaskFormScreen(nav: NavController, edit: Boolean) {
             initialPriority = if (edit) task?.priority ?: TaskPriority.MEDIUM else TaskPriority.MEDIUM,
             initialDeadline = if (edit) task?.deadline else null,
             initialStatus = if (edit) task?.status ?: TaskStatus.PENDING else TaskStatus.PENDING,
+            onDirtyChange = { hasChanges = it },
             onSave = { title, description, projectId, priority, deadline, status ->
                 val selectedProject = state.projects.firstOrNull { it.id == projectId }
                 viewModel.saveTask(
@@ -84,6 +87,7 @@ internal fun TaskFormContent(
     initialPriority: TaskPriority,
     initialDeadline: Long?,
     initialStatus: TaskStatus,
+    onDirtyChange: (Boolean) -> Unit,
     onSave: (String, String, Long?, TaskPriority, Long?, TaskStatus) -> Unit,
     onCancel: () -> Unit
 ) {
@@ -93,6 +97,16 @@ internal fun TaskFormContent(
     var selectedPriority by rememberSaveable(edit, initialPriority) { mutableStateOf(initialPriority) }
     var selectedDeadline by rememberSaveable(edit, initialDeadline) { mutableStateOf(initialDeadline) }
     var selectedStatus by rememberSaveable(edit, initialStatus) { mutableStateOf(initialStatus) }
+    val hasChanges = title != initialTitle ||
+        description != initialDescription ||
+        selectedProjectId != initialProjectId ||
+        selectedPriority != initialPriority ||
+        selectedDeadline != initialDeadline ||
+        selectedStatus != initialStatus
+
+    LaunchedEffect(hasChanges) {
+        onDirtyChange(hasChanges)
+    }
 
     SectionCard("") {
         Field(stringResource(R.string.task_title_label), title, onValueChange = { title = it })

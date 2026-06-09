@@ -278,6 +278,20 @@ fun TaskFlowNavGraph() {
             ProfileScreen(navController, role = "G", accent = Color(0xFF06C167))
         }
 
+        composable(
+            route = Routes.MANAGER_USER_TASKS,
+            arguments = listOf(
+                navArgument(Routes.MANAGER_USER_ID_ARG) {
+                    type = NavType.LongType
+                }
+            )
+        ) { backStackEntry ->
+            ManagerTasksListScreen(
+                navController,
+                userId = backStackEntry.arguments?.getLong(Routes.MANAGER_USER_ID_ARG)
+            )
+        }
+
         composable(Routes.USER_TASK_DETAILS) { UserTaskDetailsScreen(navController) }
         composable(Routes.USER_HISTORY) { UserHistoryScreen(navController) }
         composable(Routes.USER_PROFILE) {

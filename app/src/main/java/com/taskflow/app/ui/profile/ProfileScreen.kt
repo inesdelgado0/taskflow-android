@@ -75,8 +75,15 @@ fun ProfileScreen(nav: NavController, role: String, accent: Color) {
     val coroutineScope = rememberCoroutineScope()
     val selectedLanguage by remember {
         LanguageManager.languageFlow(context)
-    }.collectAsState(initial = LanguageManager.SYSTEM)
+    }.collectAsState(initial = LanguageManager.PORTUGUESE)
     var cameraPhotoUri by remember { mutableStateOf<Uri?>(null) }
+    val hasChanges = state.user?.let { user ->
+        state.name != user.name ||
+            state.username != user.username ||
+            state.email != user.email ||
+            state.photoUrl != user.photoUrl ||
+            state.newPassword.isNotBlank()
+    } ?: false
     val photoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri ->
@@ -100,7 +107,7 @@ fun ProfileScreen(nav: NavController, role: String, accent: Color) {
     ProfileFormScreen(
         title = stringResource(R.string.profile_title),
         onBack = { nav.popBackStack() },
-        confirmOnBack = true
+        confirmOnBack = hasChanges
     ) {
         ProfileCard {
             if (state.isLoading && state.user == null) {
@@ -265,12 +272,6 @@ private fun LanguageSelector(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            LanguageOptionButton(
-                text = stringResource(R.string.language_system),
-                selected = selectedLanguage == LanguageManager.SYSTEM,
-                onClick = { onLanguageSelected(LanguageManager.SYSTEM) },
-                modifier = Modifier.weight(1f)
-            )
             LanguageOptionButton(
                 text = stringResource(R.string.language_portuguese),
                 selected = selectedLanguage == LanguageManager.PORTUGUESE,

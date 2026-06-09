@@ -12,6 +12,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,10 +44,11 @@ fun ProjectFormScreen(nav: NavController, edit: Boolean) {
     val state by viewModel.uiState.collectAsState()
     val project = state.projects.firstOrNull { it.id == state.selectedProjectId } ?: state.projects.firstOrNull()
     val managers = state.users.projectManagers()
+    var hasChanges by rememberSaveable(edit, project?.id) { mutableStateOf(false) }
     FormScreen(
         title = if (edit) stringResource(R.string.edit_project) else stringResource(R.string.create_project),
         onBack = { nav.popBackStack() },
-        confirmOnBack = true
+        confirmOnBack = hasChanges
     ) {
         SyncStatus(state)
         ProjectFormContent(
@@ -58,6 +60,7 @@ fun ProjectFormScreen(nav: NavController, edit: Boolean) {
             initialManagerId = if (edit) project?.managerId else null,
             initialStatus = if (edit) project?.status ?: ProjectStatus.ACTIVE else ProjectStatus.ACTIVE,
             managers = managers.map { it.id to it.name },
+            onDirtyChange = { hasChanges = it },
             onSave = { name, description, startDate, endDate, managerId, status ->
                 viewModel.saveProject(
                     existing = if (edit) project else null,
@@ -85,6 +88,7 @@ internal fun ProjectFormContent(
     initialManagerId: Long?,
     initialStatus: ProjectStatus,
     managers: List<Pair<Long, String>>,
+    onDirtyChange: (Boolean) -> Unit,
     onSave: (String, String, Long?, Long?, Long?, ProjectStatus) -> Unit,
     onCancel: () -> Unit
 ) {
@@ -94,6 +98,16 @@ internal fun ProjectFormContent(
     var endDate by rememberSaveable(edit, initialEndDate) { mutableStateOf(initialEndDate) }
     var selectedManagerId by rememberSaveable(edit, initialManagerId) { mutableStateOf(initialManagerId) }
     var selectedStatus by rememberSaveable(edit, initialStatus) { mutableStateOf(initialStatus) }
+    val hasChanges = name != initialName ||
+        description != initialDescription ||
+        startDate != initialStartDate ||
+        endDate != initialEndDate ||
+        selectedManagerId != initialManagerId ||
+        selectedStatus != initialStatus
+
+    LaunchedEffect(hasChanges) {
+        onDirtyChange(hasChanges)
+    }
 
     SectionCard("") {
         Field(
