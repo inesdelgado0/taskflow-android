@@ -67,8 +67,12 @@ fun UserTaskDetailsScreen(nav: NavController, managerMode: Boolean = false) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 Button(
                     onClick = {
-                        if (managerMode) nav.navigate(Routes.MANAGER_TASK_EDIT)
-                        else viewModel.updateTaskStatus(task, TaskStatus.IN_PROGRESS)
+                        if (managerMode) {
+                            viewModel.selectTask(task.id)
+                            nav.navigate(Routes.MANAGER_TASK_EDIT)
+                        } else {
+                            viewModel.updateTaskStatus(task, TaskStatus.IN_PROGRESS)
+                        }
                     },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(Blue)
@@ -77,8 +81,12 @@ fun UserTaskDetailsScreen(nav: NavController, managerMode: Boolean = false) {
                 }
                 OutlinedButton(
                     onClick = {
-                        if (managerMode) nav.navigate(Routes.MANAGER_ASSIGN_USERS)
-                        else nav.navigate(Routes.USER_OBSERVATIONS)
+                        if (managerMode) {
+                            viewModel.selectTask(task.id)
+                            nav.navigate(Routes.MANAGER_ASSIGN_USERS)
+                        } else {
+                            nav.navigate(Routes.USER_OBSERVATIONS)
+                        }
                     },
                     modifier = Modifier.weight(1f)
                 ) {

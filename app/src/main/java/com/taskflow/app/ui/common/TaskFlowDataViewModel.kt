@@ -210,7 +210,13 @@ class TaskFlowDataViewModel @Inject constructor(
     fun refreshFromApi() {
         viewModelScope.launch(Dispatchers.IO) {
             transient.update { it.copy(isRefreshing = true, refreshError = null, refreshErrorRes = null) }
-            populateLocalDatabase()
+            val userId = tokenManager.getUserId()
+            val result = if (userId != null) {
+                populateLocalDatabase(userId)
+            } else {
+                populateLocalDatabase()
+            }
+            result
                 .onSuccess {
                     transient.update { it.copy(isRefreshing = false, refreshError = null, refreshErrorRes = null) }
                 }
@@ -358,7 +364,17 @@ class TaskFlowDataViewModel @Inject constructor(
         viewModelScope.launch {
             transient.update { it.copy(isRefreshing = true, refreshError = null, refreshErrorRes = null) }
             val now = System.currentTimeMillis()
-            val creatorId = existing?.createdBy ?: uiState.value.currentUser?.id ?: uiState.value.users.firstOrNull()?.id ?: 1L
+            val creatorId = existing?.createdBy ?: tokenManager.getUserId()
+            if (creatorId == null) {
+                transient.update {
+                    it.copy(
+                        isRefreshing = false,
+                        refreshError = null,
+                        refreshErrorRes = R.string.error_session_expired_short
+                    )
+                }
+                return@launch
+            }
             val task = Task(
                 id = existing?.id ?: 0L,
                 projectId = projectId,

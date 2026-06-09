@@ -67,11 +67,10 @@ internal fun UserHistoryContent(
     val userAssignments = assignments.filter { assignment ->
         currentUserId != null && assignment.userId == currentUserId
     }
+    val userTaskIds = userAssignments.map { assignment -> assignment.taskId }.toSet()
     val historyTasks = tasks.filter { task ->
-        val assignment = userAssignments.firstOrNull { it.taskId == task.id }
-        assignment?.isCompleted == true ||
-            task.status == TaskStatus.COMPLETED ||
-            task.status == TaskStatus.CANCELLED
+        task.id in userTaskIds &&
+            (task.status == TaskStatus.COMPLETED || task.status == TaskStatus.CANCELLED)
     }
     val filteredTasks = when (selectedFilter) {
         "all" -> historyTasks

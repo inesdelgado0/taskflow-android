@@ -27,24 +27,24 @@ class TaskFlowNotifier @Inject constructor(
         val channels = listOf(
             NotificationChannel(
                 CHANNEL_TASKS,
-                "Tarefas",
+                context.getString(R.string.notif_channel_tasks_name),
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
-                description = "Tarefas atribuídas e atualizações de tarefas"
+                description = context.getString(R.string.notif_channel_tasks_desc)
             },
             NotificationChannel(
                 CHANNEL_DEADLINES,
-                "Prazos",
+                context.getString(R.string.notif_channel_deadlines_name),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Lembretes de prazos próximos"
+                description = context.getString(R.string.notif_channel_deadlines_desc)
             },
             NotificationChannel(
                 CHANNEL_SYNC,
-                "Sincronização",
+                context.getString(R.string.notif_channel_sync_name),
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Estado da sincronização offline"
+                description = context.getString(R.string.notif_channel_sync_desc)
             }
         )
 
@@ -57,7 +57,7 @@ class TaskFlowNotifier @Inject constructor(
         show(
             id = taskId.notificationId(TASK_NOTIFICATION_BASE),
             channelId = CHANNEL_TASKS,
-            title = "Nova tarefa atribuída",
+            title = context.getString(R.string.notif_task_assigned_title),
             text = title,
             priority = NotificationCompat.PRIORITY_DEFAULT
         )
@@ -67,7 +67,7 @@ class TaskFlowNotifier @Inject constructor(
         show(
             id = taskId.notificationId(DEADLINE_NOTIFICATION_BASE),
             channelId = CHANNEL_DEADLINES,
-            title = "Prazo próximo",
+            title = context.getString(R.string.notif_deadline_reminder_title),
             text = title,
             priority = NotificationCompat.PRIORITY_HIGH
         )
@@ -77,8 +77,8 @@ class TaskFlowNotifier @Inject constructor(
         show(
             id = SYNC_SUCCESS_NOTIFICATION_ID,
             channelId = CHANNEL_SYNC,
-            title = "Sincronização concluída",
-            text = "$count operação(ões) sincronizada(s)",
+            title = context.getString(R.string.notif_sync_completed_title),
+            text = context.getString(R.string.notif_sync_completed_text, count),
             priority = NotificationCompat.PRIORITY_LOW
         )
     }
@@ -87,8 +87,8 @@ class TaskFlowNotifier @Inject constructor(
         show(
             id = SYNC_FAILED_NOTIFICATION_ID,
             channelId = CHANNEL_SYNC,
-            title = "Sincronização incompleta",
-            text = "Algumas operações serão tentadas novamente",
+            title = context.getString(R.string.notif_sync_failed_title),
+            text = context.getString(R.string.notif_sync_failed_text),
             priority = NotificationCompat.PRIORITY_DEFAULT
         )
     }

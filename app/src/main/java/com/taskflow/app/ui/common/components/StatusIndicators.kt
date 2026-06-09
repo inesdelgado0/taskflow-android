@@ -30,15 +30,96 @@ import com.taskflow.app.R
 import com.taskflow.app.domain.util.TaskStatus
 import com.taskflow.app.ui.common.TaskFlowDataUiState
 import com.taskflow.app.ui.common.theme.Blue
-import com.taskflow.app.ui.common.util.isNearDeadline
+import com.taskflow.app.ui.common.theme.Border
 import com.taskflow.app.ui.common.theme.Green
 import com.taskflow.app.ui.common.theme.Muted
 import com.taskflow.app.ui.common.theme.Orange
 import com.taskflow.app.ui.common.theme.Red
+import com.taskflow.app.ui.common.util.isNearDeadline
+
+internal data class InAppNotification(
+    val title: String,
+    val message: String,
+    val taskId: Long? = null,
+    val isImportant: Boolean = false
+)
+
+internal fun TaskFlowDataUiState.inAppNotifications(): List<InAppNotification> {
+    val now = System.currentTimeMillis()
+    val currentUserTaskIds = currentUser?.id?.let { userId ->
+        userTaskAssignments
+            .filter { assignment -> assignment.userId == userId }
+            .map { assignment -> assignment.taskId }
+            .toSet()
+    }
+    val visibleTasks = if (currentUser != null && currentUserTaskIds != null) {
+        tasks.filter { task -> task.id in currentUserTaskIds }
+    } else {
+        tasks
+    }
+    val taskNotifications = visibleTasks
+        .filter { task -> task.status != TaskStatus.COMPLETED && task.status != TaskStatus.CANCELLED }
+        .flatMap { task ->
+            val notifications = mutableListOf<InAppNotification>()
+            if (task.deadline != null && task.deadline < now) {
+                notifications += InAppNotification(
+                    title = "Tarefa atrasada",
+                    message = task.title,
+                    taskId = task.id,
+                    isImportant = true
+                )
+            } else if (task.deadline.isNearDeadline()) {
+                notifications += InAppNotification(
+                    title = "Prazo proximo",
+                    message = task.title,
+                    taskId = task.id,
+                    isImportant = true
+                )
+            }
+            if (task.status == TaskStatus.PENDING) {
+                notifications += InAppNotification(
+                    title = "Tarefa pendente",
+                    message = task.title,
+                    taskId = task.id
+                )
+            }
+            notifications
+        }
+
+    val syncNotifications = buildList {
+        if (isRefreshing) {
+            add(
+                InAppNotification(
+                    title = "Sincronizacao em curso",
+                    message = "Os dados estao a ser atualizados."
+                )
+            )
+        }
+        if (refreshError != null) {
+            add(
+                InAppNotification(
+                    title = "Sincronizacao incompleta",
+                    message = refreshError,
+                    isImportant = true
+                )
+            )
+        }
+    }
+
+    return (syncNotifications + taskNotifications)
+        .distinctBy { "${it.title}:${it.taskId}:${it.message}" }
+        .sortedByDescending { it.isImportant }
+        .take(8)
+}
 
 @Composable
 internal fun StatusPill(text: String, color: Color) {
-    Box(Modifier.clip(RoundedCornerShape(50)).background(color.copy(alpha = 0.12f)).padding(horizontal = 8.dp, vertical = 3.dp)) {
+    Box(
+        Modifier
+            .clip(RoundedCornerShape(50))
+            .background(color.copy(alpha = 0.12f))
+            .padding(horizontal = 8.dp, vertical = 3.dp)
+    ) {
         Text(text, color = color, style = MaterialTheme.typography.labelSmall)
     }
 }
@@ -65,22 +146,29 @@ internal fun SyncStatus(state: TaskFlowDataUiState) {
 
 @Composable
 internal fun NotificationStateComponent(state: TaskFlowDataUiState) {
-    val nearDeadline = state.tasks.count { it.deadline.isNearDeadline() && it.status != TaskStatus.COMPLETED }
+    val notifications = state.inAppNotifications()
+    val importantCount = notifications.count { it.isImportant }
     val pendingSync = state.isRefreshing
-    SectionCard("Notificações") {
+
+    SectionCard("Notificacoes") {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.Notifications, null, tint = if (nearDeadline > 0 || pendingSync) Orange else Green, modifier = Modifier.size(22.dp))
+            Icon(
+                Icons.Default.Notifications,
+                contentDescription = null,
+                tint = if (importantCount > 0 || pendingSync) Orange else Green,
+                modifier = Modifier.size(22.dp)
+            )
             Spacer(Modifier.size(8.dp))
             Column {
                 Text(
-                    if (nearDeadline > 0) "$nearDeadline tarefa(s) com prazo próximo"
+                    if (importantCount > 0) "$importantCount alerta(s) importante(s)"
                     else if (pendingSync) stringResource(R.string.sync_status_syncing)
                     else stringResource(R.string.sync_status_synced),
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     if (state.refreshError != null || state.refreshErrorRes != null) stringResource(R.string.sync_status_offline)
-                    else "Notificações de tarefas, prazos e sincronização ativas",
+                    else "Notificacoes de tarefas, prazos e sincronizacao ativas",
                     color = Muted,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -93,7 +181,12 @@ internal fun NotificationStateComponent(state: TaskFlowDataUiState) {
 internal fun Dots(index: Int) {
     Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
         repeat(3) {
-            Box(Modifier.size(7.dp).clip(CircleShape).background(if (it == index) Blue else Color(0xFFD2DAE5)))
+            Box(
+                Modifier
+                    .size(7.dp)
+                    .clip(CircleShape)
+                    .background(if (it == index) Blue else Color(0xFFD2DAE5))
+            )
         }
     }
 }
@@ -105,6 +198,13 @@ internal fun ProgressLine(label: String, value: String, progress: Float) {
             Text(label, color = Muted, style = MaterialTheme.typography.bodySmall)
             Text(value, color = Muted, style = MaterialTheme.typography.bodySmall)
         }
-        LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().height(6.dp), color = Blue, trackColor = com.taskflow.app.ui.common.theme.Border)
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp),
+            color = Blue,
+            trackColor = Border
+        )
     }
 }

@@ -53,10 +53,6 @@ class StatisticsFileExporter @Inject constructor(
     private fun exportPdf(snapshot: StatisticsSnapshot): File {
         val file = exportFile(snapshot, "pdf")
         val document = PdfDocument()
-        val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, 1).create()
-        val page = document.startPage(pageInfo)
-        val canvas = page.canvas
-
         val titlePaint = Paint().apply {
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             textSize = 18f
@@ -67,21 +63,19 @@ class StatisticsFileExporter @Inject constructor(
         }
         val bodyPaint = Paint().apply { textSize = 10f }
 
-        var y = 42f
-        canvas.drawText(snapshot.title, 32f, y, titlePaint)
-        y += 24f
-        canvas.drawText("Gerado em: ${snapshot.generatedAt.formatDate()}", 32f, y, bodyPaint)
-        y += 30f
-
-        canvas.drawText("Item", 32f, y, headerPaint)
-        canvas.drawText("Total", 260f, y, headerPaint)
-        canvas.drawText("Concl.", 318f, y, headerPaint)
-        canvas.drawText("Pend.", 382f, y, headerPaint)
-        canvas.drawText("Atras.", 446f, y, headerPaint)
-        canvas.drawText("Taxa", 512f, y, headerPaint)
-        y += 18f
+        var pageNumber = 1
+        var page = document.startPage(PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber).create())
+        var canvas = page.canvas
+        var y = drawPdfHeader(canvas, snapshot, titlePaint, headerPaint, bodyPaint)
 
         snapshot.rows.forEach { row ->
+            if (y > PAGE_HEIGHT - 80f) {
+                document.finishPage(page)
+                pageNumber++
+                page = document.startPage(PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber).create())
+                canvas = page.canvas
+                y = drawPdfHeader(canvas, snapshot, titlePaint, headerPaint, bodyPaint)
+            }
             canvas.drawText(row.label.take(36), 32f, y, bodyPaint)
             canvas.drawText(row.totalTasks.toString(), 260f, y, bodyPaint)
             canvas.drawText(row.completedTasks.toString(), 318f, y, bodyPaint)
@@ -89,6 +83,14 @@ class StatisticsFileExporter @Inject constructor(
             canvas.drawText(row.overdueTasks.toString(), 446f, y, bodyPaint)
             canvas.drawText("${row.completionRate}%", 512f, y, bodyPaint)
             y += 18f
+        }
+
+        if (y > PAGE_HEIGHT - 80f) {
+            document.finishPage(page)
+            pageNumber++
+            page = document.startPage(PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber).create())
+            canvas = page.canvas
+            y = drawPdfHeader(canvas, snapshot, titlePaint, headerPaint, bodyPaint)
         }
 
         y += 12f
@@ -102,6 +104,28 @@ class StatisticsFileExporter @Inject constructor(
         file.outputStream().use { document.writeTo(it) }
         document.close()
         return file
+    }
+
+    private fun drawPdfHeader(
+        canvas: android.graphics.Canvas,
+        snapshot: StatisticsSnapshot,
+        titlePaint: Paint,
+        headerPaint: Paint,
+        bodyPaint: Paint
+    ): Float {
+        var y = 42f
+        canvas.drawText(snapshot.title.take(54), 32f, y, titlePaint)
+        y += 24f
+        canvas.drawText("Gerado em: ${snapshot.generatedAt.formatDate()}", 32f, y, bodyPaint)
+        y += 30f
+
+        canvas.drawText("Item", 32f, y, headerPaint)
+        canvas.drawText("Total", 260f, y, headerPaint)
+        canvas.drawText("Concl.", 318f, y, headerPaint)
+        canvas.drawText("Pend.", 382f, y, headerPaint)
+        canvas.drawText("Atras.", 446f, y, headerPaint)
+        canvas.drawText("Taxa", 512f, y, headerPaint)
+        return y + 18f
     }
 
     private fun exportFile(snapshot: StatisticsSnapshot, extension: String): File {

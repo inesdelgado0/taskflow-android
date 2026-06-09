@@ -66,7 +66,19 @@ private class FakeTaskListRepository(
     ): Flow<List<Task>> = flowOf(emptyList())
     override suspend fun updateTaskStatus(id: Long, status: TaskStatus) = Unit
     override suspend fun refreshTasks(projectId: Long): ApiResult<List<Task>> = ApiResult.Success(emptyList())
+    override suspend fun refreshUserTaskAssignments(userId: Long): ApiResult<Unit> = ApiResult.Success(Unit)
     override suspend fun pushTask(task: Task): ApiResult<Task> = ApiResult.Success(task)
+    override suspend fun pushTaskProgress(
+        taskId: Long,
+        userId: Long,
+        workDate: Long?,
+        location: String?,
+        completionPercentage: Int,
+        timeSpentMinutes: Int
+    ): ApiResult<Unit> = ApiResult.Success(Unit)
+    override suspend fun refreshTaskUsers(taskId: Long): ApiResult<List<Long>> = ApiResult.Success(emptyList())
+    override suspend fun assignUserToTaskRemote(taskId: Long, userId: Long): ApiResult<Unit> = ApiResult.Success(Unit)
+    override suspend fun removeUserFromTaskRemote(taskId: Long, userId: Long): ApiResult<Unit> = ApiResult.Success(Unit)
     override suspend fun updateTaskStatusRemote(id: Long, status: TaskStatus): ApiResult<Task> =
         ApiResult.Success(
             Task(

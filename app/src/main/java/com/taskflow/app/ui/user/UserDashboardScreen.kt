@@ -22,6 +22,7 @@ import com.taskflow.app.domain.util.TaskStatus
 import com.taskflow.app.ui.common.TaskFlowDataViewModel
 import com.taskflow.app.ui.common.components.AppScaffold
 import com.taskflow.app.ui.common.components.EmptyData
+import com.taskflow.app.ui.common.components.NotificationStateComponent
 import com.taskflow.app.ui.common.components.SectionCard
 import com.taskflow.app.ui.common.components.SmallStat
 import com.taskflow.app.ui.common.components.SyncStatus
@@ -41,10 +42,17 @@ fun UserDashboardScreen(nav: NavController, onLogout: () -> Unit) {
         role = "U",
         accent = Orange,
         onLogout = onLogout,
-        onProfile = { nav.navigate(Routes.USER_PROFILE) }
+        onProfile = { nav.navigate(Routes.USER_PROFILE) },
+        onNotificationClick = { taskId ->
+            taskId?.let {
+                viewModel.selectTask(it)
+                nav.navigate(Routes.userTaskExecution(it))
+            }
+        }
     ) {
         Welcome(state.currentUser?.name ?: stringResource(R.string.dashboard_user))
         SyncStatus(state)
+        NotificationStateComponent(state)
         val currentUserId = state.currentUser?.id
         val userAssignments = state.userTaskAssignments.filter { assignment ->
             currentUserId != null && assignment.userId == currentUserId
@@ -52,8 +60,10 @@ fun UserDashboardScreen(nav: NavController, onLogout: () -> Unit) {
         val userTaskIds = userAssignments.map { it.taskId }.toSet()
         val userTasks = state.tasks.filter { task -> task.id in userTaskIds }
         val activeTasks = userTasks.filter { task ->
-            val assignment = userAssignments.firstOrNull { it.taskId == task.id }
-            task.status != TaskStatus.CANCELLED && assignment?.isCompleted != true
+            task.status == TaskStatus.PENDING || task.status == TaskStatus.IN_PROGRESS
+        }
+        val completedTasks = state.tasks.count { task ->
+            task.id in userTaskIds && task.status == TaskStatus.COMPLETED
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
             SmallStat(
@@ -67,7 +77,7 @@ fun UserDashboardScreen(nav: NavController, onLogout: () -> Unit) {
             SmallStat(
                 Icons.Default.CalendarToday,
                 stringResource(R.string.dashboard_completed),
-                userAssignments.count { it.isCompleted }.toString(),
+                completedTasks.toString(),
                 stringResource(R.string.dashboard_total_synced),
                 Blue,
                 Modifier.weight(1f)

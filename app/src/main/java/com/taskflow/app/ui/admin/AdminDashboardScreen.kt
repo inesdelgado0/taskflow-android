@@ -35,6 +35,9 @@ fun AdminDashboardScreen(nav: NavController, onLogout: () -> Unit) {
         accent = Blue,
         onLogout = onLogout,
         onProfile = { nav.navigate(Routes.ADMIN_PROFILE) },
+        onNotificationClick = { taskId ->
+            if (taskId != null) nav.navigate(Routes.ADMIN_STATS)
+        },
         content = {
             Welcome(stringResource(R.string.dashboard_admin))
             SyncStatus(state)

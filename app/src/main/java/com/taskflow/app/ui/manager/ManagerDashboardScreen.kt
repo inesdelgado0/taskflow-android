@@ -37,7 +37,10 @@ fun ManagerDashboardScreen(nav: NavController, onLogout: () -> Unit) {
         role = "G",
         accent = Green,
         onLogout = onLogout,
-        onProfile = { nav.navigate(Routes.MANAGER_PROFILE) }
+        onProfile = { nav.navigate(Routes.MANAGER_PROFILE) },
+        onNotificationClick = { taskId ->
+            if (taskId != null) nav.navigate(Routes.MANAGER_TASKS_LIST)
+        }
     ) {
         Welcome(stringResource(R.string.dashboard_manager))
         SyncStatus(state)
