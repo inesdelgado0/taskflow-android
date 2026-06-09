@@ -44,6 +44,11 @@ fun ManagerProjectDetailsScreen(nav: NavController) {
     val state by viewModel.uiState.collectAsState()
     val project = state.projects.firstOrNull { it.id == state.selectedProjectId } ?: state.projects.firstOrNull()
     val projectTasks = state.tasks.filter { it.projectId == project?.id }
+    val projectUserIds = state.userProjectAssignments
+        .filter { it.projectId == project?.id }
+        .map { it.userId }
+        .toSet()
+    val projectUsers = state.users.filter { it.id in projectUserIds }
     FormScreen(stringResource(R.string.project_details), { nav.popBackStack() }) {
         if (project == null) {
             EmptyData()
@@ -70,13 +75,13 @@ fun ManagerProjectDetailsScreen(nav: NavController) {
                 Text(stringResource(R.string.view_all_tasks))
             }
         }
-        SectionCard(stringResource(R.string.project_team_count, state.users.take(3).size)) {
-            state.users.take(3).forEach { user ->
+        SectionCard(stringResource(R.string.project_team_count, projectUsers.size)) {
+            projectUsers.take(5).forEach { user ->
                 EvalLine(user.toDemoUser()) { nav.navigate(Routes.managerEvaluateUser(user.id)) }
             }
-            if (state.users.isEmpty()) EmptyData()
-            OutlinedButton(onClick = { nav.navigate(Routes.MANAGER_TEAM) }, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.view_full_team))
+            if (projectUsers.isEmpty()) EmptyData()
+            OutlinedButton(onClick = { nav.navigate(Routes.MANAGER_ADD_TEAM) }, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.add_to_team))
             }
         }
     }

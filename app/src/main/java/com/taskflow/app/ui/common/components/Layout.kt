@@ -19,10 +19,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -40,12 +40,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.taskflow.app.R
 import com.taskflow.app.ui.common.TaskFlowDataUiState
 import com.taskflow.app.ui.common.TaskFlowDataViewModel
+import com.taskflow.app.ui.common.rememberWindowInfo
 import com.taskflow.app.ui.common.theme.Blue
 import com.taskflow.app.ui.common.theme.Border
 import com.taskflow.app.ui.common.theme.Muted
@@ -66,6 +69,12 @@ internal fun AppScaffold(
     onProfile: () -> Unit,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val windowInfo = rememberWindowInfo()
+    val contentModifier = Modifier
+        .fillMaxWidth()
+        .widthIn(max = if (windowInfo.isLandscape) 920.dp else 560.dp)
+    val openProfileDescription = stringResource(R.string.cd_open_profile)
+
     Column(Modifier.fillMaxSize().background(Page)) {
         Row(
             modifier = Modifier
@@ -79,38 +88,65 @@ internal fun AppScaffold(
         ) {
             Text("TaskFlow", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                Icon(Icons.Default.Notifications, null, modifier = Modifier.size(22.dp))
-                Box(modifier = Modifier.clickable(onClick = onProfile)) {
+                Icon(Icons.Default.Notifications, stringResource(R.string.cd_notifications), modifier = Modifier.size(22.dp))
+                Box(
+                    modifier = Modifier
+                        .semantics { contentDescription = openProfileDescription }
+                        .clickable(onClick = onProfile)
+                ) {
                     Avatar(role, accent, 34)
                 }
-                IconButton(onClick = onLogout) { Icon(Icons.Default.ExitToApp, null) }
+                IconButton(onClick = onLogout) { Icon(Icons.AutoMirrored.Filled.ExitToApp, stringResource(R.string.cd_logout)) }
             }
         }
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            item { Column(verticalArrangement = Arrangement.spacedBy(12.dp), content = content) }
+            item { Column(modifier = contentModifier, verticalArrangement = Arrangement.spacedBy(12.dp), content = content) }
         }
     }
 }
 
 @Composable
 internal fun ListScreen(title: String, actionText: String?, onBack: () -> Unit, onAction: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+    val windowInfo = rememberWindowInfo()
     Column(Modifier.fillMaxSize().background(Page)) {
         TopBar(title, onBack, actionText, onAction)
-        LazyColumn(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            item { Column(verticalArrangement = Arrangement.spacedBy(12.dp), content = content) }
+        LazyColumn(
+            Modifier.fillMaxSize().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            item {
+                Column(
+                    modifier = Modifier.fillMaxWidth().widthIn(max = if (windowInfo.isLandscape) 920.dp else 560.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    content = content
+                )
+            }
         }
     }
 }
 
 @Composable
 internal fun FormScreen(title: String, onBack: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+    val windowInfo = rememberWindowInfo()
     Column(Modifier.fillMaxSize().background(Page)) {
         TopBar(title, onBack)
-        LazyColumn(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            item { Column(verticalArrangement = Arrangement.spacedBy(12.dp), content = content) }
+        LazyColumn(
+            Modifier.fillMaxSize().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            item {
+                Column(
+                    modifier = Modifier.fillMaxWidth().widthIn(max = if (windowInfo.isLandscape) 720.dp else 560.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    content = content
+                )
+            }
         }
     }
 }
@@ -126,11 +162,11 @@ internal fun TopBar(title: String, onBack: () -> Unit, actionText: String? = nul
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null) }
+        IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.btn_back)) }
         Text(title, modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
         if (actionText != null) {
             Button(onClick = onAction, colors = ButtonDefaults.buttonColors(Blue), shape = RoundedCornerShape(8.dp)) {
-                Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(4.dp))
                 Text(actionText)
             }
@@ -148,6 +184,7 @@ internal fun Welcome(name: String) {
 
 @Composable
 internal fun ProfileFormScreen(title: String, onBack: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+    val windowInfo = rememberWindowInfo()
     Column(Modifier.fillMaxSize().background(Page)) {
         TopBar(title, onBack)
         LazyColumn(
@@ -155,7 +192,12 @@ internal fun ProfileFormScreen(title: String, onBack: () -> Unit, content: @Comp
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            item { content() }
+            item {
+                Column(
+                    modifier = Modifier.fillMaxWidth().widthIn(max = if (windowInfo.isLandscape) 560.dp else 430.dp),
+                    content = content
+                )
+            }
         }
     }
 }
