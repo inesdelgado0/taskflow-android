@@ -219,3 +219,13 @@ internal fun TaskPriority.label(): String {
         TaskPriority.CRITICAL -> if (isPortuguese) "Critica" else "Critical"
     }
 }
+
+internal fun TaskStatus.label(): String {
+    val isPortuguese = java.util.Locale.getDefault().language == "pt"
+    return when (this) {
+        TaskStatus.PENDING -> if (isPortuguese) "Pendente" else "Pending"
+        TaskStatus.IN_PROGRESS -> if (isPortuguese) "Em progresso" else "In progress"
+        TaskStatus.COMPLETED -> if (isPortuguese) "Concluida" else "Completed"
+        TaskStatus.CANCELLED -> if (isPortuguese) "Cancelada" else "Cancelled"
+    }
+}

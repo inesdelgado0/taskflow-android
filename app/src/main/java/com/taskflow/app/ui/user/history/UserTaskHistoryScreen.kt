@@ -18,7 +18,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CheckBox
-import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -48,6 +47,7 @@ import com.taskflow.app.R
 import com.taskflow.app.domain.util.TaskStatus
 import com.taskflow.app.ui.user.tasks.UserTaskItemUi
 import com.taskflow.app.ui.user.tasks.UserTasksViewModel
+import com.taskflow.app.ui.common.components.CompactRating
 
 private val PageBackground = Color(0xFFF6F7F9)
 private val CardBorder = Color(0xFFE2E6EA)
@@ -57,7 +57,6 @@ private val SuccessGreen = Color(0xFF20A464)
 private val SuccessGreenBg = Color(0xFFD8F8E4)
 private val ErrorRed = Color(0xFFD92D20)
 private val ErrorRedBg = Color(0xFFFEE4E2)
-private val StarYellow = Color(0xFFFFB000)
 
 private enum class HistoryFilter {
     ALL,
@@ -223,14 +222,7 @@ private fun HistoryTaskCard(task: UserTaskItemUi) {
                         color = TextSecondary
                     )
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.Star, contentDescription = null, tint = StarYellow)
-                    Text(
-                        text = (task.rating ?: 5.0).toCompactRating(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                CompactRating((task.rating ?: 0.0).toInt())
             }
 
             Row(
@@ -310,7 +302,10 @@ private fun MonthlySummaryCard(tasks: List<UserTaskItemUi>) {
             )
             SummaryRow(stringResource(R.string.completed_tasks_metric), tasks.size.toString())
             SummaryRow(stringResource(R.string.total_time), totalMinutes.toDurationText())
-            SummaryRow(stringResource(R.string.average_rating), "5")
+            SummaryRow(
+                stringResource(R.string.average_rating),
+                tasks.mapNotNull { it.rating }.takeIf { it.isNotEmpty() }?.average()?.toCompactRating().orEmpty()
+            )
         }
     }
 }
@@ -340,7 +335,7 @@ private fun IconText(
     }
 }
 
-private fun Int.toDurationText(): String {
+internal fun Int.toDurationText(): String {
     val hours = this / 60
     val minutes = this % 60
     return when {

@@ -6,6 +6,7 @@ import com.taskflow.app.data.local.dao.UserTaskDao
 import com.taskflow.app.data.remote.TokenManager
 import com.taskflow.app.domain.model.Task
 import com.taskflow.app.domain.repository.ProjectRepository
+import com.taskflow.app.domain.repository.EvaluationRepository
 import com.taskflow.app.domain.repository.UserRepository
 import com.taskflow.app.domain.usecase.sync.PopulateLocalDatabaseUseCase
 import com.taskflow.app.domain.usecase.user.tasks.GetCompletedUserTasksUseCase
@@ -32,8 +33,10 @@ data class UserTaskItemUi(
     val priority: String,
     val deadlineText: String,
     val dateText: String,
+    val location: String,
     val progress: Int,
     val timeSpentMinutes: Int,
+    val memberCount: Int,
     val status: TaskStatus,
     val rating: Double? = null
 )
@@ -55,6 +58,7 @@ class UserTasksViewModel @Inject constructor(
     private val tokenManager: TokenManager,
     private val userRepository: UserRepository,
     private val projectRepository: ProjectRepository,
+    private val evaluationRepository: EvaluationRepository,
     private val userTaskDao: UserTaskDao,
     private val populateLocalDatabase: PopulateLocalDatabaseUseCase,
     private val getPendingUserTasksUseCase: GetPendingUserTasksUseCase,
@@ -105,6 +109,11 @@ class UserTasksViewModel @Inject constructor(
         val assignment = userTaskDao.get(userId, id)
         val projectName = projectRepository.getProjectById(projectId)?.name ?: "Projeto"
         val progress = assignment?.completionPercentage ?: if (status == TaskStatus.COMPLETED) 100 else 0
+        val memberCount = userTaskDao.countUsersByTask(id)
+        val rating = evaluationRepository
+            .getEvaluationForUserInProject(projectId, userId)
+            ?.rating
+            ?.toDouble()
 
         return UserTaskItemUi(
             id = id,
@@ -114,9 +123,12 @@ class UserTasksViewModel @Inject constructor(
             priority = priority.name.lowercase().replaceFirstChar { it.uppercase() },
             deadlineText = deadline.toDeadlineText(),
             dateText = (assignment?.workDate ?: deadline).toDateText(),
+            location = assignment?.location.orEmpty(),
             progress = progress.coerceIn(0, 100),
             timeSpentMinutes = assignment?.timeSpentMinutes ?: 0,
-            status = status
+            memberCount = memberCount,
+            status = status,
+            rating = rating
         )
     }
 

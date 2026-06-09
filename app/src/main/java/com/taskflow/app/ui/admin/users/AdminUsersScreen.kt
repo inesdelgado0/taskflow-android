@@ -14,11 +14,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -29,12 +34,17 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -122,6 +132,8 @@ private fun UserFormCard(
     uiState: AdminUsersUiState,
     viewModel: AdminUsersViewModel
 ) {
+    var passwordVisible by rememberSaveable(formState.id) { mutableStateOf(false) }
+
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
@@ -163,7 +175,10 @@ private fun UserFormCard(
                 value = formState.password,
                 onValueChange = viewModel::onPasswordChange,
                 error = formState.passwordError,
-                keyboardType = KeyboardType.Password
+                keyboardType = KeyboardType.Password,
+                isPassword = true,
+                passwordVisible = passwordVisible,
+                onPasswordVisibilityChange = { passwordVisible = it }
             )
             Text(
                 text = stringResource(R.string.user_label_role),
@@ -356,7 +371,10 @@ private fun UserTextField(
     value: String,
     onValueChange: (String) -> Unit,
     error: String?,
-    keyboardType: KeyboardType = KeyboardType.Text
+    keyboardType: KeyboardType = KeyboardType.Text,
+    isPassword: Boolean = false,
+    passwordVisible: Boolean = false,
+    onPasswordVisibilityChange: (Boolean) -> Unit = {}
 ) {
     Column(modifier = Modifier.padding(bottom = 10.dp)) {
         Text(text = label, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
@@ -368,6 +386,23 @@ private fun UserTextField(
             isError = error != null,
             singleLine = true,
             shape = RoundedCornerShape(8.dp),
+            visualTransformation = if (isPassword && !passwordVisible) {
+                PasswordVisualTransformation()
+            } else {
+                VisualTransformation.None
+            },
+            trailingIcon = if (isPassword) {
+                {
+                    IconButton(onClick = { onPasswordVisibilityChange(!passwordVisible) }) {
+                        Icon(
+                            imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                            contentDescription = label
+                        )
+                    }
+                }
+            } else {
+                null
+            },
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = PrimaryBlue,

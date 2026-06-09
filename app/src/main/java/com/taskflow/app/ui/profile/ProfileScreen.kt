@@ -40,6 +40,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,6 +57,7 @@ import com.taskflow.app.ui.common.components.FormError
 import com.taskflow.app.ui.common.components.ProfileAvatar
 import com.taskflow.app.ui.common.components.ProfileCard
 import com.taskflow.app.ui.common.components.ProfileFormScreen
+import com.taskflow.app.ui.common.locale.LanguageManager
 import com.taskflow.app.ui.common.theme.Black
 import com.taskflow.app.ui.common.theme.Blue
 import com.taskflow.app.ui.common.theme.Border
@@ -63,12 +65,17 @@ import com.taskflow.app.ui.common.theme.Muted
 import com.taskflow.app.ui.common.theme.Soft
 import com.taskflow.app.ui.common.util.initial
 import java.io.File
+import kotlinx.coroutines.launch
 
 @Composable
 fun ProfileScreen(nav: NavController, role: String, accent: Color) {
     val viewModel: ProfileViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val selectedLanguage by remember {
+        LanguageManager.languageFlow(context)
+    }.collectAsState(initial = LanguageManager.SYSTEM)
     var cameraPhotoUri by remember { mutableStateOf<Uri?>(null) }
     val photoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
@@ -111,6 +118,12 @@ fun ProfileScreen(nav: NavController, role: String, accent: Color) {
                         cameraPhotoUri = uri
                         cameraLauncher.launch(uri)
                     },
+                    selectedLanguage = selectedLanguage,
+                    onLanguageSelected = { languageCode ->
+                        coroutineScope.launch {
+                            LanguageManager.setLanguage(context, languageCode)
+                        }
+                    },
                     onSave = viewModel::saveProfile,
                     onCancel = { nav.popBackStack() }
                 )
@@ -130,6 +143,8 @@ private fun ColumnScope.EditableProfileContent(
     onPasswordChange: (String) -> Unit,
     onGalleryClick: () -> Unit,
     onCameraClick: () -> Unit,
+    selectedLanguage: String,
+    onLanguageSelected: (String) -> Unit,
     onSave: () -> Unit,
     onCancel: () -> Unit
 ) {
@@ -198,6 +213,10 @@ private fun ColumnScope.EditableProfileContent(
         placeholder = stringResource(R.string.keep_current_password)
     )
     state.passwordError?.let { FormError(it) }
+    LanguageSelector(
+        selectedLanguage = selectedLanguage,
+        onLanguageSelected = onLanguageSelected
+    )
     state.errorMessage?.let { FormError(it) }
     state.successMessage?.let {
         Text(it, color = com.taskflow.app.ui.common.theme.Green, style = MaterialTheme.typography.bodySmall)
@@ -223,6 +242,67 @@ private fun ColumnScope.EditableProfileContent(
         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
     ) {
         Text(stringResource(R.string.btn_cancel))
+    }
+}
+
+@Composable
+private fun LanguageSelector(
+    selectedLanguage: String,
+    onLanguageSelected: (String) -> Unit
+) {
+    Column {
+        Text(
+            text = stringResource(R.string.language_title),
+            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.bodySmall
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            LanguageOptionButton(
+                text = stringResource(R.string.language_system),
+                selected = selectedLanguage == LanguageManager.SYSTEM,
+                onClick = { onLanguageSelected(LanguageManager.SYSTEM) },
+                modifier = Modifier.weight(1f)
+            )
+            LanguageOptionButton(
+                text = stringResource(R.string.language_portuguese),
+                selected = selectedLanguage == LanguageManager.PORTUGUESE,
+                onClick = { onLanguageSelected(LanguageManager.PORTUGUESE) },
+                modifier = Modifier.weight(1f)
+            )
+            LanguageOptionButton(
+                text = stringResource(R.string.language_english),
+                selected = selectedLanguage == LanguageManager.ENGLISH,
+                onClick = { onLanguageSelected(LanguageManager.ENGLISH) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun LanguageOptionButton(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val containerColor = if (selected) Blue else Color.White
+    val contentColor = if (selected) Color.White else Muted
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier.height(42.dp),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, if (selected) Blue else Border),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = containerColor,
+            contentColor = contentColor
+        )
+    ) {
+        Text(text, style = MaterialTheme.typography.bodySmall)
     }
 }
 

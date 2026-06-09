@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Star
@@ -402,8 +404,8 @@ internal fun AvailableUser(user: DemoUser) {
 }
 
 @Composable
-internal fun UserTaskLine(task: Task, projects: List<Project>, onClick: () -> Unit) {
-    val progress = if (task.status == TaskStatus.COMPLETED) 1f else if (task.status == TaskStatus.IN_PROGRESS) 0.6f else 0f
+internal fun UserTaskLine(task: Task, projects: List<Project>, progressPercent: Int, onClick: () -> Unit) {
+    val progress = progressPercent.coerceIn(0, 100) / 100f
     Column(Modifier.fillMaxWidth().clickable(onClick = onClick).background(Color.White, RoundedCornerShape(8.dp)).padding(10.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Column(Modifier.weight(1f)) {
@@ -421,7 +423,7 @@ internal fun UserTaskLine(task: Task, projects: List<Project>, onClick: () -> Un
             )
         }
         Spacer(Modifier.height(8.dp))
-        ProgressLine("", "${(progress * 100).toInt()}%", progress)
+        ProgressLine("", "${progressPercent.coerceIn(0, 100)}%", progress)
     }
 }
 
@@ -438,15 +440,50 @@ internal fun Observation(name: String, text: String, time: String) {
 
 @Composable
 internal fun HistoryCard(title: String, project: String, time: String, date: String, rating: Int) {
-    SectionCard(title) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(project, color = Muted)
-            Row { Text("$rating"); Icon(Icons.Default.Star, null, tint = Yellow, modifier = Modifier.size(16.dp)) }
+    SectionCard("") {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
+            Column(Modifier.weight(1f)) {
+                Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(project, color = Muted, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            CompactRating(rating)
         }
-        TwoMetrics("", time, "", date)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(Icons.Default.AccessTime, null, tint = Muted, modifier = Modifier.size(22.dp))
+                Text(time.ifBlank { "0h" }, color = Muted, style = MaterialTheme.typography.titleMedium)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(Icons.Default.CheckBox, null, tint = Green, modifier = Modifier.size(22.dp))
+                Text(date, color = Muted, style = MaterialTheme.typography.titleMedium)
+            }
+        }
         Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Color(0xFFDDF8E7)).padding(10.dp), contentAlignment = Alignment.Center) {
             Text(stringResource(R.string.completed_status), color = Green, fontWeight = FontWeight.SemiBold)
         }
+    }
+}
+
+@Composable
+internal fun RatingStars(rating: Int, modifier: Modifier = Modifier) {
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
+        val safeRating = rating.coerceIn(0, 5)
+        repeat(5) { index ->
+            Icon(
+                Icons.Default.Star,
+                contentDescription = null,
+                tint = if (index < safeRating) Yellow else Border,
+                modifier = Modifier.size(16.dp)
+            )
+        }
+    }
+}
+
+@Composable
+internal fun CompactRating(rating: Int, modifier: Modifier = Modifier) {
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(Icons.Default.Star, contentDescription = null, tint = Yellow, modifier = Modifier.size(24.dp))
+        Text(rating.coerceIn(0, 5).toString(), color = Color.Black, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
     }
 }
 
