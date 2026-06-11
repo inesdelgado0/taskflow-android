@@ -2,14 +2,17 @@ package com.taskflow.app.ui.manager
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -33,6 +36,7 @@ import com.taskflow.app.ui.common.components.SectionCard
 import com.taskflow.app.ui.common.components.SyncStatus
 import com.taskflow.app.ui.common.TaskFlowDataViewModel
 import com.taskflow.app.ui.common.theme.Blue
+import com.taskflow.app.ui.common.theme.Red
 import com.taskflow.app.ui.common.util.label
 
 @Composable
@@ -43,6 +47,31 @@ fun TaskFormScreen(nav: NavController, edit: Boolean) {
     val project = state.projects.firstOrNull { it.id == task?.projectId } ?: state.projects.firstOrNull()
     val initialProjectId = if (edit) task?.projectId else state.selectedProjectId ?: project?.id
     var hasChanges by rememberSaveable(edit, task?.id, initialProjectId) { mutableStateOf(false) }
+    var showDeleteDialog by rememberSaveable(task?.id, edit) { mutableStateOf(false) }
+
+    if (showDeleteDialog && edit && task != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text(stringResource(R.string.dialog_delete_title)) },
+            text = { Text(stringResource(R.string.dialog_delete_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        viewModel.deleteTask(task) { nav.popBackStack() }
+                    }
+                ) {
+                    Text(stringResource(R.string.btn_delete), color = Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text(stringResource(R.string.btn_cancel))
+                }
+            }
+        )
+    }
+
     FormScreen(
         title = if (edit) stringResource(R.string.edit_task_title) else stringResource(R.string.create_task_title),
         onBack = { nav.popBackStack() },
@@ -59,6 +88,11 @@ fun TaskFormScreen(nav: NavController, edit: Boolean) {
             initialDeadline = if (edit) task?.deadline else null,
             initialStatus = if (edit) task?.status ?: TaskStatus.PENDING else TaskStatus.PENDING,
             onDirtyChange = { hasChanges = it },
+            onDelete = if (edit) {
+                { showDeleteDialog = true }
+            } else {
+                null
+            },
             onSave = { title, description, projectId, priority, deadline, status ->
                 val selectedProject = state.projects.firstOrNull { it.id == projectId }
                 viewModel.saveTask(
@@ -88,6 +122,7 @@ internal fun TaskFormContent(
     initialDeadline: Long?,
     initialStatus: TaskStatus,
     onDirtyChange: (Boolean) -> Unit,
+    onDelete: (() -> Unit)?,
     onSave: (String, String, Long?, TaskPriority, Long?, TaskStatus) -> Unit,
     onCancel: () -> Unit
 ) {
@@ -161,6 +196,17 @@ internal fun TaskFormContent(
             }
             OutlinedButton(onClick = onCancel, modifier = Modifier.weight(1f).height(52.dp), shape = RoundedCornerShape(8.dp)) {
                 Text(stringResource(R.string.btn_cancel))
+            }
+        }
+        if (edit && onDelete != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = onDelete,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Red)
+            ) {
+                Text(stringResource(R.string.task_btn_delete))
             }
         }
     }

@@ -8,6 +8,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.platform.app.InstrumentationRegistry
 import com.taskflow.app.R
+import com.taskflow.app.domain.util.TaskPriority
+import com.taskflow.app.domain.util.TaskStatus
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -29,8 +31,14 @@ class TaskFormContentTest {
                     edit = false,
                     initialTitle = "",
                     initialDescription = "",
-                    projectName = "Projeto Alpha",
-                    onSave = { title, description ->
+                    initialProjectId = 1L,
+                    projects = listOf(1L to "Projeto Alpha"),
+                    initialPriority = TaskPriority.MEDIUM,
+                    initialDeadline = null,
+                    initialStatus = TaskStatus.PENDING,
+                    onDirtyChange = {},
+                    onDelete = null,
+                    onSave = { title, description, _, _, _, _ ->
                         savedTitle = title
                         savedDescription = description
                     },
