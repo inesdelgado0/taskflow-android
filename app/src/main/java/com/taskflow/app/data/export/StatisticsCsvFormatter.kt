@@ -6,12 +6,34 @@ import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 
+data class StatisticsExportLabels(
+    val generatedAt: String,
+    val item: String,
+    val total: String,
+    val completedLabel: String,
+    val pendingLabel: String,
+    val overdueLabel: String,
+    val completionLabel: String,
+    val timeSpentLabel: String,
+    val totalLabel: String
+)
+
 class StatisticsCsvFormatter @Inject constructor() {
-    fun format(snapshot: StatisticsSnapshot): String = buildString {
+    fun format(snapshot: StatisticsSnapshot, labels: StatisticsExportLabels): String = buildString {
         appendLine(snapshot.title.csvLine())
-        appendLine("Gerado em,${snapshot.generatedAt.formatDate().csvCell()}")
+        appendLine("${labels.generatedAt},${snapshot.generatedAt.formatDate().csvCell()}")
         appendLine()
-        appendLine("Item,Total,Concluidas,Pendentes,Atrasadas,Taxa de conclusao,Tempo total (min)")
+        appendLine(
+            listOf(
+                labels.item,
+                labels.total,
+                labels.completedLabel,
+                labels.pendingLabel,
+                labels.overdueLabel,
+                labels.completionLabel,
+                labels.timeSpentLabel
+            ).joinToString(",")
+        )
         snapshot.rows.forEach { row ->
             appendLine(
                 listOf(
@@ -28,7 +50,7 @@ class StatisticsCsvFormatter @Inject constructor() {
         appendLine()
         appendLine(
             listOf(
-                "Total",
+                labels.totalLabel,
                 snapshot.totalTasks.toString(),
                 snapshot.completedTasks.toString(),
                 snapshot.pendingTasks.toString(),

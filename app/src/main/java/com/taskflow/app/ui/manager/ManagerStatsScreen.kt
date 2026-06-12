@@ -52,7 +52,7 @@ fun ManagerStatsScreen(nav: NavController) {
         StatisticsGrouping.BY_PROJECT -> stringResource(R.string.stats_by_project)
         StatisticsGrouping.BY_TASK -> stringResource(R.string.stats_by_task)
     }
-    val snapshot = state.toStatisticsSnapshot("Estatísticas do gestor", grouping)
+    val snapshot = state.toStatisticsSnapshot(stringResource(R.string.manager_statistics_title), grouping)
     FormScreen(stringResource(R.string.stats_title), onBack = { nav.popBackStack() }) {
         SyncStatus(state)
         SectionCard(stringResource(R.string.general_summary)) {
@@ -75,12 +75,12 @@ fun ManagerStatsScreen(nav: NavController) {
                 Button(onClick = { exportStatistics(context, snapshot, StatisticsExportFormat.PDF) }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(Red), shape = RoundedCornerShape(8.dp)) {
                     Icon(Icons.Default.Download, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("PDF")
+                    Text(stringResource(R.string.export_btn_pdf))
                 }
                 Button(onClick = { exportStatistics(context, snapshot, StatisticsExportFormat.CSV) }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(Green), shape = RoundedCornerShape(8.dp)) {
                     Icon(Icons.Default.Download, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("CSV")
+                    Text(stringResource(R.string.export_btn_csv))
                 }
             }
         }

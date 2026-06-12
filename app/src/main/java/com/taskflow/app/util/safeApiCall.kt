@@ -44,21 +44,3 @@ suspend fun <T> safeApiCall(call: suspend () -> Response<T>): ApiResult<T> {
     }
 }
 
-fun parseErrorMessage(errorBody: String?, gson: Gson = Gson()): String? {
-    return try {
-        gson.fromJson(errorBody, ApiErrorResponse::class.java)?.message
-    } catch (_: Exception) {
-        errorBody
-    }
-}
-
-fun NetworkError.toUserMessage(): String = when (this) {
-    NetworkError.Unauthorized       -> "Sessão expirada. Por favor inicia sessão novamente."
-    NetworkError.Forbidden          -> "Não tens permissão para realizar esta ação."
-    NetworkError.NotFound           -> "O recurso solicitado não foi encontrado."
-    NetworkError.NoConnection       -> "Sem ligação à internet. Os dados serão sincronizados quando a ligação for restabelecida."
-    NetworkError.ParseError         -> "Erro ao processar a resposta do servidor."
-    is NetworkError.ClientError     -> "Erro no pedido (${this.code})."
-    is NetworkError.ServerError     -> "Erro no servidor (${this.code}). Tenta novamente mais tarde."
-    is NetworkError.Unknown         -> "Ocorreu um erro inesperado. Tenta novamente."
-}

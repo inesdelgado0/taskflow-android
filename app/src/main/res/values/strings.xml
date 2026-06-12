@@ -63,12 +63,15 @@
     <string name="project_label_name">Nome do projeto</string>
     <string name="project_label_description">Descrição</string>
     <string name="project_label_manager">Gestor de Projeto</string>
+    <string name="project_manager_label_edit">Gestor de Projeto (RF04)</string>
     <string name="project_label_status">Estado</string>
     <string name="project_status_active">Ativo</string>
     <string name="project_status_completed">Concluído</string>
     <string name="project_btn_create">Criar Projeto</string>
     <string name="project_btn_edit">Editar Projeto</string>
     <string name="project_btn_delete">Remover Projeto</string>
+    <string name="project_placeholder_name_example">Ex: Website Redesign</string>
+    <string name="project_placeholder_description">Descrição detalhada do projeto</string>
     <string name="project_btn_complete">Marcar como Concluído</string>
 
     <!-- Tarefas -->
@@ -147,6 +150,19 @@
     <string name="stats_by_task">Por Tarefa</string>
     <string name="export_btn_pdf">Exportar PDF</string>
     <string name="export_btn_csv">Exportar CSV</string>
+    <string name="export_generated_at">Gerado em</string>
+    <string name="export_item">Item</string>
+    <string name="export_total">Total</string>
+    <string name="export_completed_short">Concl.</string>
+    <string name="export_pending_short">Pend.</string>
+    <string name="export_overdue_short">Atras.</string>
+    <string name="export_rate">Taxa</string>
+    <string name="export_total_label">Total</string>
+    <string name="export_completed_label">Concluídas</string>
+    <string name="export_pending_label">Pendentes</string>
+    <string name="export_overdue_label">Atrasadas</string>
+    <string name="export_completion_label">Conclusão</string>
+    <string name="export_file_name_fallback">estatisticas</string>
 
     <!-- Pesquisa e filtros -->
     <string name="search_hint">Pesquisar…</string>
@@ -156,6 +172,27 @@
     <string name="filter_by_date">Data</string>
     <string name="filter_btn_apply">Aplicar Filtros</string>
     <string name="filter_btn_clear">Limpar Filtros</string>
+    <string name="advanced_search">Pesquisa avançada</string>
+    <string name="search_by_task_project_user">Pesquisar por tarefa, projeto ou utilizador</string>
+    <string name="project_label">Projeto</string>
+    <string name="all_projects">Todos os projetos</string>
+    <string name="user_label">Utilizador</string>
+    <string name="all_users">Todos os utilizadores</string>
+    <string name="tasks_found">Tarefas encontradas</string>
+    <string name="average_time_per_task">Tempo médio/tarefa</string>
+    <string name="report_detail">Detalhe por relatório</string>
+    <string name="report_row_completion_details">%1$d%% | %2$d/%3$d concluídas</string>
+    <string name="top_user_ranking_label">%1$s - %2$d concluídas / %3$d tarefas</string>
+    <string name="notifications_title">Notificações</string>
+    <string name="notification_empty_state">Sem alertas no momento</string>
+    <string name="notification_task_overdue_title">Tarefa atrasada</string>
+    <string name="notification_task_deadline_near_title">Prazo próximo</string>
+    <string name="notification_task_pending_title">Tarefa pendente</string>
+    <string name="notification_sync_in_progress_title">Sincronização em curso</string>
+    <string name="notification_sync_incomplete_title">Sincronização incompleta</string>
+    <string name="notification_sync_in_progress_message">Os dados estão a ser atualizados.</string>
+    <string name="notification_active_info">Notificações de tarefas, prazos e sincronização ativas</string>
+    <string name="manager_statistics_title">Estatísticas do gestor</string>
 
     <!-- Notificações -->
     <string name="notif_task_assigned">Foi-lhe atribuída uma nova tarefa.</string>
@@ -407,4 +444,6 @@
     <string name="notif_sync_failed_title">Sincronização incompleta</string>
     <string name="notif_sync_failed_text">Algumas operações serão tentadas novamente</string>
 
+    <string name="notification_important_alerts_count">%1$d alertas importantes</string>
+    <string name="task_completion_placeholder">Ex: 75</string>
 </resources>
