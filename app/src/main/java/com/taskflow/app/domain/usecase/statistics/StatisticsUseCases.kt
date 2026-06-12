@@ -10,6 +10,12 @@ import com.taskflow.app.domain.util.TaskStatus
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 
+private val isPortuguese: Boolean
+    get() = java.util.Locale.getDefault().language == "pt"
+
+private fun localizedText(portuguese: String, english: String): String =
+    if (isPortuguese) portuguese else english
+
 class BuildUserStatisticsUseCase @Inject constructor(
     private val userRepository: UserRepository,
     private val taskRepository: TaskRepository
@@ -20,10 +26,11 @@ class BuildUserStatisticsUseCase @Inject constructor(
         val completedTasks = taskRepository.getCompletedTasksForUserFlow(userId).first()
         val tasks = pendingTasks + completedTasks
 
+        val titleSubject = user?.name ?: if (isPortuguese) "Utilizador $userId" else "User $userId"
         return StatisticsSnapshot(
-            title = "Estatisticas do utilizador: ${user?.name ?: userId}",
+            title = "${localizedText("Estatísticas do utilizador", "User statistics")} : $titleSubject",
             generatedAt = now,
-            rows = listOf(tasks.toStatisticRow(user?.name ?: "Utilizador $userId", now))
+            rows = listOf(tasks.toStatisticRow(titleSubject, now))
         )
     }
 }
@@ -35,10 +42,10 @@ class BuildProjectStatisticsUseCase @Inject constructor(
     suspend operator fun invoke(projectId: Long, now: Long = System.currentTimeMillis()): StatisticsSnapshot {
         val project = projectRepository.getProjectById(projectId)
         val tasks = taskRepository.getTasksByProjectFlow(projectId).first()
-        val label = project?.name ?: "Projeto $projectId"
+        val label = project?.name ?: if (isPortuguese) "Projeto $projectId" else "Project $projectId"
 
         return StatisticsSnapshot(
-            title = "Estatisticas do projeto: $label",
+            title = "${localizedText("Estatísticas do projeto", "Project statistics")} : $label",
             generatedAt = now,
             rows = listOf(tasks.toStatisticRow(label, now))
         )
@@ -52,8 +59,9 @@ class BuildTaskStatisticsUseCase @Inject constructor(
         val task = taskRepository.getTaskById(taskId)
         val rows = listOfNotNull(task?.let { listOf(it).toStatisticRow(it.title, now) })
 
+        val taskTitle = task?.title ?: if (isPortuguese) "Tarefa $taskId" else "Task $taskId"
         return StatisticsSnapshot(
-            title = "Estatisticas da tarefa: ${task?.title ?: taskId}",
+            title = "${localizedText("Estatísticas da tarefa", "Task statistics")} : $taskTitle",
             generatedAt = now,
             rows = rows
         )

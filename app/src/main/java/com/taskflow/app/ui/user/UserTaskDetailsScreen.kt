@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -38,12 +39,20 @@ import com.taskflow.app.ui.common.util.displayDate
 import com.taskflow.app.ui.navigation.Routes
 
 @Composable
-fun UserTaskDetailsScreen(nav: NavController, managerMode: Boolean = false) {
+fun UserTaskDetailsScreen(nav: NavController, managerMode: Boolean = false, taskId: Long? = null) {
     val viewModel: TaskFlowDataViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsState()
-    val task = state.tasks.firstOrNull { it.id == state.selectedTaskId } ?: state.tasks.firstOrNull()
+    val selectedTaskId = taskId ?: state.selectedTaskId
+    val task = selectedTaskId?.let { id -> state.tasks.firstOrNull { it.id == id } }
     val project = state.projects.firstOrNull { it.id == task?.projectId }
     var observationText by rememberSaveable(task?.id) { mutableStateOf("") }
+
+    LaunchedEffect(taskId) {
+        if (taskId != null) {
+            viewModel.selectTask(taskId)
+        }
+    }
+
     FormScreen(stringResource(R.string.task_details), { nav.popBackStack() }) {
         SyncStatus(state)
         if (task == null) {
@@ -68,8 +77,7 @@ fun UserTaskDetailsScreen(nav: NavController, managerMode: Boolean = false) {
                 Button(
                     onClick = {
                         if (managerMode) {
-                            viewModel.selectTask(task.id)
-                            nav.navigate(Routes.MANAGER_TASK_EDIT)
+                            nav.navigate(Routes.managerTaskEdit(task.id))
                         } else {
                             viewModel.updateTaskStatus(task, TaskStatus.IN_PROGRESS)
                         }

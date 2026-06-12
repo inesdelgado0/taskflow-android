@@ -141,7 +141,7 @@ fun AdminStatsScreen(nav: NavController) {
                 ) {
                     Icon(Icons.Default.Download, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("PDF")
+                    Text(stringResource(R.string.export_btn_pdf))
                 }
                 Button(
                     onClick = { exportStatistics(context, snapshot, StatisticsExportFormat.CSV) },
@@ -151,47 +151,47 @@ fun AdminStatsScreen(nav: NavController) {
                 ) {
                     Icon(Icons.Default.Download, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("CSV")
+                    Text(stringResource(R.string.export_btn_csv))
                 }
             }
         }
 
-        SectionCard("Pesquisa avançada") {
+        SectionCard(stringResource(R.string.advanced_search)) {
             SearchField(
-                placeholder = "Pesquisar por tarefa, projeto ou utilizador",
+                placeholder = stringResource(R.string.search_by_task_project_user),
                 value = query,
                 onValueChange = { query = it }
             )
             Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 DropdownSelector(
-                    label = "Projeto",
-                    selectedText = state.projects.firstOrNull { it.id == selectedProjectId }?.name ?: "Todos os projetos",
+                    label = stringResource(R.string.project_label),
+                    selectedText = state.projects.firstOrNull { it.id == selectedProjectId }?.name ?: stringResource(R.string.all_projects),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    DropdownMenuItem(text = { Text("Todos os projetos") }, onClick = { selectedProjectId = null })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.all_projects)) }, onClick = { selectedProjectId = null })
                     state.projects.forEach { project ->
                         DropdownMenuItem(text = { Text(project.name) }, onClick = { selectedProjectId = project.id })
                     }
                 }
                 DropdownSelector(
-                    label = "Utilizador",
-                    selectedText = state.users.firstOrNull { it.id == selectedUserId }?.name ?: "Todos os utilizadores",
+                    label = stringResource(R.string.user_label),
+                    selectedText = state.users.firstOrNull { it.id == selectedUserId }?.name ?: stringResource(R.string.all_users),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    DropdownMenuItem(text = { Text("Todos os utilizadores") }, onClick = { selectedUserId = null })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.all_users)) }, onClick = { selectedUserId = null })
                     state.users.forEach { user ->
                         DropdownMenuItem(text = { Text(user.name) }, onClick = { selectedUserId = user.id })
                     }
                 }
             }
-            Label("Estado")
+            Label(stringResource(R.string.filter_by_status))
             FilterChipRow(
                 items = TaskStatus.entries,
                 selected = selectedStatus,
                 label = { it.name },
                 onSelected = { selectedStatus = it }
             )
-            Label("Prioridade")
+            Label(stringResource(R.string.filter_by_priority))
             FilterChipRow(
                 items = TaskPriority.entries,
                 selected = selectedPriority,
@@ -209,7 +209,7 @@ fun AdminStatsScreen(nav: NavController) {
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                Text("Limpar filtros")
+                Text(stringResource(R.string.filter_btn_clear))
             }
         }
 
@@ -217,16 +217,16 @@ fun AdminStatsScreen(nav: NavController) {
             Metric(stringResource(R.string.dashboard_completion_rate), "${snapshot.completionRate}%")
             Metric(stringResource(R.string.completed_tasks_metric), snapshot.completedTasks.toString())
             Metric(stringResource(R.string.pending_tasks_metric), snapshot.pendingTasks.toString())
-            Metric("Tarefas encontradas", filteredTasks.size.toString())
-            Metric("Tempo médio/tarefa", averageTimeLabel)
+            Metric(stringResource(R.string.tasks_found), filteredTasks.size.toString())
+            Metric(stringResource(R.string.average_time_per_task), averageTimeLabel)
         }
 
-        SectionCard("Detalhe por relatório") {
+        SectionCard(stringResource(R.string.report_detail)) {
             snapshot.rows
                 .filter { it.totalTasks > 0 || grouping == StatisticsGrouping.BY_TASK }
                 .take(8)
                 .forEach { row ->
-                    Metric(row.label, "${row.completionRate}% | ${row.completedTasks}/${row.totalTasks} concluídas")
+                    Metric(row.label, stringResource(R.string.report_row_completion_details, row.completionRate, row.completedTasks, row.totalTasks))
                 }
             if (snapshot.rows.isEmpty()) EmptyData()
         }
@@ -235,7 +235,12 @@ fun AdminStatsScreen(nav: NavController) {
             topUsers.take(5).forEachIndexed { index, userStats ->
                 Ranking(
                     (index + 1).toString(),
-                    "${userStats.name} - ${userStats.completedTasks} concluídas / ${userStats.totalTasks} tarefas"
+                    stringResource(
+                        R.string.top_user_ranking_label,
+                        userStats.name,
+                        userStats.completedTasks,
+                        userStats.totalTasks
+                    )
                 )
             }
             if (topUsers.isEmpty()) EmptyData()

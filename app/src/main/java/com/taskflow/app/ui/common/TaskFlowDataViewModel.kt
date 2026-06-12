@@ -243,7 +243,7 @@ class TaskFlowDataViewModel @Inject constructor(
         refreshFromApi()
     }
 
-    fun selectProject(projectId: Long) {
+    fun selectProject(projectId: Long?) {
         selectedProjectId.value = projectId
     }
 

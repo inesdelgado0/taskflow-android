@@ -13,9 +13,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -39,16 +42,31 @@ import com.taskflow.app.ui.common.util.toDemoUser
 import com.taskflow.app.ui.navigation.Routes
 
 @Composable
-fun ManagerProjectDetailsScreen(nav: NavController) {
+fun ManagerProjectDetailsScreen(nav: NavController, projectId: Long? = null) {
     val viewModel: TaskFlowDataViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsState()
-    val project = state.projects.firstOrNull { it.id == state.selectedProjectId } ?: state.projects.firstOrNull()
+    val selectedProjectId = projectId ?: state.selectedProjectId
+    val project = selectedProjectId?.let { id -> state.projects.firstOrNull { it.id == id } }
     val projectTasks = state.tasks.filter { it.projectId == project?.id }
     val projectUserIds = state.userProjectAssignments
         .filter { it.projectId == project?.id }
         .map { it.userId }
         .toSet()
     val projectUsers = state.users.filter { it.id in projectUserIds }
+    var showCompletedTasks by rememberSaveable(project?.id) { mutableStateOf(false) }
+    val pendingTasksCount = projectTasks.count { task ->
+        task.status != TaskStatus.COMPLETED && task.status != TaskStatus.CANCELLED
+    }
+    val completedTasksCount = projectTasks.count { task ->
+        task.status == TaskStatus.COMPLETED
+    }
+
+    LaunchedEffect(projectId) {
+        if (projectId != null) {
+            viewModel.selectProject(projectId)
+        }
+    }
+
     FormScreen(stringResource(R.string.project_details), { nav.popBackStack() }) {
         if (project == null) {
             EmptyData()
@@ -68,10 +86,23 @@ fun ManagerProjectDetailsScreen(nav: NavController) {
         }
         SectionCard(stringResource(R.string.tasks_title)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = true, onClick = {}, label = { Text(stringResource(R.string.pending_tasks_metric)) })
-                FilterChip(selected = false, onClick = {}, label = { Text(stringResource(R.string.completed_filter)) })
+                FilterChip(
+                    selected = !showCompletedTasks,
+                    onClick = { showCompletedTasks = false },
+                    label = { Text("${stringResource(R.string.pending_filter)} ($pendingTasksCount)") }
+                )
+                FilterChip(
+                    selected = showCompletedTasks,
+                    onClick = { showCompletedTasks = true },
+                    label = { Text("${stringResource(R.string.completed_filter)} ($completedTasksCount)") }
+                )
             }
-            OutlinedButton(onClick = { nav.navigate(Routes.MANAGER_TASKS_LIST) }, modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(
+                onClick = {
+                    nav.navigate(Routes.managerProjectTasks(project.id, showCompletedTasks))
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text(stringResource(R.string.view_all_tasks))
             }
         }

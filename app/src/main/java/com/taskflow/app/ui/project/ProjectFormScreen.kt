@@ -39,12 +39,19 @@ import com.taskflow.app.ui.common.util.label
 import com.taskflow.app.ui.common.util.projectManagers
 
 @Composable
-fun ProjectFormScreen(nav: NavController, edit: Boolean) {
+fun ProjectFormScreen(nav: NavController, edit: Boolean, projectId: Long? = null) {
     val viewModel: TaskFlowDataViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsState()
-    val project = state.projects.firstOrNull { it.id == state.selectedProjectId } ?: state.projects.firstOrNull()
+    val selectedProjectId = projectId ?: state.selectedProjectId
+    val project = selectedProjectId?.let { id -> state.projects.firstOrNull { it.id == id } }
     val managers = state.users.projectManagers()
     var hasChanges by rememberSaveable(edit, project?.id) { mutableStateOf(false) }
+
+    LaunchedEffect(projectId) {
+        if (projectId != null) {
+            viewModel.selectProject(projectId)
+        }
+    }
     FormScreen(
         title = if (edit) stringResource(R.string.edit_project) else stringResource(R.string.create_project),
         onBack = { nav.popBackStack() },
@@ -113,13 +120,13 @@ internal fun ProjectFormContent(
         Field(
             stringResource(R.string.project_label_name),
             name,
-            placeholder = if (edit) "" else "Ex: Website Redesign",
+            placeholder = if (edit) "" else stringResource(R.string.project_placeholder_name_example),
             onValueChange = { name = it }
         )
         Field(
             stringResource(R.string.project_label_description),
             description,
-            placeholder = if (edit) "" else "Descricao detalhada do projeto",
+            placeholder = if (edit) "" else stringResource(R.string.project_placeholder_description),
             onValueChange = { description = it },
             minLines = 4
         )
@@ -138,7 +145,7 @@ internal fun ProjectFormContent(
             )
         }
         DropdownSelector(
-            label = if (edit) "Gestor de Projeto (RF04)" else stringResource(R.string.project_label_manager),
+            label = if (edit) stringResource(R.string.project_manager_label_edit) else stringResource(R.string.project_label_manager),
             selectedText = managers.firstOrNull { it.first == selectedManagerId }?.second.orEmpty(),
             helperText = if (edit) "" else stringResource(R.string.assign_manager_hint)
         ) {

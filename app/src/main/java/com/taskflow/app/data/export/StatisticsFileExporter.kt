@@ -6,6 +6,7 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import androidx.core.content.FileProvider
+import com.taskflow.app.R
 import com.taskflow.app.domain.model.StatisticsExportFormat
 import com.taskflow.app.domain.model.StatisticsSnapshot
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -46,7 +47,18 @@ class StatisticsFileExporter @Inject constructor(
 
     private fun exportCsv(snapshot: StatisticsSnapshot): File {
         val file = exportFile(snapshot, "csv")
-        file.writeText(csvFormatter.format(snapshot))
+        val labels = StatisticsExportLabels(
+            generatedAt = context.getString(R.string.export_generated_at),
+            item = context.getString(R.string.export_item),
+            total = context.getString(R.string.export_total),
+            completedLabel = context.getString(R.string.export_completed_label),
+            pendingLabel = context.getString(R.string.export_pending_label),
+            overdueLabel = context.getString(R.string.export_overdue_label),
+            completionLabel = context.getString(R.string.export_completion_label),
+            timeSpentLabel = context.getString(R.string.task_label_time_spent),
+            totalLabel = context.getString(R.string.export_total_label)
+        )
+        file.writeText(csvFormatter.format(snapshot, labels))
         return file
     }
 
@@ -94,11 +106,11 @@ class StatisticsFileExporter @Inject constructor(
         }
 
         y += 12f
-        canvas.drawText("Total: ${snapshot.totalTasks}", 32f, y, headerPaint)
-        canvas.drawText("Concluidas: ${snapshot.completedTasks}", 130f, y, headerPaint)
-        canvas.drawText("Pendentes: ${snapshot.pendingTasks}", 260f, y, headerPaint)
-        canvas.drawText("Atrasadas: ${snapshot.overdueTasks}", 390f, y, headerPaint)
-        canvas.drawText("Conclusao: ${snapshot.completionRate}%", 32f, y + 20f, headerPaint)
+        canvas.drawText("${context.getString(R.string.export_total_label)}: ${snapshot.totalTasks}", 32f, y, headerPaint)
+        canvas.drawText("${context.getString(R.string.export_completed_label)}: ${snapshot.completedTasks}", 130f, y, headerPaint)
+        canvas.drawText("${context.getString(R.string.export_pending_label)}: ${snapshot.pendingTasks}", 260f, y, headerPaint)
+        canvas.drawText("${context.getString(R.string.export_overdue_label)}: ${snapshot.overdueTasks}", 390f, y, headerPaint)
+        canvas.drawText("${context.getString(R.string.export_completion_label)}: ${snapshot.completionRate}%", 32f, y + 20f, headerPaint)
 
         document.finishPage(page)
         file.outputStream().use { document.writeTo(it) }
@@ -116,15 +128,15 @@ class StatisticsFileExporter @Inject constructor(
         var y = 42f
         canvas.drawText(snapshot.title.take(54), 32f, y, titlePaint)
         y += 24f
-        canvas.drawText("Gerado em: ${snapshot.generatedAt.formatDate()}", 32f, y, bodyPaint)
+        canvas.drawText("${context.getString(R.string.export_generated_at)}: ${snapshot.generatedAt.formatDate()}", 32f, y, bodyPaint)
         y += 30f
 
-        canvas.drawText("Item", 32f, y, headerPaint)
-        canvas.drawText("Total", 260f, y, headerPaint)
-        canvas.drawText("Concl.", 318f, y, headerPaint)
-        canvas.drawText("Pend.", 382f, y, headerPaint)
-        canvas.drawText("Atras.", 446f, y, headerPaint)
-        canvas.drawText("Taxa", 512f, y, headerPaint)
+        canvas.drawText(context.getString(R.string.export_item), 32f, y, headerPaint)
+        canvas.drawText(context.getString(R.string.export_total), 260f, y, headerPaint)
+        canvas.drawText(context.getString(R.string.export_completed_short), 318f, y, headerPaint)
+        canvas.drawText(context.getString(R.string.export_pending_short), 382f, y, headerPaint)
+        canvas.drawText(context.getString(R.string.export_overdue_short), 446f, y, headerPaint)
+        canvas.drawText(context.getString(R.string.export_rate), 512f, y, headerPaint)
         return y + 18f
     }
 
@@ -134,7 +146,7 @@ class StatisticsFileExporter @Inject constructor(
             .lowercase()
             .replace(Regex("[^a-z0-9]+"), "_")
             .trim('_')
-            .ifBlank { "estatisticas" }
+            .ifBlank { context.getString(R.string.export_file_name_fallback) }
 
         return File(dir, "${safeTitle}_${snapshot.generatedAt}.$extension")
     }

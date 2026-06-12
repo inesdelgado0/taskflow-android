@@ -345,7 +345,7 @@ private fun ProgressFormCard(
                 label = stringResource(R.string.completion_percentage),
                 value = formState.percentage,
                 onValueChange = onPercentageChanged,
-                placeholder = "0-100",
+                placeholder = stringResource(R.string.task_completion_placeholder),
                 error = formState.percentageError?.let { stringResource(it) }
             )
             UserTextField(

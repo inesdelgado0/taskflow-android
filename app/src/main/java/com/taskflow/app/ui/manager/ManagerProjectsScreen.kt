@@ -22,8 +22,7 @@ fun ManagerProjectsScreen(nav: NavController) {
         SyncStatus(state)
         state.projects.forEach { project ->
             ProjectSummary(project, state.tasks.filter { it.projectId == project.id }) {
-                viewModel.selectProject(project.id)
-                nav.navigate(Routes.MANAGER_PROJECT_DETAILS)
+                nav.navigate(Routes.managerProjectDetails(project.id))
             }
         }
     }

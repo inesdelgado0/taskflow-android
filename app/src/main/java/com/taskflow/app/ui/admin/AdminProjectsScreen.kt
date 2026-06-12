@@ -98,12 +98,10 @@ fun AdminProjectsScreen(nav: NavController) {
                     allTasks = state.tasks,
                     managerName = state.users.managerName(project.managerId),
                     onEdit = {
-                        viewModel.selectProject(project.id)
-                        nav.navigate(Routes.ADMIN_PROJECT_EDIT)
+                        nav.navigate(Routes.adminProjectEdit(project.id))
                     },
                     onDetails = {
-                        viewModel.selectProject(project.id)
-                        nav.navigate(Routes.ADMIN_PROJECT_DETAILS)
+                        nav.navigate(Routes.adminProjectDetails(project.id))
                     }
                 )
             }

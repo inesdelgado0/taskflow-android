@@ -241,20 +241,76 @@ fun TaskFlowNavGraph() {
 
         composable(Routes.ADMIN_PROJECTS) { AdminProjectsScreen(navController) }
         composable(Routes.ADMIN_PROJECT_CREATE) { ProjectFormScreen(navController, edit = false) }
-        composable(Routes.ADMIN_PROJECT_EDIT) { ProjectFormScreen(navController, edit = true) }
-        composable(Routes.ADMIN_PROJECT_DETAILS) { AdminProjectDetailsScreen(navController) }
+        composable(
+            route = Routes.ADMIN_PROJECT_EDIT,
+            arguments = listOf(navArgument(Routes.PROJECT_ID_ARG) { type = NavType.LongType })
+        ) { backStackEntry ->
+            ProjectFormScreen(
+                navController,
+                edit = true,
+                projectId = backStackEntry.arguments?.getLong(Routes.PROJECT_ID_ARG)
+            )
+        }
+        composable(
+            route = Routes.ADMIN_PROJECT_DETAILS,
+            arguments = listOf(navArgument(Routes.PROJECT_ID_ARG) { type = NavType.LongType })
+        ) { backStackEntry ->
+            AdminProjectDetailsScreen(
+                navController,
+                projectId = backStackEntry.arguments?.getLong(Routes.PROJECT_ID_ARG)
+            )
+        }
         composable(Routes.ADMIN_USERS_LIST) { AdminUsersListScreen(navController) }
         composable(Routes.ADMIN_USER_CREATE) { UserFormScreen(navController, edit = false) }
-        composable(Routes.ADMIN_USER_EDIT) { UserFormScreen(navController, edit = true) }
+        composable(
+            route = Routes.ADMIN_USER_EDIT,
+            arguments = listOf(navArgument(Routes.USER_ID_ARG) { type = NavType.LongType })
+        ) { backStackEntry ->
+            UserFormScreen(
+                navController,
+                edit = true,
+                userId = backStackEntry.arguments?.getLong(Routes.USER_ID_ARG)
+            )
+        }
         composable(Routes.ADMIN_STATS) { AdminStatsScreen(navController) }
         composable(Routes.ADMIN_PROFILE) {
             ProfileScreen(navController, role = "A", accent = Color(0xFF2F7DF6))
         }
 
         composable(Routes.MANAGER_TASKS_LIST) { ManagerTasksListScreen(navController) }
+        composable(
+            route = Routes.MANAGER_PROJECT_TASKS,
+            arguments = listOf(
+                navArgument(Routes.PROJECT_ID_ARG) { type = NavType.LongType },
+                navArgument(Routes.MANAGER_PROJECT_TASKS_STATUS_ARG) { type = NavType.BoolType }
+            )
+        ) { backStackEntry ->
+            ManagerTasksListScreen(
+                navController,
+                projectId = backStackEntry.arguments?.getLong(Routes.PROJECT_ID_ARG),
+                initialShowCompleted = backStackEntry.arguments?.getBoolean(Routes.MANAGER_PROJECT_TASKS_STATUS_ARG) ?: false
+            )
+        }
         composable(Routes.MANAGER_TASK_CREATE) { TaskFormScreen(navController, edit = false) }
-        composable(Routes.MANAGER_TASK_EDIT) { TaskFormScreen(navController, edit = true) }
-        composable(Routes.MANAGER_TASK_DETAILS) { ManagerTaskDetailsScreen(navController) }
+        composable(
+            route = Routes.MANAGER_TASK_EDIT,
+            arguments = listOf(navArgument(Routes.TASK_ID_ARG) { type = NavType.LongType })
+        ) { backStackEntry ->
+            TaskFormScreen(
+                navController,
+                edit = true,
+                taskId = backStackEntry.arguments?.getLong(Routes.TASK_ID_ARG)
+            )
+        }
+        composable(
+            route = Routes.MANAGER_TASK_DETAILS,
+            arguments = listOf(navArgument(Routes.TASK_ID_ARG) { type = NavType.LongType })
+        ) { backStackEntry ->
+            ManagerTaskDetailsScreen(
+                navController,
+                taskId = backStackEntry.arguments?.getLong(Routes.TASK_ID_ARG)
+            )
+        }
         composable(Routes.MANAGER_TEAM) { ManagerTeamScreen(navController) }
         composable(Routes.MANAGER_ADD_TEAM) { AddTeamScreen(navController) }
         composable(
@@ -284,7 +340,15 @@ fun TaskFlowNavGraph() {
             )
         }
         composable(Routes.MANAGER_PROJECTS) { ManagerProjectsScreen(navController) }
-        composable(Routes.MANAGER_PROJECT_DETAILS) { ManagerProjectDetailsScreen(navController) }
+        composable(
+            route = Routes.MANAGER_PROJECT_DETAILS,
+            arguments = listOf(navArgument(Routes.PROJECT_ID_ARG) { type = NavType.LongType })
+        ) { backStackEntry ->
+            ManagerProjectDetailsScreen(
+                navController,
+                projectId = backStackEntry.arguments?.getLong(Routes.PROJECT_ID_ARG)
+            )
+        }
         composable(Routes.MANAGER_STATS) { ManagerStatsScreen(navController) }
         composable(Routes.MANAGER_PROFILE) {
             ProfileScreen(navController, role = "G", accent = Color(0xFF06C167))

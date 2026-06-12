@@ -33,8 +33,7 @@ fun AdminUsersListScreen(nav: NavController) {
                 user.toDemoUser(),
                 showRole = true,
                 onEdit = {
-                    viewModel.selectUser(user.id)
-                    nav.navigate(Routes.ADMIN_USER_EDIT)
+                    nav.navigate(Routes.adminUserEdit(user.id))
                 },
                 onRemove = { viewModel.deleteUser(user) }
             )

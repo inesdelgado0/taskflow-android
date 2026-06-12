@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -31,20 +32,31 @@ import com.taskflow.app.ui.common.util.projectManagers
 import com.taskflow.app.ui.navigation.Routes
 
 @Composable
-fun ManagerTasksListScreen(nav: NavController, userId: Long? = null) {
+fun ManagerTasksListScreen(
+    nav: NavController,
+    userId: Long? = null,
+    projectId: Long? = null,
+    initialShowCompleted: Boolean = false
+) {
     val viewModel: TaskFlowDataViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsState()
     var query by rememberSaveable { mutableStateOf("") }
     var selectedPriority by rememberSaveable { mutableStateOf<TaskPriority?>(null) }
     var selectedManagerId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var showCompleted by rememberSaveable { mutableStateOf(false) }
+    var showCompleted by rememberSaveable(projectId, initialShowCompleted) { mutableStateOf(initialShowCompleted) }
     val managers = state.users.projectManagers()
+
+    LaunchedEffect(projectId) {
+        viewModel.selectProject(projectId)
+    }
+
     val filteredTasks = state.tasks
         .filter { task ->
             query.isBlank() ||
                 task.title.contains(query, ignoreCase = true) ||
                 task.description.orEmpty().contains(query, ignoreCase = true)
         }
+        .filter { task -> projectId == null || task.projectId == projectId }
         .filter { task -> selectedPriority == null || task.priority == selectedPriority }
         .filter { task ->
             selectedManagerId == null ||
@@ -108,8 +120,7 @@ fun ManagerTasksListScreen(nav: NavController, userId: Long? = null) {
             ManagerTaskCard(task, state.projects, {
                 nav.navigate(Routes.managerAssignUsers(task.id))
             }, {
-                viewModel.selectTask(task.id)
-                nav.navigate(Routes.MANAGER_TASK_EDIT)
+                nav.navigate(Routes.managerTaskEdit(task.id))
             })
         }
         if (filteredTasks.isEmpty()) EmptyData()

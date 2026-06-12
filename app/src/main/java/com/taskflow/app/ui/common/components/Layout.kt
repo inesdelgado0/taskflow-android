@@ -102,7 +102,7 @@ internal fun AppScaffold(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("TaskFlow", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.app_name), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 Box {
                     IconButton(onClick = { notificationsExpanded = true }) {
@@ -129,7 +129,7 @@ internal fun AppScaffold(
                                 text = {
                                     Column {
                                         Text(stringResource(R.string.sync_status_synced), fontWeight = FontWeight.SemiBold)
-                                        Text("Sem alertas no momento", color = Muted, style = MaterialTheme.typography.bodySmall)
+                                        Text(stringResource(R.string.notification_empty_state), color = Muted, style = MaterialTheme.typography.bodySmall)
                                     }
                                 },
                                 onClick = { notificationsExpanded = false }
@@ -139,8 +139,8 @@ internal fun AppScaffold(
                                 DropdownMenuItem(
                                     text = {
                                         Column(Modifier.widthIn(min = 220.dp, max = 320.dp)) {
-                                            Text(notification.title, fontWeight = FontWeight.SemiBold)
-                                            Text(notification.message, color = Muted, style = MaterialTheme.typography.bodySmall)
+                                            Text(notification.resolvedTitle(), fontWeight = FontWeight.SemiBold)
+                                            Text(notification.resolvedMessage(), color = Muted, style = MaterialTheme.typography.bodySmall)
                                         }
                                     },
                                     onClick = {

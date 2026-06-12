@@ -38,8 +38,10 @@ import com.taskflow.app.ui.common.theme.Red
 import com.taskflow.app.ui.common.util.isNearDeadline
 
 internal data class InAppNotification(
-    val title: String,
-    val message: String,
+    val titleRes: Int? = null,
+    val title: String? = null,
+    val messageRes: Int? = null,
+    val message: String? = null,
     val taskId: Long? = null,
     val isImportant: Boolean = false
 )
@@ -63,14 +65,14 @@ internal fun TaskFlowDataUiState.inAppNotifications(): List<InAppNotification> {
             val notifications = mutableListOf<InAppNotification>()
             if (task.deadline != null && task.deadline < now) {
                 notifications += InAppNotification(
-                    title = "Tarefa atrasada",
+                    titleRes = R.string.notification_task_overdue_title,
                     message = task.title,
                     taskId = task.id,
                     isImportant = true
                 )
             } else if (task.deadline.isNearDeadline()) {
                 notifications += InAppNotification(
-                    title = "Prazo proximo",
+                    titleRes = R.string.notification_task_deadline_near_title,
                     message = task.title,
                     taskId = task.id,
                     isImportant = true
@@ -78,7 +80,7 @@ internal fun TaskFlowDataUiState.inAppNotifications(): List<InAppNotification> {
             }
             if (task.status == TaskStatus.PENDING) {
                 notifications += InAppNotification(
-                    title = "Tarefa pendente",
+                    titleRes = R.string.notification_task_pending_title,
                     message = task.title,
                     taskId = task.id
                 )
@@ -90,15 +92,15 @@ internal fun TaskFlowDataUiState.inAppNotifications(): List<InAppNotification> {
         if (isRefreshing) {
             add(
                 InAppNotification(
-                    title = "Sincronizacao em curso",
-                    message = "Os dados estao a ser atualizados."
+                    titleRes = R.string.notification_sync_in_progress_title,
+                    messageRes = R.string.notification_sync_in_progress_message
                 )
             )
         }
         if (refreshError != null) {
             add(
                 InAppNotification(
-                    title = "Sincronizacao incompleta",
+                    titleRes = R.string.notification_sync_incomplete_title,
                     message = refreshError,
                     isImportant = true
                 )
@@ -107,10 +109,18 @@ internal fun TaskFlowDataUiState.inAppNotifications(): List<InAppNotification> {
     }
 
     return (syncNotifications + taskNotifications)
-        .distinctBy { "${it.title}:${it.taskId}:${it.message}" }
+        .distinctBy { "${it.titleRes}:${it.title}:${it.taskId}:${it.messageRes}:${it.message}" }
         .sortedByDescending { it.isImportant }
         .take(8)
 }
+
+@Composable
+internal fun InAppNotification.resolvedTitle(): String =
+    titleRes?.let { stringResource(it) } ?: title.orEmpty()
+
+@Composable
+internal fun InAppNotification.resolvedMessage(): String =
+    messageRes?.let { stringResource(it) } ?: message.orEmpty()
 
 @Composable
 internal fun StatusPill(text: String, color: Color) {
@@ -150,7 +160,7 @@ internal fun NotificationStateComponent(state: TaskFlowDataUiState) {
     val importantCount = notifications.count { it.isImportant }
     val pendingSync = state.isRefreshing
 
-    SectionCard("Notificacoes") {
+    SectionCard(stringResource(R.string.notifications_title)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 Icons.Default.Notifications,
@@ -161,14 +171,14 @@ internal fun NotificationStateComponent(state: TaskFlowDataUiState) {
             Spacer(Modifier.size(8.dp))
             Column {
                 Text(
-                    if (importantCount > 0) "$importantCount alerta(s) importante(s)"
+                    if (importantCount > 0) stringResource(R.string.notification_important_alerts_count, importantCount)
                     else if (pendingSync) stringResource(R.string.sync_status_syncing)
                     else stringResource(R.string.sync_status_synced),
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     if (state.refreshError != null || state.refreshErrorRes != null) stringResource(R.string.sync_status_offline)
-                    else "Notificacoes de tarefas, prazos e sincronizacao ativas",
+                    else stringResource(R.string.notification_active_info),
                     color = Muted,
                     style = MaterialTheme.typography.bodySmall
                 )

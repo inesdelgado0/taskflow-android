@@ -109,7 +109,7 @@ class UserTasksViewModel @Inject constructor(
 
     private suspend fun Task.toUi(userId: Long): UserTaskItemUi {
         val assignment = userTaskDao.get(userId, id)
-        val projectName = projectRepository.getProjectById(projectId)?.name ?: "Projeto"
+        val projectName = projectRepository.getProjectById(projectId)?.name ?: if (java.util.Locale.getDefault().language == "pt") "Projeto" else "Project"
         val progress = assignment?.completionPercentage ?: if (status == TaskStatus.COMPLETED) 100 else 0
         val memberCount = userTaskDao.countUsersByTask(id)
         val rating = evaluationRepository

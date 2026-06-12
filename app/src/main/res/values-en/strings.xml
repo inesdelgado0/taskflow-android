@@ -63,12 +63,15 @@
     <string name="project_label_name">Project name</string>
     <string name="project_label_description">Description</string>
     <string name="project_label_manager">Project Manager</string>
+    <string name="project_manager_label_edit">Project Manager (RF04)</string>
     <string name="project_label_status">Status</string>
     <string name="project_status_active">Active</string>
     <string name="project_status_completed">Completed</string>
     <string name="project_btn_create">Create Project</string>
     <string name="project_btn_edit">Edit Project</string>
     <string name="project_btn_delete">Delete Project</string>
+    <string name="project_placeholder_name_example">Ex: Website Redesign</string>
+    <string name="project_placeholder_description">Detailed project description</string>
     <string name="project_btn_complete">Mark as Completed</string>
 
     <!-- Tarefas -->
@@ -147,6 +150,19 @@
     <string name="stats_by_task">By Task</string>
     <string name="export_btn_pdf">Export PDF</string>
     <string name="export_btn_csv">Export CSV</string>
+    <string name="export_generated_at">Generated on</string>
+    <string name="export_item">Item</string>
+    <string name="export_total">Total</string>
+    <string name="export_completed_short">Comp.</string>
+    <string name="export_pending_short">Pend.</string>
+    <string name="export_overdue_short">Late</string>
+    <string name="export_rate">Rate</string>
+    <string name="export_total_label">Total</string>
+    <string name="export_completed_label">Completed</string>
+    <string name="export_pending_label">Pending</string>
+    <string name="export_overdue_label">Overdue</string>
+    <string name="export_completion_label">Completion</string>
+    <string name="export_file_name_fallback">statistics</string>
 
     <!-- Pesquisa e filtros -->
     <string name="search_hint">Search…</string>
@@ -156,6 +172,27 @@
     <string name="filter_by_date">Date</string>
     <string name="filter_btn_apply">Apply Filters</string>
     <string name="filter_btn_clear">Clear Filters</string>
+    <string name="advanced_search">Advanced search</string>
+    <string name="search_by_task_project_user">Search by task, project or user</string>
+    <string name="project_label">Project</string>
+    <string name="all_projects">All projects</string>
+    <string name="user_label">User</string>
+    <string name="all_users">All users</string>
+    <string name="tasks_found">Tasks found</string>
+    <string name="average_time_per_task">Average time/task</string>
+    <string name="report_detail">Report details</string>
+    <string name="report_row_completion_details">%1$d%% | %2$d/%3$d completed</string>
+    <string name="top_user_ranking_label">%1$s - %2$d completed / %3$d tasks</string>
+    <string name="notifications_title">Notifications</string>
+    <string name="notification_empty_state">No alerts at the moment</string>
+    <string name="notification_task_overdue_title">Task overdue</string>
+    <string name="notification_task_deadline_near_title">Deadline near</string>
+    <string name="notification_task_pending_title">Task pending</string>
+    <string name="notification_sync_in_progress_title">Sync in progress</string>
+    <string name="notification_sync_incomplete_title">Sync incomplete</string>
+    <string name="notification_sync_in_progress_message">Data is being updated.</string>
+    <string name="notification_active_info">Task, deadline and sync notifications active</string>
+    <string name="manager_statistics_title">Manager statistics</string>
 
     <!-- Notificações -->
     <string name="notif_task_assigned">You have been assigned a new task.</string>
@@ -393,4 +430,6 @@
     <string name="error_rating_required">Select a score between 1 and 5.</string>
     <string name="sync_saved_local">Saved locally. It will sync when there is a connection.</string>
 
+    <string name="notification_important_alerts_count">%1$d important alerts</string>
+    <string name="task_completion_placeholder">Ex: 75</string>
 </resources>
