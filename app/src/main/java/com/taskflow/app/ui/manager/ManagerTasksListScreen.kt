@@ -108,8 +108,7 @@ fun ManagerTasksListScreen(nav: NavController, userId: Long? = null) {
             ManagerTaskCard(task, state.projects, {
                 nav.navigate(Routes.managerAssignUsers(task.id))
             }, {
-                viewModel.selectTask(task.id)
-                nav.navigate(Routes.MANAGER_TASK_EDIT)
+                nav.navigate(Routes.managerTaskEdit(task.id))
             })
         }
         if (filteredTasks.isEmpty()) EmptyData()

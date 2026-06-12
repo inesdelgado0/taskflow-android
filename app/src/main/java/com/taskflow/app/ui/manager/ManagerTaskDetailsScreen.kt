@@ -5,6 +5,6 @@ import androidx.navigation.NavController
 import com.taskflow.app.ui.user.UserTaskDetailsScreen
 
 @Composable
-fun ManagerTaskDetailsScreen(nav: NavController) {
-    UserTaskDetailsScreen(nav = nav, managerMode = true)
+fun ManagerTaskDetailsScreen(nav: NavController, taskId: Long? = null) {
+    UserTaskDetailsScreen(nav = nav, managerMode = true, taskId = taskId)
 }

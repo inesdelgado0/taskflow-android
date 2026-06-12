@@ -40,14 +40,21 @@ import com.taskflow.app.ui.common.theme.Red
 import com.taskflow.app.ui.common.util.label
 
 @Composable
-fun TaskFormScreen(nav: NavController, edit: Boolean) {
+fun TaskFormScreen(nav: NavController, edit: Boolean, taskId: Long? = null) {
     val viewModel: TaskFlowDataViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsState()
-    val task = state.tasks.firstOrNull { it.id == state.selectedTaskId } ?: state.tasks.firstOrNull()
-    val project = state.projects.firstOrNull { it.id == task?.projectId } ?: state.projects.firstOrNull()
+    val selectedTaskId = taskId ?: state.selectedTaskId
+    val task = selectedTaskId?.let { id -> state.tasks.firstOrNull { it.id == id } }
+    val project = state.projects.firstOrNull { it.id == task?.projectId }
     val initialProjectId = if (edit) task?.projectId else state.selectedProjectId ?: project?.id
     var hasChanges by rememberSaveable(edit, task?.id, initialProjectId) { mutableStateOf(false) }
     var showDeleteDialog by rememberSaveable(task?.id, edit) { mutableStateOf(false) }
+
+    LaunchedEffect(taskId) {
+        if (taskId != null) {
+            viewModel.selectTask(taskId)
+        }
+    }
 
     if (showDeleteDialog && edit && task != null) {
         AlertDialog(

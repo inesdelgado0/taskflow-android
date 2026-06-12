@@ -39,12 +39,19 @@ import com.taskflow.app.ui.common.util.label
 import com.taskflow.app.ui.common.util.projectManagers
 
 @Composable
-fun ProjectFormScreen(nav: NavController, edit: Boolean) {
+fun ProjectFormScreen(nav: NavController, edit: Boolean, projectId: Long? = null) {
     val viewModel: TaskFlowDataViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsState()
-    val project = state.projects.firstOrNull { it.id == state.selectedProjectId } ?: state.projects.firstOrNull()
+    val selectedProjectId = projectId ?: state.selectedProjectId
+    val project = selectedProjectId?.let { id -> state.projects.firstOrNull { it.id == id } }
     val managers = state.users.projectManagers()
     var hasChanges by rememberSaveable(edit, project?.id) { mutableStateOf(false) }
+
+    LaunchedEffect(projectId) {
+        if (projectId != null) {
+            viewModel.selectProject(projectId)
+        }
+    }
     FormScreen(
         title = if (edit) stringResource(R.string.edit_project) else stringResource(R.string.create_project),
         onBack = { nav.popBackStack() },

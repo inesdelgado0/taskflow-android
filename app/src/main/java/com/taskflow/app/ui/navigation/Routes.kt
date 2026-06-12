@@ -1,6 +1,9 @@
 package com.taskflow.app.ui.navigation
 
 object Routes {
+    const val PROJECT_ID_ARG = "projectId"
+    const val USER_ID_ARG = "userId"
+    const val TASK_ID_ARG = "taskId"
 
     const val ONBOARDING = "onboarding"
     const val LOGIN = "login"
@@ -14,11 +17,11 @@ object Routes {
 
     const val ADMIN_PROJECTS = "admin/projects"
     const val ADMIN_PROJECT_CREATE = "admin/projects/create"
-    const val ADMIN_PROJECT_EDIT = "admin/projects/edit"
-    const val ADMIN_PROJECT_DETAILS = "admin/projects/details"
+    const val ADMIN_PROJECT_EDIT = "admin/projects/edit/{$PROJECT_ID_ARG}"
+    const val ADMIN_PROJECT_DETAILS = "admin/projects/details/{$PROJECT_ID_ARG}"
     const val ADMIN_USERS_LIST = "admin/users"
     const val ADMIN_USER_CREATE = "admin/users/create"
-    const val ADMIN_USER_EDIT = "admin/users/edit"
+    const val ADMIN_USER_EDIT = "admin/users/edit/{$USER_ID_ARG}"
     const val ADMIN_STATS = "admin/statistics"
     const val ADMIN_PROFILE = "admin/profile"
 
@@ -26,15 +29,15 @@ object Routes {
     const val MANAGER_TASKS_LIST = "manager/tasks"
     const val MANAGER_USER_TASKS = "manager/tasks/user/{$MANAGER_USER_ID_ARG}"
     const val MANAGER_TASK_CREATE = "manager/tasks/create"
-    const val MANAGER_TASK_EDIT = "manager/tasks/edit"
-    const val MANAGER_TASK_DETAILS = "manager/tasks/details"
+    const val MANAGER_TASK_EDIT = "manager/tasks/edit/{$TASK_ID_ARG}"
+    const val MANAGER_TASK_DETAILS = "manager/tasks/details/{$TASK_ID_ARG}"
     const val MANAGER_TEAM = "manager/team"
     const val MANAGER_ADD_TEAM = "manager/team/add"
     const val MANAGER_TASK_ID_ARG = "taskId"
     const val MANAGER_ASSIGN_USERS = "manager/tasks/{$MANAGER_TASK_ID_ARG}/assign-users"
     const val MANAGER_EVALUATE_USER = "manager/evaluate-user/{$MANAGER_USER_ID_ARG}"
     const val MANAGER_PROJECTS = "manager/projects"
-    const val MANAGER_PROJECT_DETAILS = "manager/projects/details"
+    const val MANAGER_PROJECT_DETAILS = "manager/projects/details/{$PROJECT_ID_ARG}"
     const val MANAGER_STATS = "manager/statistics"
     const val MANAGER_PROFILE = "manager/profile"
 
@@ -54,6 +57,12 @@ object Routes {
     fun managerEvaluateUser(userId: Long): String = "manager/evaluate-user/$userId"
     fun managerUserTasks(userId: Long): String = "manager/tasks/user/$userId"
     fun managerAssignUsers(taskId: Long): String = "manager/tasks/$taskId/assign-users"
+    fun adminProjectEdit(projectId: Long): String = "admin/projects/edit/$projectId"
+    fun adminProjectDetails(projectId: Long): String = "admin/projects/details/$projectId"
+    fun adminUserEdit(userId: Long): String = "admin/users/edit/$userId"
+    fun managerTaskEdit(taskId: Long): String = "manager/tasks/edit/$taskId"
+    fun managerTaskDetails(taskId: Long): String = "manager/tasks/details/$taskId"
+    fun managerProjectDetails(projectId: Long): String = "manager/projects/details/$projectId"
     fun userTaskExecution(taskId: Long): String = "user/tasks/$taskId/execution"
 }
 

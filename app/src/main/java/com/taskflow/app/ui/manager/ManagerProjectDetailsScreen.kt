@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -39,16 +40,24 @@ import com.taskflow.app.ui.common.util.toDemoUser
 import com.taskflow.app.ui.navigation.Routes
 
 @Composable
-fun ManagerProjectDetailsScreen(nav: NavController) {
+fun ManagerProjectDetailsScreen(nav: NavController, projectId: Long? = null) {
     val viewModel: TaskFlowDataViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsState()
-    val project = state.projects.firstOrNull { it.id == state.selectedProjectId } ?: state.projects.firstOrNull()
+    val selectedProjectId = projectId ?: state.selectedProjectId
+    val project = selectedProjectId?.let { id -> state.projects.firstOrNull { it.id == id } }
     val projectTasks = state.tasks.filter { it.projectId == project?.id }
     val projectUserIds = state.userProjectAssignments
         .filter { it.projectId == project?.id }
         .map { it.userId }
         .toSet()
     val projectUsers = state.users.filter { it.id in projectUserIds }
+
+    LaunchedEffect(projectId) {
+        if (projectId != null) {
+            viewModel.selectProject(projectId)
+        }
+    }
+
     FormScreen(stringResource(R.string.project_details), { nav.popBackStack() }) {
         if (project == null) {
             EmptyData()

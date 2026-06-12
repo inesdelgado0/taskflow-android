@@ -52,10 +52,11 @@ import com.taskflow.app.ui.common.util.initial
 import com.taskflow.app.ui.common.util.toDemoUser
 
 @Composable
-fun UserFormScreen(nav: NavController, edit: Boolean) {
+fun UserFormScreen(nav: NavController, edit: Boolean, userId: Long? = null) {
     val viewModel: TaskFlowDataViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsState()
-    val user = state.users.firstOrNull { it.id == state.selectedUserId } ?: state.users.firstOrNull()
+    val selectedUserId = userId ?: state.selectedUserId
+    val user = selectedUserId?.let { id -> state.users.firstOrNull { it.id == id } }
     var pendingPhoto by rememberSaveable(user?.id, edit) { mutableStateOf(if (edit) user?.photoUrl else null) }
     val photoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),

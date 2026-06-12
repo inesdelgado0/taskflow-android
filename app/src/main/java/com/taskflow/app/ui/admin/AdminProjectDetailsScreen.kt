@@ -6,6 +6,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -26,13 +27,20 @@ import com.taskflow.app.ui.navigation.Routes
 import androidx.compose.ui.res.stringResource
 
 @Composable
-fun AdminProjectDetailsScreen(nav: NavController) {
+fun AdminProjectDetailsScreen(nav: NavController, projectId: Long? = null) {
     val viewModel: TaskFlowDataViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsState()
-    val project = state.projects.firstOrNull { it.id == state.selectedProjectId } ?: state.projects.firstOrNull()
+    val selectedProjectId = projectId ?: state.selectedProjectId
+    val project = selectedProjectId?.let { id -> state.projects.firstOrNull { it.id == id } }
     val projectTasks = state.tasks.filter { it.projectId == project?.id }
     val managerName = state.users.managerName(project?.managerId)
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(projectId) {
+        if (projectId != null) {
+            viewModel.selectProject(projectId)
+        }
+    }
 
     if (showDeleteDialog && project != null) {
         AlertDialog(
@@ -66,7 +74,7 @@ fun AdminProjectDetailsScreen(nav: NavController) {
             project = project,
             managerName = managerName,
             tasks = projectTasks,
-            onEdit = { nav.navigate(Routes.ADMIN_PROJECT_EDIT) },
+            onEdit = { nav.navigate(Routes.adminProjectEdit(project.id)) },
             onDelete = { showDeleteDialog = true }
         )
         val teamPreview = state.users
