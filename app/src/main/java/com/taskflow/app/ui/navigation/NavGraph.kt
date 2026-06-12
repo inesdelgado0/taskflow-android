@@ -278,6 +278,19 @@ fun TaskFlowNavGraph() {
         }
 
         composable(Routes.MANAGER_TASKS_LIST) { ManagerTasksListScreen(navController) }
+        composable(
+            route = Routes.MANAGER_PROJECT_TASKS,
+            arguments = listOf(
+                navArgument(Routes.PROJECT_ID_ARG) { type = NavType.LongType },
+                navArgument(Routes.MANAGER_PROJECT_TASKS_STATUS_ARG) { type = NavType.BoolType }
+            )
+        ) { backStackEntry ->
+            ManagerTasksListScreen(
+                navController,
+                projectId = backStackEntry.arguments?.getLong(Routes.PROJECT_ID_ARG),
+                initialShowCompleted = backStackEntry.arguments?.getBoolean(Routes.MANAGER_PROJECT_TASKS_STATUS_ARG) ?: false
+            )
+        }
         composable(Routes.MANAGER_TASK_CREATE) { TaskFormScreen(navController, edit = false) }
         composable(
             route = Routes.MANAGER_TASK_EDIT,

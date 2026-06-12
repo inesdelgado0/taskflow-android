@@ -26,8 +26,10 @@ object Routes {
     const val ADMIN_PROFILE = "admin/profile"
 
     const val MANAGER_USER_ID_ARG = "userId"
+    const val MANAGER_PROJECT_TASKS_STATUS_ARG = "showCompleted"
     const val MANAGER_TASKS_LIST = "manager/tasks"
     const val MANAGER_USER_TASKS = "manager/tasks/user/{$MANAGER_USER_ID_ARG}"
+    const val MANAGER_PROJECT_TASKS = "manager/projects/{$PROJECT_ID_ARG}/tasks/{$MANAGER_PROJECT_TASKS_STATUS_ARG}"
     const val MANAGER_TASK_CREATE = "manager/tasks/create"
     const val MANAGER_TASK_EDIT = "manager/tasks/edit/{$TASK_ID_ARG}"
     const val MANAGER_TASK_DETAILS = "manager/tasks/details/{$TASK_ID_ARG}"
@@ -56,6 +58,7 @@ object Routes {
     fun managerDashboard(managerId: Long): String = "$MANAGER_DASHBOARD/$managerId"
     fun managerEvaluateUser(userId: Long): String = "manager/evaluate-user/$userId"
     fun managerUserTasks(userId: Long): String = "manager/tasks/user/$userId"
+    fun managerProjectTasks(projectId: Long, showCompleted: Boolean): String = "manager/projects/$projectId/tasks/$showCompleted"
     fun managerAssignUsers(taskId: Long): String = "manager/tasks/$taskId/assign-users"
     fun adminProjectEdit(projectId: Long): String = "admin/projects/edit/$projectId"
     fun adminProjectDetails(projectId: Long): String = "admin/projects/details/$projectId"
