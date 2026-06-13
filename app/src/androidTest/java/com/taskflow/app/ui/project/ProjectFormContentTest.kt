@@ -36,6 +36,7 @@ class ProjectFormContentTest {
                     initialManagerId = null,
                     initialStatus = ProjectStatus.ACTIVE,
                     managers = listOf(1L to "Joao Silva"),
+                    onDirtyChange = {},
                     onSave = { name, description, _, _, _, status ->
                         savedName = name
                         savedDescription = description

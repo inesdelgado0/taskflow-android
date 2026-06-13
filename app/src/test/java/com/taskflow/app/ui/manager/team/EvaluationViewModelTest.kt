@@ -62,6 +62,7 @@ private class FakeEvaluationRepository : EvaluationRepository {
     override suspend fun upsertEvaluation(evaluation: Evaluation): Long = evaluation.id
     override suspend fun getEvaluationById(id: Long): Evaluation? = null
     override suspend fun getEvaluationForUserInProject(projectId: Long, userId: Long): Evaluation? = null
+    override fun getAllEvaluationsFlow(): Flow<List<Evaluation>> = flowOf(emptyList())
     override fun getEvaluationsByProjectFlow(projectId: Long): Flow<List<Evaluation>> = flowOf(emptyList())
     override fun getEvaluationsByUserFlow(userId: Long): Flow<List<Evaluation>> = flowOf(emptyList())
     override suspend fun getAverageRating(userId: Long): Float? = null
@@ -71,7 +72,18 @@ private class FakeEvaluationRepository : EvaluationRepository {
         ApiResult.Success(evaluation)
 }
 
-private class FakeUserRepository : UserRepository {
+private class FakeUserRepository(
+    private val user: User = User(
+        id = 1L,
+        name = "Test",
+        username = "test",
+        email = "test@example.com",
+        passwordHash = "hash",
+        role = UserRole.USER,
+        createdAt = 0L,
+        updatedAt = 0L
+    )
+) : UserRepository {
     override suspend fun createUser(user: User): Long = user.id
     override suspend fun updateUser(user: User) = Unit
     override suspend fun deleteUser(id: Long) = Unit
@@ -83,6 +95,20 @@ private class FakeUserRepository : UserRepository {
     override fun searchUsersFlow(query: String): Flow<List<User>> = flowOf(emptyList())
     override suspend fun setUserActive(id: Long, isActive: Boolean) = Unit
     override suspend fun refreshUsers(): ApiResult<List<User>> = ApiResult.Success(emptyList())
+    override suspend fun refreshCurrentUser(): ApiResult<User> = ApiResult.Success(User(
+        id = 1L,
+        name = "Test",
+        username = "test",
+        email = "test@example.com",
+        passwordHash = "hash",
+        role = UserRole.USER,
+        createdAt = 0L,
+        updatedAt = 0L
+    ))
+    override suspend fun pushUser(user: User, password: String?): ApiResult<User> = ApiResult.Success(user)
+    override suspend fun updateUserRolesRemote(id: Long, roles: List<UserRole>): ApiResult<User> = ApiResult.Success(user)
+    override suspend fun deleteUserRemote(id: Long): ApiResult<Unit> = ApiResult.Success(Unit)
     override suspend fun updateProfileRemote(user: User, newPassword: String?): ApiResult<User> =
         ApiResult.Success(user)
+    override suspend fun uploadCurrentUserPhoto(bytes: ByteArray, contentType: String): ApiResult<User> = ApiResult.Success(user)
 }

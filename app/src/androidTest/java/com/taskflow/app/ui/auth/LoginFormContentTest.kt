@@ -68,7 +68,8 @@ class LoginFormContentTest {
 
     @Test
     fun loginForm_showsErrorMessage() {
-        val errorMessage = "Invalid credentials."
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val errorMessage = context.getString(R.string.error_invalid_credentials)
 
         composeTestRule.setContent {
             MaterialTheme {
@@ -79,7 +80,7 @@ class LoginFormContentTest {
                     passwordVisible = false,
                     selectedRole = UserRole.ADMIN,
                     formState = AuthFormState(),
-                    uiState = AuthUiState.Error(errorMessage),
+                    uiState = AuthUiState.Error(R.string.error_invalid_credentials),
                     onEmailChange = {},
                     onPasswordChange = {},
                     onPasswordVisibilityChange = {},

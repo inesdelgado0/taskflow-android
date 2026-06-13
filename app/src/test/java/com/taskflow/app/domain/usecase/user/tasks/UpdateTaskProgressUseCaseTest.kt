@@ -162,6 +162,7 @@ private class FakeUserTaskDao(
         timeSpent: Int,
         workDate: Long?,
         location: String?,
+        isCompleted: Boolean,
         updatedAt: Long
     ) {
         val current = saved.getValue(userId to taskId)
@@ -170,6 +171,7 @@ private class FakeUserTaskDao(
             timeSpentMinutes = timeSpent,
             workDate = workDate,
             location = location,
+            isCompleted = isCompleted,
             updatedAt = updatedAt
         )
     }
@@ -178,6 +180,9 @@ private class FakeUserTaskDao(
         val current = saved.getValue(userId to taskId)
         saved[userId to taskId] = current.copy(isCompleted = true, updatedAt = updatedAt)
     }
+
+    override suspend fun countUsersByTask(taskId: Long): Int =
+        saved.values.count { it.taskId == taskId }
 
     override suspend fun deleteAllForTask(taskId: Long) {
         saved.keys.filter { it.second == taskId }.forEach(saved::remove)

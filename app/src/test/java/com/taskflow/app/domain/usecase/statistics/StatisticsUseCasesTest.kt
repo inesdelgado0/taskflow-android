@@ -43,7 +43,8 @@ class StatisticsUseCasesTest {
         val snapshot = useCase(projectId = 7L, now = now)
         val row = snapshot.rows.single()
 
-        assertEquals("Estatisticas do projeto: App Mobile", snapshot.title)
+        val expectedPrefix = if (java.util.Locale.getDefault().language == "pt") "Estatísticas do projeto" else "Project statistics"
+        assertEquals("$expectedPrefix : App Mobile", snapshot.title)
         assertEquals(4, row.totalTasks)
         assertEquals(1, row.completedTasks)
         assertEquals(2, row.pendingTasks)
@@ -75,7 +76,8 @@ class StatisticsUseCasesTest {
 
         val snapshot = useCase(userId = 3L, now = 1_000L)
 
-        assertEquals("Estatisticas do utilizador: Simao", snapshot.title)
+        val expectedPrefix = if (java.util.Locale.getDefault().language == "pt") "Estatísticas do utilizador" else "User statistics"
+        assertEquals("$expectedPrefix : Simao", snapshot.title)
         assertEquals(2, snapshot.totalTasks)
         assertEquals(1, snapshot.completedTasks)
         assertEquals(1, snapshot.pendingTasks)
@@ -118,6 +120,9 @@ private class FakeProjectRepository(
     override suspend fun assignManagerRemote(projectId: Long, managerId: Long?): ApiResult<Project> = ApiResult.Success(project)
     override suspend fun completeProjectRemote(id: Long): ApiResult<Project> = ApiResult.Success(project)
     override suspend fun updateProjectStatusRemote(id: Long, status: ProjectStatus): ApiResult<Project> = ApiResult.Success(project)
+    override suspend fun refreshProjectUsers(projectId: Long): ApiResult<List<Long>> = ApiResult.Success(emptyList())
+    override suspend fun assignUserToProjectRemote(projectId: Long, userId: Long): ApiResult<Unit> = ApiResult.Success(Unit)
+    override suspend fun removeUserFromProjectRemote(projectId: Long, userId: Long): ApiResult<Unit> = ApiResult.Success(Unit)
     override suspend fun deleteProjectRemote(id: Long): ApiResult<Unit> = ApiResult.Success(Unit)
 }
 
@@ -176,6 +181,11 @@ private class FakeUserRepository(
     override fun searchUsersFlow(query: String): Flow<List<User>> = flowOf(listOf(user))
     override suspend fun setUserActive(id: Long, isActive: Boolean) = Unit
     override suspend fun refreshUsers(): ApiResult<List<User>> = ApiResult.Success(listOf(user))
+    override suspend fun refreshCurrentUser(): ApiResult<User> = ApiResult.Success(user)
+    override suspend fun pushUser(user: User, password: String?): ApiResult<User> = ApiResult.Success(user)
+    override suspend fun updateUserRolesRemote(id: Long, roles: List<UserRole>): ApiResult<User> = ApiResult.Success(user)
+    override suspend fun deleteUserRemote(id: Long): ApiResult<Unit> = ApiResult.Success(Unit)
     override suspend fun updateProfileRemote(user: User, newPassword: String?): ApiResult<User> =
         ApiResult.Success(user)
+    override suspend fun uploadCurrentUserPhoto(bytes: ByteArray, contentType: String): ApiResult<User> = ApiResult.Success(user)
 }
