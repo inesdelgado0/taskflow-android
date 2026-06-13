@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.taskflow.app.data.local.entity.UserTaskEntity
 import com.taskflow.app.domain.model.Evaluation
 import com.taskflow.app.domain.model.Project
 import com.taskflow.app.domain.model.Task
@@ -73,7 +74,24 @@ class UserHistoryContentTest {
                             rating = 4,
                             createdAt = now
                         )
-                    )
+                    ),
+                    assignments = listOf(
+                        UserTaskEntity(
+                            userId = 1L,
+                            taskId = 1L,
+                            completionPercentage = 100,
+                            isCompleted = true,
+                            updatedAt = now
+                        ),
+                        UserTaskEntity(
+                            userId = 1L,
+                            taskId = 2L,
+                            completionPercentage = 100,
+                            isCompleted = true,
+                            updatedAt = now
+                        )
+                    ),
+                    currentUserId = 1L
                 )
             }
         }

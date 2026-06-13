@@ -42,6 +42,7 @@ class UserTaskDaoContractTest {
             timeSpent = 180,
             workDate = 1_780_000_000_000L,
             location = "Porto",
+            isCompleted = false,
             updatedAt = 1_780_000_001_000L
         )
 
@@ -101,6 +102,10 @@ private class FakeUserTaskDao : UserTaskDao {
         saved[userTask.userId to userTask.taskId] = userTask
     }
 
+    override suspend fun upsertAll(userTasks: List<UserTaskEntity>) {
+        userTasks.forEach { upsert(it) }
+    }
+
     override suspend fun get(userId: Long, taskId: Long): UserTaskEntity? =
         saved[userId to taskId]
 
@@ -110,6 +115,9 @@ private class FakeUserTaskDao : UserTaskDao {
     override fun getTasksByUserFlow(userId: Long): Flow<List<UserTaskEntity>> =
         flowOf(saved.values.filter { it.userId == userId })
 
+    override fun getAllFlow(): Flow<List<UserTaskEntity>> =
+        flowOf(saved.values.toList())
+
     override suspend fun updateProgress(
         userId: Long,
         taskId: Long,
@@ -117,6 +125,7 @@ private class FakeUserTaskDao : UserTaskDao {
         timeSpent: Int,
         workDate: Long?,
         location: String?,
+        isCompleted: Boolean,
         updatedAt: Long
     ) {
         val current = saved.getValue(userId to taskId)
@@ -125,6 +134,7 @@ private class FakeUserTaskDao : UserTaskDao {
             timeSpentMinutes = timeSpent,
             workDate = workDate,
             location = location,
+            isCompleted = isCompleted,
             updatedAt = updatedAt
         )
     }
@@ -132,6 +142,13 @@ private class FakeUserTaskDao : UserTaskDao {
     override suspend fun markCompleted(userId: Long, taskId: Long, updatedAt: Long) {
         val current = saved.getValue(userId to taskId)
         saved[userId to taskId] = current.copy(isCompleted = true, updatedAt = updatedAt)
+    }
+
+    override suspend fun countUsersByTask(taskId: Long): Int =
+        saved.values.count { it.taskId == taskId }
+
+    override suspend fun delete(taskId: Long, userId: Long) {
+        saved.remove(userId to taskId)
     }
 
     override suspend fun deleteAllForTask(taskId: Long) {

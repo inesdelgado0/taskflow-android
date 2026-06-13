@@ -9,6 +9,18 @@ import org.junit.Test
 class StatisticsCsvFormatterTest {
     private val formatter = StatisticsCsvFormatter()
 
+    private val testLabels = StatisticsExportLabels(
+        generatedAt = "Gerado em",
+        item = "Item",
+        total = "Total",
+        completedLabel = "Concluidas",
+        pendingLabel = "Pendentes",
+        overdueLabel = "Atrasadas",
+        completionLabel = "Conclusao",
+        timeSpentLabel = "Tempo",
+        totalLabel = "Total"
+    )
+
     @Test
     fun format_escapesCommaAndQuotes() {
         val snapshot = StatisticsSnapshot(
@@ -25,7 +37,7 @@ class StatisticsCsvFormatterTest {
             )
         )
 
-        val csv = formatter.format(snapshot)
+        val csv = formatter.format(snapshot, testLabels)
 
         assertTrue(csv.contains("\"Estatisticas, Projeto\""))
         assertTrue(csv.contains("\"Tarefa \"\"critica\"\"\",2,1,1,0,50%,0"))
@@ -42,7 +54,7 @@ class StatisticsCsvFormatterTest {
             )
         )
 
-        val csv = formatter.format(snapshot)
+        val csv = formatter.format(snapshot, testLabels)
 
         assertTrue(csv.contains("Total,6,4,2,1,66%,0"))
         assertEquals(6, snapshot.totalTasks)
